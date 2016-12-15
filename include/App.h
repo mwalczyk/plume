@@ -5,9 +5,15 @@
 #include <array>
 #include <string>
 
-//#include "vulkan.h"
+#define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include "glfw3.h"
+
+enum class WindowMode
+{
+	TOOLKIT_NO_WINDOW,
+	TOOLKIT_GLFW_WINDOW
+};
 
 class App
 {
@@ -32,8 +38,9 @@ public:
 		Options& requiredFeatures(VkPhysicalDeviceFeatures tRequiredFeatures) { mRequiredFeatures = tRequiredFeatures; return *this; }
 	};
 
-	App(const std::string &tApplicationName, VkPhysicalDeviceFeatures tRequiredFeatures) :
-		mApplicationName{ tApplicationName }
+	App(const std::string &tApplicationName, VkPhysicalDeviceFeatures tRequiredFeatures, WindowMode tWindowMode = WindowMode::TOOLKIT_GLFW_WINDOW) :
+		mApplicationName{ tApplicationName },
+		mWindowMode{ tWindowMode }
 	{
 		mRequiredFeatures = tRequiredFeatures; // error if placed in initializer list?
 		setup();
@@ -67,24 +74,32 @@ private:
 	// 4.
 	void createLogicalDevice();
 
+	// 5.
+	void createSurface();
+
 	// app requirements
 	std::vector<const char*> mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };					// what Vulkan validation layers does this app need to support?
 	std::vector<const char*> mRequiredExtensions = { VK_EXT_DEBUG_REPORT_EXTENSION_NAME };					// what Vulkan extensions does this app need to support?
 	VkPhysicalDeviceFeatures mRequiredFeatures = {};														// what Vulkan features does this app need to support?
 	std::vector<VkQueueFlagBits> mRequiredQueueFlagBits = { VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT };	// what types of operations does this app need to support?
 
-																											// general app properties
+	// general app properties
 	std::string mApplicationName = { "test application" };
 	uint32_t mWindowWidth = { 640 };
 	uint32_t mWindowHeight = { 480 };
+	WindowMode mWindowMode;
 	GLFWwindow *mWindowHandle = { nullptr };
 
-	VkDebugReportCallbackEXT mDebugCallback;
-
 	// handles to Vulkan objects
+	VkDebugReportCallbackEXT mDebugCallback{ VK_NULL_HANDLE };
 	VkInstance mInstance{ VK_NULL_HANDLE };
 	VkPhysicalDevice mPhysicalDevice{ VK_NULL_HANDLE };
 	VkDevice mLogicalDevice{ VK_NULL_HANDLE };
+	VkQueue mQueue{ VK_NULL_HANDLE };
+	VkSurfaceKHR mSurface{ VK_NULL_HANDLE };
+
+	// other Vulkan related items
+	size_t mQueueFamilyIndex;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugReportFlagsEXT flags,

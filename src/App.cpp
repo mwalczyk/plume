@@ -31,6 +31,7 @@ void destroyDebugReportCallbackEXT(VkInstance tInstance,
 	}
 }
 
+//! create Vulkan objects
 void App::initializeRenderer()
 {
 	createInstance();
@@ -64,6 +65,19 @@ void App::createInstance()
 	applicationInfo.pNext = nullptr;
 	applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 
+	// get the extensions required by glfw
+	// typically requires: VK_KHR_surface and VK_KHR_win32_surface
+	if (mWindowMode == WindowMode::TOOLKIT_GLFW_WINDOW)
+	{
+		uint32_t glfwRequiredExtensionCount{ 0 };
+		const char** glfwRequiredExtensionNames;
+		glfwRequiredExtensionNames = glfwGetRequiredInstanceExtensions(&glfwRequiredExtensionCount);
+		for (size_t i = 0; i < glfwRequiredExtensionCount; ++i)
+		{
+			mRequiredExtensions.push_back(glfwRequiredExtensionNames[i]);
+		}
+	}
+
 	VkInstanceCreateInfo instanceCreateInfo;
 	instanceCreateInfo.enabledExtensionCount = mRequiredExtensions.size();
 	instanceCreateInfo.enabledLayerCount = mRequiredLayers.size();
@@ -80,7 +94,7 @@ void App::createInstance()
 	}
 }
 
-//! check if all request validation layers are supported on this device
+//! check if all requested validation layers are supported on this device
 bool App::checkValidationLayerSupport()
 {
 	uint32_t layerCount{ 0 };
@@ -125,11 +139,9 @@ void App::setupDebugCallback()
 
 void App::createPhysicalDevice()
 {
-	// how many physical devices are connected?
 	uint32_t physicalDeviceCount{ 0 };
 	vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount, nullptr);
 
-	// make sure there is at least one physical device connected
 	if (physicalDeviceCount == 0)
 	{
 		throw std::runtime_error("failed to find any connected physical devices");
@@ -137,11 +149,9 @@ void App::createPhysicalDevice()
 
 	std::cout << "there are " << physicalDeviceCount << " physical devices connected\n";
 
-	// retrieve handles to all of the available physical devices
 	std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
 	vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount, physicalDevices.data());
 
-	// pick a suitable physical device
 	for (const auto& physicalDevice : physicalDevices)
 	{
 		if (isPhysicalDeviceSuitable(physicalDevice))
@@ -156,10 +166,11 @@ void App::createPhysicalDevice()
 	}
 }
 
+//! after enumerating all physical devices on the system, pick one that is suitable for graphics and compute operations
 bool App::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice)
 {
-	auto properties = getPhysicalDeviceProperties(tPhysicalDevice);
-	auto features = getPhysicalDeviceFeatures(tPhysicalDevice);
+	auto physicalDeviceProperties = getPhysicalDeviceProperties(tPhysicalDevice);
+	auto physicalDeviceFeatures = getPhysicalDeviceFeatures(tPhysicalDevice);
 
 	// in the future, we may want to construct a map of physical devices to "scores" so that we can
 	// rank GPUs and choose a fallback device if the tests below fail
@@ -177,6 +188,8 @@ bool App::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice)
 		// VK_QUEUE_COMPUTE_BIT
 		// VK_QUEUE_TRANSFER_BIT (copying buffer and image contents)
 		// VK_QUEUE_SPARSE_BINDING_BIT (memory binding operations used to update sparse resources)
+		// for now, find a queue family that supports BOTH graphics and compute operations
+		// in the future, it should be possible to use two different queue families for these operations
 		bool supportsAllQueueFlagBits{ true };
 		for (const auto &requiredQueueFlagBit : mRequiredQueueFlagBits)
 		{
@@ -201,14 +214,15 @@ bool App::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice)
 	// make sure that the physical device is a discrete GPU and supports both tessellation and 
 	// geometry shaders
 	if (foundSuitableQueueFamily &&
-		properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-		features.tessellationShader &&
-		features.geometryShader)
+		physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+		physicalDeviceFeatures.tessellationShader &&
+		physicalDeviceFeatures.geometryShader)
 	{
 		std::cout << "found suitable physical device:\n";
-		std::cout << "\tdevice ID: " << properties.deviceID << "\n";
-		std::cout << "\tdevice name: " << properties.deviceName << "\n";
-		std::cout << "\tvendor ID: " << properties.vendorID << "\n";
+		std::cout << "\tdevice ID: " << physicalDeviceProperties.deviceID << "\n";
+		std::cout << "\tdevice name: " << physicalDeviceProperties.deviceName << "\n";
+		std::cout << "\tvendor ID: " << physicalDeviceProperties.vendorID << "\n";
+		mQueueFamilyIndex = queueFamilyIndex;
 		return true;
 	}
 
@@ -326,7 +340,18 @@ void App::createLogicalDevice()
 		throw std::runtime_error("failed to create a logical device");
 	}
 
+	// grab a handle to the queue
+	vkGetDeviceQueue(mLogicalDevice, mQueueFamilyIndex, 0, &mQueue);
+
 	std::cout << "sucessfully created a logical device\n";
+}
+
+void App::createSurface()
+{
+	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo;
+	surfaceCreateInfo.flags = 0;
+	surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
+	//surfaceCreateInfo.hwnd =
 }
 
 void App::setup()
