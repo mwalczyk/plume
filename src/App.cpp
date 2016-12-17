@@ -36,6 +36,7 @@ void App::initializeRenderer()
 {
 	createInstance();
 	setupDebugCallback();
+	createSurface();
 	createPhysicalDevice();
 	createLogicalDevice();
 }
@@ -45,6 +46,7 @@ void App::initializeWindow()
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	std::cout << "glfw version: " << glfwGetVersionString() << "\n";
 	mWindowHandle = glfwCreateWindow(mWindowWidth, mWindowHeight, mApplicationName.c_str(), nullptr, nullptr);
 }
 
@@ -65,8 +67,7 @@ void App::createInstance()
 	applicationInfo.pNext = nullptr;
 	applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 
-	// get the extensions required by glfw
-	// typically requires: VK_KHR_surface and VK_KHR_win32_surface
+	// get the extensions required by glfw: VK_KHR_surface and VK_KHR_win32_surface
 	if (mWindowMode == WindowMode::TOOLKIT_GLFW_WINDOW)
 	{
 		uint32_t glfwRequiredExtensionCount{ 0 };
@@ -74,17 +75,17 @@ void App::createInstance()
 		glfwRequiredExtensionNames = glfwGetRequiredInstanceExtensions(&glfwRequiredExtensionCount);
 		for (size_t i = 0; i < glfwRequiredExtensionCount; ++i)
 		{
-			mRequiredExtensions.push_back(glfwRequiredExtensionNames[i]);
+			mRequiredInstanceExtensions.push_back(glfwRequiredExtensionNames[i]);
 		}
 	}
 
 	VkInstanceCreateInfo instanceCreateInfo;
-	instanceCreateInfo.enabledExtensionCount = mRequiredExtensions.size();
+	instanceCreateInfo.enabledExtensionCount = mRequiredInstanceExtensions.size();
 	instanceCreateInfo.enabledLayerCount = mRequiredLayers.size();
 	instanceCreateInfo.flags = 0;
 	instanceCreateInfo.pApplicationInfo = &applicationInfo;
 	instanceCreateInfo.pNext = nullptr;
-	instanceCreateInfo.ppEnabledExtensionNames = mRequiredExtensions.data();
+	instanceCreateInfo.ppEnabledExtensionNames = mRequiredInstanceExtensions.data();
 	instanceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
 	instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 
@@ -114,6 +115,7 @@ bool App::checkValidationLayerSupport()
 				break;
 			}
 		}
+
 		if (!layerFound)
 		{
 			return false;
@@ -121,6 +123,24 @@ bool App::checkValidationLayerSupport()
 	}
 
 	return true;
+}
+
+std::vector<VkExtensionProperties> App::getExtensionProperties() const
+{
+	uint32_t extensionPropertiesCount;
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionPropertiesCount, nullptr);
+
+	std::vector<VkExtensionProperties> extensionProperties(extensionPropertiesCount);
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionPropertiesCount, extensionProperties.data());
+	
+	std::cout << "this Vulkan instance supports " << extensionPropertiesCount << " extensions:\n";
+
+	for (const auto &extensionProperty: extensionProperties)
+	{
+		std::cout << "\textension name: " << extensionProperty.extensionName << ", spec version: " << extensionProperty.specVersion << "\n";
+	}
+
+	return extensionProperties;
 }
 
 //! setup the callback function for validation layers
@@ -135,6 +155,16 @@ void App::setupDebugCallback()
 	{
 		throw std::runtime_error("failed to setup the debug callback");
 	}
+}
+
+void App::createSurface()
+{
+	if (glfwCreateWindowSurface(mInstance, mWindowHandle, nullptr, &mSurface) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create surface");
+	}
+
+	std::cout << "successfully created surface\n";
 }
 
 void App::createPhysicalDevice()
@@ -188,8 +218,10 @@ bool App::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice)
 		// VK_QUEUE_COMPUTE_BIT
 		// VK_QUEUE_TRANSFER_BIT (copying buffer and image contents)
 		// VK_QUEUE_SPARSE_BINDING_BIT (memory binding operations used to update sparse resources)
-		// for now, find a queue family that supports BOTH graphics and compute operations
-		// in the future, it should be possible to use two different queue families for these operations
+		
+		// for now, find a single queue family that supports graphics and compute operations and presentation
+		// in the future, it should be possible to use two or more different queue families for these operations
+		
 		bool supportsAllQueueFlagBits{ true };
 		for (const auto &requiredQueueFlagBit : mRequiredQueueFlagBits)
 		{
@@ -199,8 +231,13 @@ bool App::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice)
 				break;
 			}
 		}
+		
+		// check if this queue family supports presentation
+		VkBool32 presentSupport{ false };
+		vkGetPhysicalDeviceSurfaceSupportKHR(tPhysicalDevice, queueFamilyIndex, mSurface, &presentSupport);
 
 		if (supportsAllQueueFlagBits &&
+			presentSupport &&
 			queueFamilyProperty.queueCount > 0)
 		{
 			std::cout << "found suitable queue family (index " << queueFamilyIndex << ") with " << queueFamilyProperty.queueCount << " possible queues\n";
@@ -211,8 +248,10 @@ bool App::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice)
 		++queueFamilyIndex;
 	}
 
-	// make sure that the physical device is a discrete GPU and supports both tessellation and 
-	// geometry shaders
+	// make sure that the physical device supports all of the device level extensions (i.e. swapchain creation)
+	bool deviceExtensionsSupported = checkDeviceExtensionSupport(tPhysicalDevice);
+
+	// make sure that the physical device is a discrete GPU and supports both tessellation and geometry shaders
 	if (foundSuitableQueueFamily &&
 		physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
 		physicalDeviceFeatures.tessellationShader &&
@@ -229,7 +268,20 @@ bool App::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice)
 	return false;
 }
 
-VkPhysicalDeviceProperties App::getPhysicalDeviceProperties(VkPhysicalDevice tPhysicalDevice)
+bool App::checkDeviceExtensionSupport(VkPhysicalDevice tPhysicalDevice)
+{
+	auto deviceExtensionProperties = getPhysicalDeviceExtensionProperties(tPhysicalDevice);
+
+	std::cout << "this device supports " << deviceExtensionProperties.size() << " extensions:\n";
+	for (const auto &deviceExtensionProperty : deviceExtensionProperties)
+	{
+		std::cout << "\textension name: " << deviceExtensionProperty.extensionName << ", spec version: " << deviceExtensionProperty.specVersion << "\n";
+	}
+
+	return true;
+}
+
+VkPhysicalDeviceProperties App::getPhysicalDeviceProperties(VkPhysicalDevice tPhysicalDevice) const
 {
 	VkPhysicalDeviceProperties physicalDeviceProperties;
 	vkGetPhysicalDeviceProperties(tPhysicalDevice, &physicalDeviceProperties);
@@ -237,7 +289,7 @@ VkPhysicalDeviceProperties App::getPhysicalDeviceProperties(VkPhysicalDevice tPh
 	return physicalDeviceProperties;
 }
 
-VkPhysicalDeviceFeatures App::getPhysicalDeviceFeatures(VkPhysicalDevice tPhysicalDevice)
+VkPhysicalDeviceFeatures App::getPhysicalDeviceFeatures(VkPhysicalDevice tPhysicalDevice) const
 {
 	VkPhysicalDeviceFeatures physicalDeviceFeatures;
 	vkGetPhysicalDeviceFeatures(tPhysicalDevice, &physicalDeviceFeatures);
@@ -245,7 +297,31 @@ VkPhysicalDeviceFeatures App::getPhysicalDeviceFeatures(VkPhysicalDevice tPhysic
 	return physicalDeviceFeatures;
 }
 
-void App::getPhysicalDeviceMemoryProperties(VkPhysicalDevice tPhysicalDevice)
+std::vector<VkQueueFamilyProperties> App::getPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice tPhysicalDevice) const
+{
+	uint32_t queueFamilyPropertyCount{ 0 };
+	vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &queueFamilyPropertyCount, nullptr);
+
+	std::cout << "this physical device supports " << queueFamilyPropertyCount << " queue families\n";
+
+	std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyPropertyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &queueFamilyPropertyCount, queueFamilyProperties.data());
+
+	return queueFamilyProperties;
+}
+
+std::vector<VkExtensionProperties> App::getPhysicalDeviceExtensionProperties(VkPhysicalDevice tPhysicalDevice) const
+{
+	uint32_t deviceExtensionPropertiesCount{ 0 };
+	vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, nullptr);
+
+	std::vector<VkExtensionProperties> deviceExtensionProperties(deviceExtensionPropertiesCount);
+	vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, deviceExtensionProperties.data());
+
+	return deviceExtensionProperties;
+}
+
+VkPhysicalDeviceMemoryProperties App::getPhysicalDeviceMemoryProperties(VkPhysicalDevice tPhysicalDevice) const
 {
 	VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
 	vkGetPhysicalDeviceMemoryProperties(tPhysicalDevice, &physicalDeviceMemoryProperties);
@@ -289,19 +365,8 @@ void App::getPhysicalDeviceMemoryProperties(VkPhysicalDevice tPhysicalDevice)
 
 		// VkMemoryHeapFlags will always be VK_MEMORY_HEAP_DEVICE_LOCAL_BIT
 	}
-}
 
-std::vector<VkQueueFamilyProperties> App::getPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice tPhysicalDevice)
-{
-	uint32_t queueFamilyPropertyCount{ 0 };
-	vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &queueFamilyPropertyCount, nullptr);
-
-	std::cout << "this physical device supports " << queueFamilyPropertyCount << " queue families\n";
-
-	std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyPropertyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &queueFamilyPropertyCount, queueFamilyProperties.data());
-
-	return queueFamilyProperties;
+	return physicalDeviceMemoryProperties;
 }
 
 void App::createLogicalDevice()
@@ -344,14 +409,6 @@ void App::createLogicalDevice()
 	vkGetDeviceQueue(mLogicalDevice, mQueueFamilyIndex, 0, &mQueue);
 
 	std::cout << "sucessfully created a logical device\n";
-}
-
-void App::createSurface()
-{
-	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo;
-	surfaceCreateInfo.flags = 0;
-	surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
-	//surfaceCreateInfo.hwnd =
 }
 
 void App::setup()
