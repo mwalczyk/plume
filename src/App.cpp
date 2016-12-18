@@ -39,6 +39,7 @@ void App::initializeRenderer()
 	createSurface();
 	createPhysicalDevice();
 	createLogicalDevice();
+	createSwapchain();
 }
 
 void App::initializeWindow()
@@ -75,17 +76,17 @@ void App::createInstance()
 		glfwRequiredExtensionNames = glfwGetRequiredInstanceExtensions(&glfwRequiredExtensionCount);
 		for (size_t i = 0; i < glfwRequiredExtensionCount; ++i)
 		{
-			mRequiredInstanceExtensions.push_back(glfwRequiredExtensionNames[i]);
+			mRequiredExtensions.push_back(glfwRequiredExtensionNames[i]);
 		}
 	}
 
 	VkInstanceCreateInfo instanceCreateInfo;
-	instanceCreateInfo.enabledExtensionCount = mRequiredInstanceExtensions.size();
+	instanceCreateInfo.enabledExtensionCount = mRequiredExtensions.size();
 	instanceCreateInfo.enabledLayerCount = mRequiredLayers.size();
 	instanceCreateInfo.flags = 0;
 	instanceCreateInfo.pApplicationInfo = &applicationInfo;
 	instanceCreateInfo.pNext = nullptr;
-	instanceCreateInfo.ppEnabledExtensionNames = mRequiredInstanceExtensions.data();
+	instanceCreateInfo.ppEnabledExtensionNames = mRequiredExtensions.data();
 	instanceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
 	instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 
@@ -125,6 +126,7 @@ bool App::checkValidationLayerSupport()
 	return true;
 }
 
+//! retrieve a list of all available instance level extensions
 std::vector<VkExtensionProperties> App::getExtensionProperties() const
 {
 	uint32_t extensionPropertiesCount;
@@ -251,8 +253,20 @@ bool App::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice)
 	// make sure that the physical device supports all of the device level extensions (i.e. swapchain creation)
 	bool deviceExtensionsSupported = checkDeviceExtensionSupport(tPhysicalDevice);
 
+	// make sure that the physical device's swapchain support is adequate: only check this if the physical device supports swapchain creation
+	bool swapchainSupportIsAdequate{ false };
+	if (deviceExtensionsSupported)
+	{
+		// for now, a physical device's swapchain support is adequate if there is at least one supported image format and presentation mode
+		auto swapchainSupportDetails = getSwapchainSupportDetails(tPhysicalDevice);
+		swapchainSupportIsAdequate = !swapchainSupportDetails.mFormats.empty() && !swapchainSupportDetails.mPresentModes.empty();
+		std::cout << "this physical device's swapchain support is " << (swapchainSupportIsAdequate ? "adequate\n" : "inadequate\n");
+	}
+
 	// make sure that the physical device is a discrete GPU and supports both tessellation and geometry shaders
 	if (foundSuitableQueueFamily &&
+		deviceExtensionsSupported &&
+		swapchainSupportIsAdequate &&
 		physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
 		physicalDeviceFeatures.tessellationShader &&
 		physicalDeviceFeatures.geometryShader)
@@ -272,13 +286,58 @@ bool App::checkDeviceExtensionSupport(VkPhysicalDevice tPhysicalDevice)
 {
 	auto deviceExtensionProperties = getPhysicalDeviceExtensionProperties(tPhysicalDevice);
 
+	// for now, print all of the available device extension names
 	std::cout << "this device supports " << deviceExtensionProperties.size() << " extensions:\n";
 	for (const auto &deviceExtensionProperty : deviceExtensionProperties)
 	{
 		std::cout << "\textension name: " << deviceExtensionProperty.extensionName << ", spec version: " << deviceExtensionProperty.specVersion << "\n";
 	}
 
+	// make sure that all of the required device extensions are available
+	for (const auto &requiredDeviceExtensionName : mRequiredDeviceExtensions)
+	{
+		std::cout << "checking support for device extension: " << requiredDeviceExtensionName << "\n";
+		auto predicate = [&](const VkExtensionProperties &extensionProperty) { return strcmp(requiredDeviceExtensionName, extensionProperty.extensionName) == 0; };
+		if (std::find_if(deviceExtensionProperties.begin(), deviceExtensionProperties.end(), predicate) == deviceExtensionProperties.end())
+		{
+			std::cout << "required device extension " << requiredDeviceExtensionName << " is not supported by this physical device\n";
+			return false;
+		}
+	}
+
+	std::cout << "all of the required device extensions are supported by this physical device\n";
+
 	return true;
+}
+
+//! retrieve some properties about this physical device's swapchain
+SwapchainSupportDetails App::getSwapchainSupportDetails(VkPhysicalDevice tPhysicalDevice) const
+{
+	// all of the support querying functions take a VkPhysicalDevice and VkSurfaceKHR as parameters
+	SwapchainSupportDetails details;
+
+	// general surface capabilities
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(tPhysicalDevice, mSurface, &details.mCapabilities);
+
+	// surface formats
+	uint32_t formatCount{ 0 };
+	vkGetPhysicalDeviceSurfaceFormatsKHR(tPhysicalDevice, mSurface, &formatCount, nullptr);
+	if (formatCount != 0)
+	{
+		details.mFormats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(tPhysicalDevice, mSurface, &formatCount, details.mFormats.data());
+	}
+
+	// surface presentation modes
+	uint32_t presentModeCount{ 0 };
+	vkGetPhysicalDeviceSurfacePresentModesKHR(tPhysicalDevice, mSurface, &presentModeCount, nullptr);
+
+	if (presentModeCount != 0) {
+		details.mPresentModes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(tPhysicalDevice, mSurface, &presentModeCount, details.mPresentModes.data());
+	}
+
+	return details;
 }
 
 VkPhysicalDeviceProperties App::getPhysicalDeviceProperties(VkPhysicalDevice tPhysicalDevice) const
@@ -378,7 +437,7 @@ void App::createLogicalDevice()
 	mRequiredFeatures.geometryShader = VK_TRUE;
 
 	const float defaultQueuePriority{ 0.0f };
-
+	
 	// for now, we simply create a single queue from the first queue family
 	VkDeviceQueueCreateInfo deviceQueueCreateInfo;
 	deviceQueueCreateInfo.flags = 0;
@@ -389,12 +448,12 @@ void App::createLogicalDevice()
 	deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 
 	VkDeviceCreateInfo deviceCreateInfo;
-	deviceCreateInfo.enabledExtensionCount = 0;
+	deviceCreateInfo.enabledExtensionCount = mRequiredDeviceExtensions.size();
 	deviceCreateInfo.enabledLayerCount = mRequiredLayers.size();
 	deviceCreateInfo.flags = 0;
 	deviceCreateInfo.pEnabledFeatures = &mRequiredFeatures;
 	deviceCreateInfo.pNext = nullptr;
-	deviceCreateInfo.ppEnabledExtensionNames = nullptr;
+	deviceCreateInfo.ppEnabledExtensionNames = mRequiredDeviceExtensions.data();
 	deviceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
 	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
 	deviceCreateInfo.queueCreateInfoCount = 1;
@@ -409,6 +468,80 @@ void App::createLogicalDevice()
 	vkGetDeviceQueue(mLogicalDevice, mQueueFamilyIndex, 0, &mQueue);
 
 	std::cout << "sucessfully created a logical device\n";
+}
+
+void App::createSwapchain()
+{
+	auto swapchainSupportDetails = getSwapchainSupportDetails(mPhysicalDevice);
+
+	// from the structure above, determine an optimal surface format, presentation mode, and size for the swapchain
+	auto selectedSurfaceFormat = selectSwapchainSurfaceFormat(swapchainSupportDetails.mFormats);
+	auto selectedPresentMode = selectSwapchainPresentMode(swapchainSupportDetails.mPresentModes);
+}
+
+VkSurfaceFormatKHR App::selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &tSurfaceFormats) const
+{
+	// if there is only one VkSurfaceFormatKHR entry with format VK_FORMAT_UNDEFINED, this means that the surface has no preferred format
+	if (tSurfaceFormats.size() == 1 && 
+		tSurfaceFormats[0].format == VK_FORMAT_UNDEFINED)
+	{
+		std::cout << "no preferred surface format - defaulting to VK_FORMAT_B8G8R8A8_UNORM and VK_COLOR_SPACE_SRGB_NONLINEAR_KHR\n";
+		return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+	}
+
+	// otherwise, there is a preferred format - iterate through and see if the above combination is available
+	for (const auto &surfaceFormat : tSurfaceFormats)
+	{
+		if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM && 
+			surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
+		{
+			std::cout << "found the preferrd surface format - VK_FORMAT_B8G8R8A8_UNORM and VK_COLOR_SPACE_SRGB_NONLINEAR_KHR\n";
+			return surfaceFormat;
+		}
+	}
+
+	// at this point, we could start ranking the available formats and determine which one is "best"
+	// for now, return the first available format, since our preferred format was not available
+	std::cout << "could not find the preferred surface format - defaulting to the first available format\n";
+	return tSurfaceFormats[0];
+}
+
+VkPresentModeKHR App::selectSwapchainPresentMode(const std::vector<VkPresentModeKHR> &tPresentModes) const
+{
+	// the swapchain can use one of the following modes for presentation:
+	// VK_PRESENT_MODE_IMMEDIATE_KHR
+	// VK_PRESENT_MODE_FIFO_KHR (the only mode guaranteed to be available)
+	// VK_PRESENT_MODE_FIFO_RELAXED_KHR
+	// VK_PRESENT_MODE_MAILBOX_KHR
+
+	for (const auto& presentMode : tPresentModes)
+	{
+		if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		{
+			std::cout << "found VK_PRESENT_MODE_MAILBOX_KHR presentation mode\n";
+			return presentMode;
+		}
+	}
+
+	std::cout << "presentation mode VK_PRESENT_MODE_MAILBOX_KHR is not available - defaulting to VK_PRESENT_MODE_FIFO_KHR\n";
+	return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D App::selectSwapchainExtent(const VkSurfaceCapabilitiesKHR &tSurfaceCapabilities) const
+{
+	if (tSurfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+	{
+		return tSurfaceCapabilities.currentExtent;
+	}
+	else
+	{
+		VkExtent2D actualExtent = { mWindowWidth, mWindowHeight };
+		
+		actualExtent.width = std::max(tSurfaceCapabilities.minImageExtent.width, std::min(tSurfaceCapabilities.maxImageExtent.width, actualExtent.width));
+		actualExtent.height = std::max(tSurfaceCapabilities.minImageExtent.height, std::min(tSurfaceCapabilities.maxImageExtent.height, actualExtent.height));
+	}
+
+	return VkExtent2D{};
 }
 
 void App::setup()

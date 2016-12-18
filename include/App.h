@@ -5,6 +5,7 @@
 #include <array>
 #include <string>
 #include <algorithm>
+#include <limits>
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -15,6 +16,13 @@ enum class WindowMode
 	TOOLKIT_NO_WINDOW,
 	TOOLKIT_GLFW_WINDOW
 }; 
+
+struct SwapchainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR mCapabilities;			// min/max number of images in the swapchain, min/max width and height of the images, etc.
+	std::vector<VkSurfaceFormatKHR> mFormats;		// pixel format, color space, etc.
+	std::vector<VkPresentModeKHR> mPresentModes;	// presentation modes
+};
 
 class App
 {
@@ -76,6 +84,8 @@ private:
 	void createPhysicalDevice();
 	bool isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice tPhysicalDevice);
+
+	SwapchainSupportDetails getSwapchainSupportDetails(VkPhysicalDevice tPhysicalDevice) const;
 	VkPhysicalDeviceProperties getPhysicalDeviceProperties(VkPhysicalDevice tPhysicalDevice) const;
 	VkPhysicalDeviceFeatures getPhysicalDeviceFeatures(VkPhysicalDevice tPhysicalDevice) const;
 	std::vector<VkQueueFamilyProperties> getPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice tPhysicalDevice) const;
@@ -85,9 +95,15 @@ private:
 	// 5.
 	void createLogicalDevice();
 
+	// 6.
+	void createSwapchain();
+	VkSurfaceFormatKHR selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &tSurfaceFormats) const;
+	VkPresentModeKHR selectSwapchainPresentMode(const std::vector<VkPresentModeKHR> &tPresentModes) const;
+	VkExtent2D selectSwapchainExtent(const VkSurfaceCapabilitiesKHR &tSurfaceCapabilities) const;
+
 	// app requirements
 	std::vector<const char*>		mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };				// what Vulkan validation layers does this app need to support?
-	std::vector<const char*>		mRequiredInstanceExtensions = { VK_EXT_DEBUG_REPORT_EXTENSION_NAME };		// what instance level Vulkan extensions does this app need to support?
+	std::vector<const char*>		mRequiredExtensions = { VK_EXT_DEBUG_REPORT_EXTENSION_NAME };				// what instance level Vulkan extensions does this app need to support?
 	std::vector<const char*>		mRequiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };			// what device level Vulkan extensions does this app need to support?
 	VkPhysicalDeviceFeatures		mRequiredFeatures = {};														// what Vulkan features does this app need to support?
 	std::vector<VkQueueFlagBits>	mRequiredQueueFlagBits = { VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT };	// what types of operations does this app need to support?
