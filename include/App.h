@@ -1,5 +1,6 @@
 #pragma once
 
+#define NOMINMAX
 #include <iostream>
 #include <vector>
 #include <array>
@@ -122,6 +123,10 @@ private:
 	VkDevice					mLogicalDevice{ VK_NULL_HANDLE };
 	VkQueue						mQueue{ VK_NULL_HANDLE };
 	VkSurfaceKHR				mSurface{ VK_NULL_HANDLE };
+	VkSwapchainKHR				mSwapchain{ VK_NULL_HANDLE };
+	std::vector<VkImage>		mSwapchainImages;
+	VkFormat					mSwapchainImageFormat;
+	VkExtent2D					mSwapchainImageExtent;
 
 	// other Vulkan related items
 	size_t mQueueFamilyIndex;
