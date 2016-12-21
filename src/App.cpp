@@ -31,6 +31,30 @@ void destroyDebugReportCallbackEXT(VkInstance tInstance,
 	}
 }
 
+//! helper function for reading the contents of a file
+static std::vector<char> readFile(const std::string &tFileName)
+{
+	// start reading at the end of the file to determine file size
+	std::ifstream file(tFileName, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open())
+	{
+		throw std::runtime_error("failed to open file");
+	}
+
+	size_t fileSize = static_cast<size_t>(file.tellg());
+	std::vector<char> fileContents(fileSize);
+
+	file.seekg(0);
+	file.read(fileContents.data(), fileSize);
+
+	file.close();
+
+	std::cout << "successfully read " << fileSize << " bytes from file: " << tFileName << "\n";
+
+	return fileContents;
+}
+
 //! create Vulkan objects
 void App::initializeRenderer()
 {
@@ -40,6 +64,8 @@ void App::initializeRenderer()
 	createPhysicalDevice();
 	createLogicalDevice();
 	createSwapchain();
+	createImageViews();
+	createGraphicsPipeline();
 }
 
 void App::initializeWindow()
@@ -592,6 +618,166 @@ VkExtent2D App::selectSwapchainExtent(const VkSurfaceCapabilitiesKHR &tSurfaceCa
 		std::cout << "\twidth: " << actualExtent.width << ", height: " << actualExtent.height << "\n";
 		return actualExtent;
 	}
+}
+
+void App::createImageViews()
+{
+	mSwapchainImageViews.resize(mSwapchainImages.size());
+
+	for (size_t i = 0; i < mSwapchainImageViews.size(); ++i)
+	{
+		VkImageViewCreateInfo imageViewCreateInfo;
+		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;				// do not swizzle any of the color channels
+		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.flags = 0;
+		imageViewCreateInfo.format = mSwapchainImageFormat;
+		imageViewCreateInfo.image = mSwapchainImages[i];
+		imageViewCreateInfo.pNext = nullptr;
+		imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;	// describes the image's purpose
+		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;						// describes which part of the image we will access
+		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+		imageViewCreateInfo.subresourceRange.layerCount = 1;
+		imageViewCreateInfo.subresourceRange.levelCount = 1;
+		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;							// treat the image as a standard 2D texture
+	
+		if (vkCreateImageView(mLogicalDevice, &imageViewCreateInfo, nullptr, &mSwapchainImageViews[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create one or more image views for the swapchain");
+		}
+	}
+
+	std::cout << "successfully created " << mSwapchainImageViews.size() << " image views for the swapchain\n";
+}
+
+void App::createGraphicsPipeline()
+{
+	// for now, use absolute paths
+	auto vertShaderSrc = readFile("C:/Users/Michael Walczyk/Documents/Visual Studio 2015/Projects/VulkanToolkit/assets/shaders/vert.spv");
+	auto fragShaderSrc = readFile("C:/Users/Michael Walczyk/Documents/Visual Studio 2015/Projects/VulkanToolkit/assets/shaders/frag.spv");
+
+	// shader module objects are only required during the pipeline creation process
+	VkShaderModule vertShaderModule{ VK_NULL_HANDLE };
+	VkShaderModule fragShaderModule{ VK_NULL_HANDLE };
+
+	createShaderModule(vertShaderSrc, vertShaderModule);
+	createShaderModule(fragShaderSrc, fragShaderModule);
+
+	// assign shader modules to specific shader stages
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo;
+	vertShaderStageInfo.flags = 0;
+	vertShaderStageInfo.module = vertShaderModule;
+	vertShaderStageInfo.pName = "main";
+	vertShaderStageInfo.pNext = nullptr;
+	vertShaderStageInfo.pSpecializationInfo = nullptr;
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo;
+	vertShaderStageInfo.flags = 0;
+	vertShaderStageInfo.module = fragShaderModule;
+	vertShaderStageInfo.pName = "main";
+	vertShaderStageInfo.pNext = nullptr;
+	vertShaderStageInfo.pSpecializationInfo = nullptr;
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+	// group the create info structures together
+	VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfos[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+	// describe the format of the vertex data that will be passed to the vertex shader
+	VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
+	vertexInputStateCreateInfo.flags = 0;
+	vertexInputStateCreateInfo.pNext = nullptr;
+	vertexInputStateCreateInfo.pVertexAttributeDescriptions = nullptr;
+	vertexInputStateCreateInfo.pVertexBindingDescriptions = nullptr;
+	vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputStateCreateInfo.vertexBindingDescriptionCount = 0;
+
+	// describe the type of geometry that will be drawn and if primitive restart should be enabled
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo;
+	inputAssemblyStateCreateInfo.flags = 0;
+	inputAssemblyStateCreateInfo.pNext = nullptr;
+	inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
+	inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	// set up a viewport
+	VkViewport viewport;
+	viewport.x = 0;
+	viewport.y = 0;
+	viewport.width = static_cast<float>(mSwapchainImageExtent.width);
+	viewport.height = static_cast<float>(mSwapchainImageExtent.height);
+	viewport.minDepth = 0.0f;	// the range of depth values that will be used by the depth buffer
+	viewport.maxDepth = 1.0f;
+
+	// set up a fullscreen scissor rectangle
+	VkRect2D scissor;
+	scissor.extent = mSwapchainImageExtent;
+	scissor.offset = { 0, 0 };
+
+	// combine the viewport and scissor settings into a viewport state structure
+	VkPipelineViewportStateCreateInfo viewportStateCreateInfo;
+	viewportStateCreateInfo.flags = 0;
+	viewportStateCreateInfo.pNext = nullptr;
+	viewportStateCreateInfo.pScissors = &scissor;
+	viewportStateCreateInfo.pViewports = &viewport;
+	viewportStateCreateInfo.scissorCount = 1;
+	viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportStateCreateInfo.viewportCount = 1;
+
+	// configure the rasterizer
+	VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo;
+	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;	// turn on backface culling
+	rasterizationStateCreateInfo.depthBiasClamp = 0.0f;
+	rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
+	rasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
+	rasterizationStateCreateInfo.depthBiasSlopeFactor = 0.0f;
+	rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
+	rasterizationStateCreateInfo.flags = 0;
+	rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizationStateCreateInfo.lineWidth = 1.0f;
+	rasterizationStateCreateInfo.pNext = nullptr;
+	rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
+	rasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+
+	// configure multisampling (anti-aliasing): for now, disable this feature
+	VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo;
+	multisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
+	multisampleStateCreateInfo.alphaToOneEnable = VK_FALSE;
+	multisampleStateCreateInfo.flags = 0;
+	multisampleStateCreateInfo.minSampleShading = 1.0f;
+	multisampleStateCreateInfo.pNext = nullptr;
+	multisampleStateCreateInfo.pSampleMask = nullptr;
+	multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
+	multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+
+	// for now, we are not using depth and stencil tests
+
+	// configure color blending - this determines how new fragments are composited with colors that are already in the framebuffer
+	VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo;
+}
+
+void App::createShaderModule(const std::vector<char> &tSrc, VkShaderModule &tShaderModule)
+{
+	VkShaderModuleCreateInfo shaderModuleCreateInfo;
+	shaderModuleCreateInfo.codeSize = tSrc.size();
+	shaderModuleCreateInfo.flags = 0;
+	shaderModuleCreateInfo.pCode = (uint32_t*)tSrc.data();
+	shaderModuleCreateInfo.pNext = nullptr;
+	shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+
+	if (vkCreateShaderModule(mLogicalDevice, &shaderModuleCreateInfo, nullptr, &tShaderModule) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create shader module");
+	}
+
+	std::cout << "successfully created shader module\n";
 }
 
 void App::setup()

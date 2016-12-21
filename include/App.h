@@ -7,6 +7,7 @@
 #include <string>
 #include <algorithm>
 #include <limits>
+#include <fstream>
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -102,6 +103,13 @@ private:
 	VkPresentModeKHR selectSwapchainPresentMode(const std::vector<VkPresentModeKHR> &tPresentModes) const;
 	VkExtent2D selectSwapchainExtent(const VkSurfaceCapabilitiesKHR &tSurfaceCapabilities) const;
 
+	// 7.
+	void createImageViews();
+
+	// 8. 
+	void createGraphicsPipeline();
+	void createShaderModule(const std::vector<char> &tSrc, VkShaderModule &tShaderModule);
+
 	// app requirements
 	std::vector<const char*>		mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };				// what Vulkan validation layers does this app need to support?
 	std::vector<const char*>		mRequiredExtensions = { VK_EXT_DEBUG_REPORT_EXTENSION_NAME };				// what instance level Vulkan extensions does this app need to support?
@@ -127,6 +135,7 @@ private:
 	std::vector<VkImage>		mSwapchainImages;
 	VkFormat					mSwapchainImageFormat;
 	VkExtent2D					mSwapchainImageExtent;
+	std::vector<VkImageView>	mSwapchainImageViews;
 
 	// other Vulkan related items
 	size_t mQueueFamilyIndex;
