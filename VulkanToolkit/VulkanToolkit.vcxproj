@@ -159,11 +159,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\App.cpp" />
+    <ClCompile Include="..\src\Device.cpp" />
+    <ClCompile Include="..\src\Instance.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Swapchain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\App.h" />
+    <ClInclude Include="..\include\Device.h" />
+    <ClInclude Include="..\include\Instance.h" />
+    <ClInclude Include="..\include\PhysicalDevice.h" />
     <ClInclude Include="..\include\Swapchain.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
