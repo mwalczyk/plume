@@ -106,9 +106,12 @@ private:
 	// 7.
 	void createImageViews();
 
-	// 8. 
+	// 8.
+	void createRenderPass();
+
+	// 9. 
 	void createGraphicsPipeline();
-	void createShaderModule(const std::vector<char> &tSrc, VkShaderModule &tShaderModule);
+	void createShaderModule(const std::vector<char> &tSrc, VkShaderModule *tShaderModule);
 
 	// app requirements
 	std::vector<const char*>		mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };				// what Vulkan validation layers does this app need to support?
@@ -136,6 +139,9 @@ private:
 	VkFormat					mSwapchainImageFormat;
 	VkExtent2D					mSwapchainImageExtent;
 	std::vector<VkImageView>	mSwapchainImageViews;
+	VkRenderPass				mRenderPass;
+	VkPipelineLayout			mPipelineLayout;
+	VkPipeline					mPipeline;
 
 	// other Vulkan related items
 	size_t mQueueFamilyIndex;
