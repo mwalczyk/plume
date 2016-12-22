@@ -67,6 +67,10 @@ void App::initializeRenderer()
 	createImageViews();
 	createRenderPass();
 	createGraphicsPipeline();
+	createFramebuffers();
+	createCommandPool();
+	createCommandBuffers();
+	createSemaphores();
 }
 
 void App::initializeWindow()
@@ -678,13 +682,22 @@ void App::createRenderPass()
 	subpassDescription.colorAttachmentCount = 1;
 	subpassDescription.pColorAttachments = &attachmentReference;
 
+	// create a subpass dependency 
+	VkSubpassDependency subpassDependency = {};
+	subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependency.dstSubpass = 0;
+	subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependency.srcAccessMask = 0;
+	subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 	// create a render pass with the information above
 	VkRenderPassCreateInfo renderPassCreateInfo = {};
 	renderPassCreateInfo.attachmentCount = 1;
-	renderPassCreateInfo.dependencyCount = 0;
+	renderPassCreateInfo.dependencyCount = 1;
 	renderPassCreateInfo.flags = 0;
 	renderPassCreateInfo.pAttachments = &attachmentDescription;
-	renderPassCreateInfo.pDependencies = nullptr;
+	renderPassCreateInfo.pDependencies = &subpassDependency;
 	renderPassCreateInfo.pNext = nullptr;
 	renderPassCreateInfo.pSubpasses = &subpassDescription;
 	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -900,6 +913,125 @@ void App::createShaderModule(const std::vector<char> &tSrc, VkShaderModule *tSha
 	std::cout << "successfully created shader module\n";
 }
 
+void App::createFramebuffers()
+{
+	mSwapchainFramebuffers.resize(mSwapchainImages.size());
+
+	for (size_t i = 0; i < mSwapchainImages.size(); ++i)	
+	{
+		VkImageView attachments[] = { mSwapchainImageViews[i] };
+
+		VkFramebufferCreateInfo framebufferCreateInfo = {};
+		framebufferCreateInfo.attachmentCount = 1;
+		framebufferCreateInfo.flags = 0;
+		framebufferCreateInfo.height = mSwapchainImageExtent.height;
+		framebufferCreateInfo.layers = 1;
+		framebufferCreateInfo.pAttachments = attachments;
+		framebufferCreateInfo.pNext = nullptr;
+		framebufferCreateInfo.renderPass = mRenderPass;	// the render pass that this framebuffer needs to be compatible with
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCreateInfo.width = mSwapchainImageExtent.width;
+
+		if (vkCreateFramebuffer(mLogicalDevice, &framebufferCreateInfo, nullptr, &mSwapchainFramebuffers[i]))
+		{
+			throw std::runtime_error("failed to create one or more of the swapchain framebuffers");
+		}
+	}
+
+	std::cout << "successfully created " << mSwapchainFramebuffers.size() << " framebuffers for the swapchain\n";
+}
+
+void App::createCommandPool()
+{
+	VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+	commandPoolCreateInfo.flags = 0; // possible flags are VK_COMMAND_POOL_CREATE_TRANSIENT_BIT and VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+	commandPoolCreateInfo.pNext = nullptr;
+	commandPoolCreateInfo.queueFamilyIndex = mQueueFamilyIndex;
+	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+
+	if (vkCreateCommandPool(mLogicalDevice, &commandPoolCreateInfo, nullptr, &mCommandPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create command pool");
+	}
+
+	std::cout << "successfully created command pool\n";
+}
+
+void App::createCommandBuffers()
+{
+	// allocate and record the commands for each swapchain image
+	mCommandBuffers.resize(mSwapchainFramebuffers.size());
+
+	VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	commandBufferAllocateInfo.commandPool = mCommandPool;
+	commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	commandBufferAllocateInfo.commandBufferCount = (uint32_t)mCommandBuffers.size();
+
+	if (vkAllocateCommandBuffers(mLogicalDevice, &commandBufferAllocateInfo, mCommandBuffers.data()) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to allocate command buffers");
+	}
+
+	for (size_t i = 0; i < mCommandBuffers.size(); ++i)
+	{
+		VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+		commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		commandBufferBeginInfo.pInheritanceInfo = nullptr;
+		commandBufferBeginInfo.pNext = nullptr;
+		commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		// start recording into this command buffer
+		vkBeginCommandBuffer(mCommandBuffers[i], &commandBufferBeginInfo);
+
+		VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+		VkRenderPassBeginInfo renderPassBeginInfo = {};
+		renderPassBeginInfo.clearValueCount = 1;
+		renderPassBeginInfo.framebuffer = mSwapchainFramebuffers[i];
+		renderPassBeginInfo.pClearValues = &clearValue;
+		renderPassBeginInfo.pNext = nullptr;
+		renderPassBeginInfo.renderArea.extent = mSwapchainImageExtent;
+		renderPassBeginInfo.renderArea.offset = { 0, 0 };
+		renderPassBeginInfo.renderPass = mRenderPass;
+		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+
+		// begin the render pass
+		vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		// bind the graphics pipeline
+		vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
+
+		// draw
+		vkCmdDraw(mCommandBuffers[i], 3, 1, 0, 0);
+
+		// stop recording into this command buffer
+		vkCmdEndRenderPass(mCommandBuffers[i]);
+
+		if (vkEndCommandBuffer(mCommandBuffers[i]) != VK_SUCCESS) 
+		{
+			throw std::runtime_error("failed to record command buffer");
+		}
+	}
+
+	std::cout << "successfully recorded " << mCommandBuffers.size() << " command buffers\n";
+}
+
+void App::createSemaphores()
+{
+	VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+	semaphoreCreateInfo.flags = 0;
+	semaphoreCreateInfo.pNext = nullptr;
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	if (vkCreateSemaphore(mLogicalDevice, &semaphoreCreateInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS ||
+		vkCreateSemaphore(mLogicalDevice, &semaphoreCreateInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create semaphores");
+	}
+	
+	std::cout << "successfully created semaphores\n";
+}
+
 void App::setup()
 {
 	initializeWindow();
@@ -913,7 +1045,42 @@ void App::update()
 
 void App::draw()
 {
+	// get the index of the next available image
+	uint32_t imageIndex{ 0 };
+	vkAcquireNextImageKHR(mLogicalDevice, mSwapchain, std::numeric_limits<uint64_t>::max(), mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;		// wait for the image to be acquired from the swapchain
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &mCommandBuffers[imageIndex];
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;	// signal that rendering has finished
+
+	if (vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to submit draw command buffer");
+	}
+
+	// submit the result back to the swapchain for presentation
+	VkSwapchainKHR swapchains[] = { mSwapchain };
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;		// wait for rendering to finish before attempting to present
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapchains;
+	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pResults = nullptr;
+
+	// present
+	vkQueuePresentKHR(mQueue, &presentInfo);
 }
 
 void App::run()

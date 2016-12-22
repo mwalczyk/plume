@@ -113,6 +113,18 @@ private:
 	void createGraphicsPipeline();
 	void createShaderModule(const std::vector<char> &tSrc, VkShaderModule *tShaderModule);
 
+	// 10.
+	void createFramebuffers();
+
+	// 11. 
+	void createCommandPool();
+
+	// 12. 
+	void createCommandBuffers();
+
+	// 13.
+	void createSemaphores();
+
 	// app requirements
 	std::vector<const char*>		mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };				// what Vulkan validation layers does this app need to support?
 	std::vector<const char*>		mRequiredExtensions = { VK_EXT_DEBUG_REPORT_EXTENSION_NAME };				// what instance level Vulkan extensions does this app need to support?
@@ -128,20 +140,25 @@ private:
 	GLFWwindow *mWindowHandle{ nullptr };
 
 	// handles to Vulkan objects
-	VkDebugReportCallbackEXT	mDebugCallback{ VK_NULL_HANDLE };
-	VkInstance					mInstance{ VK_NULL_HANDLE };
-	VkPhysicalDevice			mPhysicalDevice{ VK_NULL_HANDLE };
-	VkDevice					mLogicalDevice{ VK_NULL_HANDLE };
-	VkQueue						mQueue{ VK_NULL_HANDLE };
-	VkSurfaceKHR				mSurface{ VK_NULL_HANDLE };
-	VkSwapchainKHR				mSwapchain{ VK_NULL_HANDLE };
-	std::vector<VkImage>		mSwapchainImages;
-	VkFormat					mSwapchainImageFormat;
-	VkExtent2D					mSwapchainImageExtent;
-	std::vector<VkImageView>	mSwapchainImageViews;
-	VkRenderPass				mRenderPass;
-	VkPipelineLayout			mPipelineLayout;
-	VkPipeline					mPipeline;
+	VkDebugReportCallbackEXT		mDebugCallback{ VK_NULL_HANDLE };
+	VkInstance						mInstance{ VK_NULL_HANDLE };
+	VkPhysicalDevice				mPhysicalDevice{ VK_NULL_HANDLE };
+	VkDevice						mLogicalDevice{ VK_NULL_HANDLE };
+	VkQueue							mQueue{ VK_NULL_HANDLE };
+	VkSurfaceKHR					mSurface{ VK_NULL_HANDLE };
+	VkSwapchainKHR					mSwapchain{ VK_NULL_HANDLE };
+	std::vector<VkImage>			mSwapchainImages;
+	VkFormat						mSwapchainImageFormat;
+	VkExtent2D						mSwapchainImageExtent;
+	std::vector<VkImageView>		mSwapchainImageViews;
+	VkRenderPass					mRenderPass{ VK_NULL_HANDLE };
+	VkPipelineLayout				mPipelineLayout{ VK_NULL_HANDLE };
+	VkPipeline						mPipeline{ VK_NULL_HANDLE };
+	std::vector<VkFramebuffer>		mSwapchainFramebuffers;
+	VkCommandPool					mCommandPool{ VK_NULL_HANDLE };
+	std::vector<VkCommandBuffer>	mCommandBuffers;
+	VkSemaphore						mImageAvailableSemaphore;
+	VkSemaphore						mRenderFinishedSemaphore;
 
 	// other Vulkan related items
 	size_t mQueueFamilyIndex;
