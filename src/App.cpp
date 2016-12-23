@@ -714,8 +714,8 @@ void App::createRenderPass()
 void App::createGraphicsPipeline()
 {
 	// for now, use absolute paths
-	auto vertShaderSrc = readFile("C:/Users/michael.walczyk/Documents/Visual Studio 2015/Projects/VulkanToolkit/assets/shaders/vert.spv");
-	auto fragShaderSrc = readFile("C:/Users/michael.walczyk/Documents/Visual Studio 2015/Projects/VulkanToolkit/assets/shaders/frag.spv");
+	auto vertShaderSrc = readFile("assets/shaders/vert.spv");
+	auto fragShaderSrc = readFile("assets/shaders/frag.spv");
 
 	// shader module objects are only required during the pipeline creation process
 	VkShaderModule vertShaderModule{ VK_NULL_HANDLE };
@@ -944,7 +944,7 @@ void App::createFramebuffers()
 void App::createCommandPool()
 {
 	VkCommandPoolCreateInfo commandPoolCreateInfo = {};
-	commandPoolCreateInfo.flags = 0; // possible flags are VK_COMMAND_POOL_CREATE_TRANSIENT_BIT and VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+	commandPoolCreateInfo.flags = 0;	// possible flags are VK_COMMAND_POOL_CREATE_TRANSIENT_BIT and VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
 	commandPoolCreateInfo.pNext = nullptr;
 	commandPoolCreateInfo.queueFamilyIndex = mQueueFamilyIndex;
 	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
