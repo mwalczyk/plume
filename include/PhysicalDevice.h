@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+#include <cassert>
 
 #include "vulkan/vulkan.h"
 
@@ -15,10 +17,11 @@ namespace vk
 
 	public:
 
-		PhysicalDevice() = default;
+		PhysicalDevice();
 		~PhysicalDevice();
 
 		inline VkPhysicalDevice getHandle() const { return mPhysicalDeviceHandle; };
+		std::vector<VkExtensionProperties> getDeviceExtensionProperties() const;
 
 	private:
 

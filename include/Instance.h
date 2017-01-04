@@ -3,12 +3,14 @@
 #include <memory>
 #include <vector>
 #include <cassert>
+#include <iostream>
+#include <algorithm>
 
-#include "vulkan/vulkan.h"
+#include "Platform.h"
 
 namespace vk
 {
-
+	
 	class Instance;
 	using InstanceRef = std::shared_ptr<Instance>;
 
@@ -30,21 +32,41 @@ namespace vk
 			VkApplicationInfo mApplicationInfo;
 		};
 
+		//! Factory method for returning a new InstanceRef
+		static InstanceRef create(const Options &tOptions = Options()) { return std::make_shared<Instance>(tOptions); }
+
 		Instance(const Options &tOptions = Options());
 		~Instance();
 
 		inline VkInstance getHandle() const { return mInstanceHandle; }
+		std::vector<VkExtensionProperties> getInstanceExtensionProperties() const;
+		std::vector<VkLayerProperties> getInstanceLayerProperties() const;
+		std::vector<VkPhysicalDevice> getPhysicalDevices() const;
 
 	private:
 
 		bool checkInstanceLayerSupport();
+		void setupDebugReportCallback();
 
 		VkInstance mInstanceHandle;
+		VkDebugReportCallbackEXT mDebugReportCallback;
 
 		std::vector<const char*> mRequiredLayers;
 		std::vector<const char*> mRequiredExtensions;
 		VkApplicationInfo mApplicationInfo;
 
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags,
+															VkDebugReportObjectTypeEXT objType,
+															uint64_t obj,
+															size_t location,
+															int32_t code,
+															const char* layerPrefix,
+															const char* msg,
+															void* userData)
+		{
+			std::cerr << "VALIDATION LAYER: " << msg << std::endl;
+			return VK_FALSE;
+		}
 	};
 
 } // namespace

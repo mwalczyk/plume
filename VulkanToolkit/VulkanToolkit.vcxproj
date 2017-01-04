@@ -162,14 +162,21 @@
     <ClCompile Include="..\src\Device.cpp" />
     <ClCompile Include="..\src\Instance.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\PhysicalDevice.cpp" />
+    <ClCompile Include="..\src\Surface.cpp" />
     <ClCompile Include="..\src\Swapchain.cpp" />
+    <ClCompile Include="..\src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\App.h" />
     <ClInclude Include="..\include\Device.h" />
     <ClInclude Include="..\include\Instance.h" />
     <ClInclude Include="..\include\PhysicalDevice.h" />
+    <ClInclude Include="..\include\Platform.h" />
+    <ClInclude Include="..\include\Surface.h" />
     <ClInclude Include="..\include\Swapchain.h" />
+    <ClInclude Include="..\include\Vk.h" />
+    <ClInclude Include="..\include\Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
