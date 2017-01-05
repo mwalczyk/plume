@@ -2,11 +2,15 @@
 
 namespace vk
 {
+	/// Notes:
+	///
+	/// The Vulkan implementation will generally group all of the queues with the same capabilities into a single queue
+	/// family. However, this is not a strict requirement, and there may be multiple queue families with the same 
+	/// capabilities.
 
 	Device::Options::Options()
 	{
-		mRequiredQueueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
-		mRequiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+		mRequiredQueueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 		mUseSwapchain = true;
 	}
 
@@ -38,22 +42,89 @@ namespace vk
 		mPhysicalDeviceExtensionProperties.resize(deviceExtensionPropertiesCount);
 		vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, mPhysicalDeviceExtensionProperties.data());
 
+		// Print some useful information about the chosen physical device.
 		std::cout << "Found suitable physical device:\n";
 		std::cout << "\tdevice ID: " << mPhysicalDeviceProperties.deviceID << "\n";
 		std::cout << "\tdevice name: " << mPhysicalDeviceProperties.deviceName << "\n";
 		std::cout << "\tvendor ID: " << mPhysicalDeviceProperties.vendorID << "\n";
 		
-		// Find the indicies of all of the requested queue families.
+		// Find the indicies of all of the requested queue families (inspired by Sascha Willems' codebase).
+		const float defaultQueuePriority = 0.0f;
+		const uint32_t defaultQueueCount = 1;
+		std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
 		if (mRequiredQueueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
 			mQueueFamilyIndices.mGraphicsIndex = findQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
+
+			VkDeviceQueueCreateInfo deviceQueueCreateInfo = {};
+			deviceQueueCreateInfo.pQueuePriorities = &defaultQueuePriority;
+			deviceQueueCreateInfo.queueCount = defaultQueueCount;
+			deviceQueueCreateInfo.queueFamilyIndex = mQueueFamilyIndices.mGraphicsIndex;
+			deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+
+			deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
 		}
 		if (mRequiredQueueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
-			mQueueFamilyIndices.mComputeIndex = findQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
+			mQueueFamilyIndices.mComputeIndex = findQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT);
+
+			if (mQueueFamilyIndices.mComputeIndex != mQueueFamilyIndices.mGraphicsIndex)
+			{
+				// Create a dedicated queue for compute operations.
+				VkDeviceQueueCreateInfo deviceQueueCreateInfo = {};
+				deviceQueueCreateInfo.pQueuePriorities = &defaultQueuePriority;
+				deviceQueueCreateInfo.queueCount = defaultQueueCount;
+				deviceQueueCreateInfo.queueFamilyIndex = mQueueFamilyIndices.mComputeIndex;
+				deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+
+				deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+			}
+			else
+			{
+				// Reuse the graphics queue for compute operations.
+				mQueueFamilyIndices.mComputeIndex = mQueueFamilyIndices.mGraphicsIndex;
+			}
+		}
+		if (mRequiredQueueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+			mQueueFamilyIndices.mTransferIndex = findQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT);
+
+			if (mQueueFamilyIndices.mTransferIndex != mQueueFamilyIndices.mGraphicsIndex &&
+				mQueueFamilyIndices.mTransferIndex != mQueueFamilyIndices.mComputeIndex)
+			{
+				// Create a dedicated queue for transfer operations.
+				VkDeviceQueueCreateInfo deviceQueueCreateInfo = {};
+				deviceQueueCreateInfo.pQueuePriorities = &defaultQueuePriority;
+				deviceQueueCreateInfo.queueCount = defaultQueueCount;
+				deviceQueueCreateInfo.queueFamilyIndex = mQueueFamilyIndices.mTransferIndex;
+				deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+
+				deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+			}
+			else
+			{
+				// Reuse the graphics queue for transfer operations.
+				mQueueFamilyIndices.mTransferIndex = mQueueFamilyIndices.mGraphicsIndex;
+			}
+		}
+		if (mRequiredQueueFlags & VK_QUEUE_SPARSE_BINDING_BIT)
+		{
+			mQueueFamilyIndices.mSparseBindingIndex = findQueueFamilyIndex(VK_QUEUE_SPARSE_BINDING_BIT);
+
+			// TODO
 		}
 
-		const float defaultQueuePriority = 0.0f;
+		std::cout << "Queue family - graphcis index: " << mQueueFamilyIndices.mGraphicsIndex << std::endl;
+		std::cout << "Queue family - compute index: " << mQueueFamilyIndices.mComputeIndex << std::endl;
+		std::cout << "Queue family - transfer index: " << mQueueFamilyIndices.mTransferIndex << std::endl;
+		std::cout << "Queue family - sparse binding index: " << mQueueFamilyIndices.mSparseBindingIndex << std::endl;
+		std::cout << "Number of VkDeviceQueueCreateInfo structures: " << deviceQueueCreateInfos.size() << std::endl;
+
+		// Automatically add the swapchain extension if needed.
+		if (mUseSwapchain)
+		{
+			mRequiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+		}
 
 		/*
 		// For now, we simply create a single queue from the first queue family
@@ -101,21 +172,32 @@ namespace vk
 
 	uint32_t Device::findQueueFamilyIndex(VkQueueFlagBits tQueueFlagBits) const
 	{
-		// Try to find a dedicated queue for compute operations.
+		// Try to find a dedicated queue for compute operations (without graphics).
 		if (tQueueFlagBits & VK_QUEUE_COMPUTE_BIT)
 		{
 			for (size_t i = 0; i < mPhysicalDeviceQueueFamilyProperties.size(); ++i)
 			{
-				if (mPhysicalDeviceQueueFamilyProperties[i].queueCount > 0 && mPhysicalDeviceQueueFamilyProperties[i].queueFlags & tQueueFlagBits)
+				if (mPhysicalDeviceQueueFamilyProperties[i].queueCount > 0 && 
+					mPhysicalDeviceQueueFamilyProperties[i].queueFlags & tQueueFlagBits &&
+					(mPhysicalDeviceQueueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)
 				{
 					return static_cast<uint32_t>(i);
 				}
 			}
 		}
-		// Try to find a dedicated queue for transfer operations.
+		// Try to find a dedicated queue for transfer operations (without compute and graphics).
 		else if (tQueueFlagBits & VK_QUEUE_TRANSFER_BIT)
 		{
-
+			for (size_t i = 0; i < mPhysicalDeviceQueueFamilyProperties.size(); ++i)
+			{
+				if (mPhysicalDeviceQueueFamilyProperties[i].queueCount > 0 &&
+					mPhysicalDeviceQueueFamilyProperties[i].queueFlags & tQueueFlagBits &&
+					(mPhysicalDeviceQueueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0 &&
+					(mPhysicalDeviceQueueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)
+				{
+					return static_cast<uint32_t>(i);
+				}
+			}
 		}
 		
 		// For all other queue families (or if a dedicated queue was not found above), simply return the 

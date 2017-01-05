@@ -20,10 +20,10 @@ namespace vk
 
 	struct QueueFamilyIndices
 	{
-		uint32_t mGraphicsIndex;
-		uint32_t mComputeIndex;
-		uint32_t mTransferIndex;
-		uint32_t mSparseBindingIndex;
+		uint32_t mGraphicsIndex = -1;
+		uint32_t mComputeIndex = -1;
+		uint32_t mTransferIndex = -1;
+		uint32_t mSparseBindingIndex = -1;
 	};
 
 	class Device;
@@ -79,6 +79,7 @@ namespace vk
 		VkQueueFlags mRequiredQueueFlags;
 		std::vector<const char*> mRequiredDeviceExtensions;
 		bool mUseSwapchain;
+
 		QueueFamilyIndices mQueueFamilyIndices;
 
 	};
