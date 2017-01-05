@@ -11,6 +11,7 @@ int main()
 	/// vk::Instance
 	auto instance = vk::Instance::create();
 	auto physicalDevices = instance->getPhysicalDevices();
+	assert(physicalDevices.size() > 0);
 
 	/// vk::Window
 	/// The Window class creates a Surface object
@@ -21,7 +22,7 @@ int main()
 	auto window = vk::Window::create(instance, windowOptions);
 
 	/// vk::Device
-	auto device = vk::Device::create(instance, window->getSurface());
+	auto device = vk::Device::create(physicalDevices[0]);
 
 	while (!window->shouldWindowClose())
 	{

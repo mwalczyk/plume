@@ -67,6 +67,9 @@ namespace vk
 			std::cerr << "VALIDATION LAYER: " << msg << std::endl;
 			return VK_FALSE;
 		}
+
+		friend class Device;
+
 	};
 
 } // namespace

@@ -5,50 +5,58 @@ namespace vk
 
 	Device::Options::Options()
 	{
-		mRequiredQueueFlagBits = { VK_QUEUE_GRAPHICS_BIT };
+		mRequiredQueueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
 		mRequiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-		mRequiredPhysicalDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-
-		VkPhysicalDeviceFeatures defaultPhysicalDeviceFeatures;
-		defaultPhysicalDeviceFeatures.tessellationShader = VK_TRUE;
-		defaultPhysicalDeviceFeatures.geometryShader = VK_TRUE;
-
-		// TODO: implement this check
-		mRequiredPhysicalDeviceFeatures = defaultPhysicalDeviceFeatures;
+		mUseSwapchain = true;
 	}
 
-	Device::Device(const InstanceRef &tInstance, const SurfaceRef &tSurface, const Options &tOptions) :
-		mInstance(tInstance),
-		mSurface(tSurface),
-		mRequiredQueueFlagBits(tOptions.mRequiredQueueFlagBits),
+	Device::Device(VkPhysicalDevice tPhysicalDevice, const Options &tOptions) :
+		mPhysicalDeviceHandle(tPhysicalDevice),
+		mRequiredQueueFlags(tOptions.mRequiredQueueFlags),
 		mRequiredDeviceExtensions(tOptions.mRequiredDeviceExtensions),
-		mRequiredPhysicalDeviceType(tOptions.mRequiredPhysicalDeviceType)
-	{
-		auto physicalDevices = mInstance->getPhysicalDevices();
-		assert(physicalDevices.size() > 0);
-		
-		for (const auto &physicalDevice: physicalDevices)
-		{
-			if (isPhysicalDeviceSuitable(physicalDevice))
-			{
-				mPhysicalDeviceHandle = physicalDevice;
-				break;
-			}
-		}
-
-		// Ensure that at least one suitable GPU was found
+		mUseSwapchain(tOptions.mUseSwapchain)
+	{		
+		// Ensure that at least one suitable GPU was found.
 		assert(mPhysicalDeviceHandle != VK_NULL_HANDLE);
 
+		// Store the general properties, features, and memory properties of the chosen physical device.
+		vkGetPhysicalDeviceProperties(tPhysicalDevice, &mPhysicalDeviceProperties);
+		vkGetPhysicalDeviceFeatures(tPhysicalDevice, &mPhysicalDeviceFeatures);
+		vkGetPhysicalDeviceMemoryProperties(tPhysicalDevice, &mPhysicalDeviceMemoryProperties);
+
+		// Store the queue family properties of the chosen physical device.
+		uint32_t physicalDeviceQueueFamilyPropertiesCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &physicalDeviceQueueFamilyPropertiesCount, nullptr);
+		
+		mPhysicalDeviceQueueFamilyProperties.resize(physicalDeviceQueueFamilyPropertiesCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &physicalDeviceQueueFamilyPropertiesCount, mPhysicalDeviceQueueFamilyProperties.data());
+
+		// Store the device extensions of the chosen physical device.
+		uint32_t deviceExtensionPropertiesCount = 0;
+		vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, nullptr);
+
+		mPhysicalDeviceExtensionProperties.resize(deviceExtensionPropertiesCount);
+		vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, mPhysicalDeviceExtensionProperties.data());
+
+		std::cout << "Found suitable physical device:\n";
+		std::cout << "\tdevice ID: " << mPhysicalDeviceProperties.deviceID << "\n";
+		std::cout << "\tdevice name: " << mPhysicalDeviceProperties.deviceName << "\n";
+		std::cout << "\tvendor ID: " << mPhysicalDeviceProperties.vendorID << "\n";
+		
+		// Find the indicies of all of the requested queue families.
+		if (mRequiredQueueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			mQueueFamilyIndices.mGraphicsIndex = findQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
+		}
+		if (mRequiredQueueFlags & VK_QUEUE_COMPUTE_BIT)
+		{
+			mQueueFamilyIndices.mComputeIndex = findQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
+		}
+
+		const float defaultQueuePriority = 0.0f;
+
 		/*
-		// enumerate the features supported by the physical device but ensure that we always have access to tessellation and geometry shaders
-		auto supportedFeatures = getPhysicalDeviceFeatures(mPhysicalDeviceHandle);
-		mRequiredFeatures.multiDrawIndirect = supportedFeatures.multiDrawIndirect; // only enable multi-draw indirect if it is supported
-		mRequiredFeatures.tessellationShader = VK_TRUE;
-		mRequiredFeatures.geometryShader = VK_TRUE;
-
-		const float defaultQueuePriority{ 0.0f };
-
-		// for now, we simply create a single queue from the first queue family
+		// For now, we simply create a single queue from the first queue family
 		VkDeviceQueueCreateInfo deviceQueueCreateInfo;
 		deviceQueueCreateInfo.flags = 0;
 		deviceQueueCreateInfo.pNext = nullptr;
@@ -59,12 +67,12 @@ namespace vk
 
 		VkDeviceCreateInfo deviceCreateInfo;
 		deviceCreateInfo.enabledExtensionCount = mRequiredDeviceExtensions.size();
-		deviceCreateInfo.enabledLayerCount = mRequiredLayers.size();
+		deviceCreateInfo.enabledLayerCount = mInstance->mRequiredLayers.size();
 		deviceCreateInfo.flags = 0;
-		deviceCreateInfo.pEnabledFeatures = &mRequiredFeatures;
+		deviceCreateInfo.pEnabledFeatures = &mPhysicalDeviceFeatures;
 		deviceCreateInfo.pNext = nullptr;
 		deviceCreateInfo.ppEnabledExtensionNames = mRequiredDeviceExtensions.data();
-		deviceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
+		deviceCreateInfo.ppEnabledLayerNames = mInstance->mRequiredLayers.data();
 		deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
 		deviceCreateInfo.queueCreateInfoCount = 1;
 		deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -75,6 +83,9 @@ namespace vk
 		// Store a handle to the queue
 		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndex, 0, &mQueueHandle);
 		*/
+
+		// HERE we should try to find a queue for each of the requested queue families - individual queues are better... but 
+		// if a unique queue is not found, find a queue family that supports multiple operations (see Sascha Willems' example)
 
 		std::cout << "Sucessfully created logical and physical devices\n";
 	}
@@ -88,186 +99,39 @@ namespace vk
 		vkDestroyDevice(mDeviceHandle, nullptr);
 	}
 
-	bool Device::isPhysicalDeviceSuitable(VkPhysicalDevice tPhysicalDevice) 
+	uint32_t Device::findQueueFamilyIndex(VkQueueFlagBits tQueueFlagBits) const
 	{
-		// In the future, we may want to construct a map of physical devices to "scores" so that we can
-		// rank GPUs and choose a fallback device if the tests below fail.
-		auto physicalDeviceProperties = getPhysicalDeviceProperties(tPhysicalDevice);
-		auto physicalDeviceFeatures = getPhysicalDeviceFeatures(tPhysicalDevice);
-		auto queueFamilyProperties = getPhysicalDeviceQueueFamilyProperties(tPhysicalDevice);
-
-		bool foundSuitableQueueFamily = false;
-		size_t queueFamilyIndex = 0;
-		for (const auto &queueFamilyProperty : queueFamilyProperties)
+		// Try to find a dedicated queue for compute operations.
+		if (tQueueFlagBits & VK_QUEUE_COMPUTE_BIT)
 		{
-			// A queue can support one or more of the following:
-			//	VK_QUEUE_GRAPHICS_BIT
-			//	VK_QUEUE_COMPUTE_BIT
-			//	VK_QUEUE_TRANSFER_BIT (copying buffer and image contents)
-			//	VK_QUEUE_SPARSE_BINDING_BIT (memory binding operations used to update sparse resources)
-			// For now, find a single queue family that supports graphics and compute operations and presentation.
-			// In the future, it should be possible to use two or more different queue families for these operations.
-			bool supportsAllQueueFlagBits = true;
-			for (const auto &requiredQueueFlagBit : mRequiredQueueFlagBits)
+			for (size_t i = 0; i < mPhysicalDeviceQueueFamilyProperties.size(); ++i)
 			{
-				if (!(queueFamilyProperty.queueFlags & requiredQueueFlagBit))
+				if (mPhysicalDeviceQueueFamilyProperties[i].queueCount > 0 && mPhysicalDeviceQueueFamilyProperties[i].queueFlags & tQueueFlagBits)
 				{
-					supportsAllQueueFlagBits = false;
-					break;
+					return static_cast<uint32_t>(i);
 				}
 			}
-
-			// Check if this queue family supports presentation and allows for the creation of at least one queue.
-			VkBool32 supportsSurfacePresentation = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(tPhysicalDevice, queueFamilyIndex, mSurface->getHandle(), &supportsSurfacePresentation);
-
-			if (supportsAllQueueFlagBits &&
-				supportsSurfacePresentation &&
-				queueFamilyProperty.queueCount > 0)
-			{
-				std::cout << "Found suitable queue family (index " << queueFamilyIndex << ") with " << queueFamilyProperty.queueCount << " possible queues\n";
-				foundSuitableQueueFamily = true;
-				break;
-			}
-
-			++queueFamilyIndex;
 		}
-
-		// Make sure that the physical device supports all of the device level extensions (i.e. swapchain creation).
-		bool deviceExtensionsSupported = checkDeviceExtensionSupport(tPhysicalDevice);
-
-		// Make sure that the physical device's swapchain support is adequate: only check this if the physical device supports swapchain creation.
-		bool swapchainSupportIsAdequate = false;
-		if (deviceExtensionsSupported)
+		// Try to find a dedicated queue for transfer operations.
+		else if (tQueueFlagBits & VK_QUEUE_TRANSFER_BIT)
 		{
-			// For now, a physical device's swapchain support is adequate if there is at least one supported image format and presentation mode.
-			auto swapchainSupportDetails = getSwapchainSupportDetails(tPhysicalDevice);
-			swapchainSupportIsAdequate = !swapchainSupportDetails.mFormats.empty() && !swapchainSupportDetails.mPresentModes.empty();
-			std::cout << "This physical device's swapchain support is " << (swapchainSupportIsAdequate ? "adequate\n" : "inadequate\n");
-		}
 
-		if (foundSuitableQueueFamily &&
-			deviceExtensionsSupported &&
-			swapchainSupportIsAdequate &&
-			physicalDeviceProperties.deviceType == mRequiredPhysicalDeviceType &&
-			physicalDeviceFeatures.tessellationShader &&
-			physicalDeviceFeatures.geometryShader)
+		}
+		
+		// For all other queue families (or if a dedicated queue was not found above), simply return the 
+		// index of the first queue family that supports the requested operations.
+		for (size_t i = 0; i < mPhysicalDeviceQueueFamilyProperties.size(); ++i)
 		{
-			std::cout << "Found suitable physical device:\n";
-			std::cout << "\tdevice ID: " << physicalDeviceProperties.deviceID << "\n";
-			std::cout << "\tdevice name: " << physicalDeviceProperties.deviceName << "\n";
-			std::cout << "\tvendor ID: " << physicalDeviceProperties.vendorID << "\n";
-			mQueueFamilyIndex = queueFamilyIndex;
-			return true;
-		}
-
-		return false;
-	}
-
-	bool Device::checkDeviceExtensionSupport(VkPhysicalDevice tPhysicalDevice) const
-	{
-		auto deviceExtensionProperties = getDeviceExtensionProperties(tPhysicalDevice);
-
-		// Make sure that all of the required device extensions are available.
-		for (const auto &requiredDeviceExtensionName: mRequiredDeviceExtensions)
-		{
-			auto predicate = [&](const VkExtensionProperties &extensionProperty) { return strcmp(requiredDeviceExtensionName, extensionProperty.extensionName) == 0; };
-			if (std::find_if(deviceExtensionProperties.begin(), deviceExtensionProperties.end(), predicate) == deviceExtensionProperties.end())
+			if (mPhysicalDeviceQueueFamilyProperties[i].queueCount > 0 && mPhysicalDeviceQueueFamilyProperties[i].queueFlags & tQueueFlagBits)
 			{
-				std::cout << "Required device extension " << requiredDeviceExtensionName << " is not supported by this physical device\n";
-				return false;
+				return static_cast<uint32_t>(i);
 			}
 		}
-
-		return true;
+		
+		throw std::runtime_error("Could not find a matching queue family");
 	}
 
-	VkPhysicalDeviceProperties Device::getPhysicalDeviceProperties(VkPhysicalDevice tPhysicalDevice) const
-	{
-		VkPhysicalDeviceProperties physicalDeviceProperties;
-		vkGetPhysicalDeviceProperties(tPhysicalDevice, &physicalDeviceProperties);
-
-		return physicalDeviceProperties;
-	}
-
-	VkPhysicalDeviceFeatures Device::getPhysicalDeviceFeatures(VkPhysicalDevice tPhysicalDevice) const
-	{
-		VkPhysicalDeviceFeatures physicalDeviceFeatures;
-		vkGetPhysicalDeviceFeatures(tPhysicalDevice, &physicalDeviceFeatures);
-
-		return physicalDeviceFeatures;
-	}
-
-	std::vector<VkQueueFamilyProperties> Device::getPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice tPhysicalDevice) const
-	{
-		uint32_t physicalDeviceQueueFamilyPropertiesCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &physicalDeviceQueueFamilyPropertiesCount, nullptr);
-
-		std::vector<VkQueueFamilyProperties> physicalDeviceQueueFamilyProperties(physicalDeviceQueueFamilyPropertiesCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &physicalDeviceQueueFamilyPropertiesCount, physicalDeviceQueueFamilyProperties.data());
-
-		return physicalDeviceQueueFamilyProperties;
-	}
-
-	std::vector<VkExtensionProperties> Device::getDeviceExtensionProperties(VkPhysicalDevice tPhysicalDevice) const
-	{
-		uint32_t deviceExtensionPropertiesCount = 0;
-		vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, nullptr);
-
-		std::vector<VkExtensionProperties> deviceExtensionProperties(deviceExtensionPropertiesCount);
-		vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, deviceExtensionProperties.data());
-
-		return deviceExtensionProperties;
-	}
-
-	VkPhysicalDeviceMemoryProperties Device::getPhysicalDeviceMemoryProperties(VkPhysicalDevice tPhysicalDevice) const
-	{
-		VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
-		vkGetPhysicalDeviceMemoryProperties(tPhysicalDevice, &physicalDeviceMemoryProperties);
-
-		std::cout << "Enumerating this device's available memory types:\n";
-
-		for (size_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; ++i)
-		{
-			VkMemoryType memoryType = physicalDeviceMemoryProperties.memoryTypes[i];
-			std::cout << "Found an available memory type with heap index: " << memoryType.heapIndex << "\n";
-
-			if (memoryType.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-			{
-				std::cout << "\tThis is device local memory (VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)\n";
-			}
-			if (memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-			{
-				std::cout << "\tThis is host visible memory (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)\n";
-			}
-			if (memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-			{
-				std::cout << "\tThis is host coherent memory (VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)\n";
-			}
-			if (memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)
-			{
-				std::cout << "\tThis is host cached memory (VK_MEMORY_PROPERTY_HOST_CACHED_BIT)\n";
-			}
-			if (memoryType.propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
-			{
-				std::cout << "\tThis is lazily allocated memory (VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)\n";
-			}
-		}
-
-		std::cout << "Enumerating this device's available memory heaps:\n";
-
-		for (size_t i = 0; i < physicalDeviceMemoryProperties.memoryHeapCount; ++i)
-		{
-			VkMemoryHeap memoryHeap = physicalDeviceMemoryProperties.memoryHeaps[i];
-
-			std::cout << "Found an available memory heap with size: " << memoryHeap.size << " (bytes)\n";
-
-			// VkMemoryHeapFlags will always be VK_MEMORY_HEAP_DEVICE_LOCAL_BIT
-		}
-
-		return physicalDeviceMemoryProperties;
-	}
-
+	/*
 	SwapchainSupportDetails Device::getSwapchainSupportDetails(VkPhysicalDevice tPhysicalDevice) const
 	{
 		SwapchainSupportDetails details;
@@ -295,6 +159,6 @@ namespace vk
 		}
 
 		return details;
-	}
+	}*/
 
 } // namespace vk
