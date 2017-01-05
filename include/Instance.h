@@ -32,16 +32,16 @@ namespace vk
 			VkApplicationInfo mApplicationInfo;
 		};
 
-		//! Factory method for returning a new InstanceRef
+		//! Factory method for returning a new InstanceRef.
 		static InstanceRef create(const Options &tOptions = Options()) { return std::make_shared<Instance>(tOptions); }
 
 		Instance(const Options &tOptions = Options());
 		~Instance();
 
 		inline VkInstance getHandle() const { return mInstanceHandle; }
-		std::vector<VkExtensionProperties> getInstanceExtensionProperties() const;
-		std::vector<VkLayerProperties> getInstanceLayerProperties() const;
-		std::vector<VkPhysicalDevice> getPhysicalDevices() const;
+		inline const std::vector<VkExtensionProperties>& getInstanceExtensionProperties() const { return mInstanceExtensionProperties; }
+		inline const std::vector<VkLayerProperties>& getInstanceLayerProperties() const { return mInstanceLayerProperties; }
+		inline const std::vector<VkPhysicalDevice>& getPhysicalDevices() const { return mPhysicalDevices; }
 
 	private:
 
@@ -50,6 +50,10 @@ namespace vk
 
 		VkInstance mInstanceHandle;
 		VkDebugReportCallbackEXT mDebugReportCallback;
+
+		std::vector<VkExtensionProperties> mInstanceExtensionProperties;
+		std::vector<VkLayerProperties> mInstanceLayerProperties;
+		std::vector<VkPhysicalDevice> mPhysicalDevices;
 
 		std::vector<const char*> mRequiredLayers;
 		std::vector<const char*> mRequiredExtensions;
@@ -67,8 +71,6 @@ namespace vk
 			std::cerr << "VALIDATION LAYER: " << msg << std::endl;
 			return VK_FALSE;
 		}
-
-		friend class Device;
 
 	};
 

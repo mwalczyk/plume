@@ -10,13 +10,15 @@ namespace vk
 
 	Device::Options::Options()
 	{
-		mRequiredQueueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+		mRequiredQueueFlags = VK_QUEUE_GRAPHICS_BIT;
+		mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };
 		mUseSwapchain = true;
 	}
 
 	Device::Device(VkPhysicalDevice tPhysicalDevice, const Options &tOptions) :
 		mPhysicalDeviceHandle(tPhysicalDevice),
 		mRequiredQueueFlags(tOptions.mRequiredQueueFlags),
+		mRequiredLayers(tOptions.mRequiredLayers),
 		mRequiredDeviceExtensions(tOptions.mRequiredDeviceExtensions),
 		mUseSwapchain(tOptions.mUseSwapchain)
 	{		
@@ -114,7 +116,7 @@ namespace vk
 			// TODO
 		}
 
-		std::cout << "Queue family - graphcis index: " << mQueueFamilyIndices.mGraphicsIndex << std::endl;
+		std::cout << "Queue family - graphics index: " << mQueueFamilyIndices.mGraphicsIndex << std::endl;
 		std::cout << "Queue family - compute index: " << mQueueFamilyIndices.mComputeIndex << std::endl;
 		std::cout << "Queue family - transfer index: " << mQueueFamilyIndices.mTransferIndex << std::endl;
 		std::cout << "Queue family - sparse binding index: " << mQueueFamilyIndices.mSparseBindingIndex << std::endl;
@@ -126,37 +128,25 @@ namespace vk
 			mRequiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		}
 
-		/*
-		// For now, we simply create a single queue from the first queue family
-		VkDeviceQueueCreateInfo deviceQueueCreateInfo;
-		deviceQueueCreateInfo.flags = 0;
-		deviceQueueCreateInfo.pNext = nullptr;
-		deviceQueueCreateInfo.pQueuePriorities = &defaultQueuePriority;
-		deviceQueueCreateInfo.queueCount = 1;
-		deviceQueueCreateInfo.queueFamilyIndex = 0;
-		deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-
-		VkDeviceCreateInfo deviceCreateInfo;
-		deviceCreateInfo.enabledExtensionCount = mRequiredDeviceExtensions.size();
-		deviceCreateInfo.enabledLayerCount = mInstance->mRequiredLayers.size();
-		deviceCreateInfo.flags = 0;
+		// Create the logical device.
+		VkDeviceCreateInfo deviceCreateInfo = {};
+		deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(mRequiredDeviceExtensions.size());
+		deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mRequiredLayers.size());
 		deviceCreateInfo.pEnabledFeatures = &mPhysicalDeviceFeatures;
-		deviceCreateInfo.pNext = nullptr;
 		deviceCreateInfo.ppEnabledExtensionNames = mRequiredDeviceExtensions.data();
-		deviceCreateInfo.ppEnabledLayerNames = mInstance->mRequiredLayers.data();
-		deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
-		deviceCreateInfo.queueCreateInfoCount = 1;
+		deviceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
+		deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
+		deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
 		deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 		auto result = vkCreateDevice(mPhysicalDeviceHandle, &deviceCreateInfo, nullptr, &mDeviceHandle);
 		assert(result == VK_SUCCESS);
 
-		// Store a handle to the queue
-		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndex, 0, &mQueueHandle);
-		*/
-
-		// HERE we should try to find a queue for each of the requested queue families - individual queues are better... but 
-		// if a unique queue is not found, find a queue family that supports multiple operations (see Sascha Willems' example)
+		// Store handles to each of the newly created queues.
+		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mGraphicsIndex, 0, &mQueuesHandles.mGraphicsQueue);
+		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mComputeIndex, 0, &mQueuesHandles.mComputeQueue);
+		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mTransferIndex, 0, &mQueuesHandles.mTransferQueue);
+		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mSparseBindingIndex, 0, &mQueuesHandles.mSparseBindingQueue);
 
 		std::cout << "Sucessfully created logical and physical devices\n";
 	}
@@ -166,6 +156,9 @@ namespace vk
 		// The logical device is likely to be the last object created (aside from objects used at
 		// runtime). Before destroying the device, ensure that it is not executing any work.
 		vkDeviceWaitIdle(mDeviceHandle);
+		
+		// Note that queues are created along with the logical device. All queues associated with 
+		// this device will automatically be destroyed when vkDestroyDevice is called.
 
 		vkDestroyDevice(mDeviceHandle, nullptr);
 	}
@@ -212,35 +205,5 @@ namespace vk
 		
 		throw std::runtime_error("Could not find a matching queue family");
 	}
-
-	/*
-	SwapchainSupportDetails Device::getSwapchainSupportDetails(VkPhysicalDevice tPhysicalDevice) const
-	{
-		SwapchainSupportDetails details;
-
-		// General surface capabilities
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(tPhysicalDevice, mSurface->getHandle(), &details.mCapabilities);
-
-		// Surface formats
-		uint32_t formatCount = 0;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(tPhysicalDevice, mSurface->getHandle(), &formatCount, nullptr);
-		if (formatCount != 0)
-		{
-			details.mFormats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(tPhysicalDevice, mSurface->getHandle(), &formatCount, details.mFormats.data());
-		}
-
-		// Surface presentation modes
-		uint32_t presentModeCount = 0;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(tPhysicalDevice, mSurface->getHandle(), &presentModeCount, nullptr);
-
-		if (presentModeCount != 0) 
-		{
-			details.mPresentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(tPhysicalDevice, mSurface->getHandle(), &presentModeCount, details.mPresentModes.data());
-		}
-
-		return details;
-	}*/
 
 } // namespace vk

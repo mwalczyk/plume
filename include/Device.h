@@ -18,14 +18,6 @@ namespace vk
 		std::vector<VkPresentModeKHR> mPresentModes;	
 	};
 
-	struct QueueFamilyIndices
-	{
-		uint32_t mGraphicsIndex = -1;
-		uint32_t mComputeIndex = -1;
-		uint32_t mTransferIndex = -1;
-		uint32_t mSparseBindingIndex = -1;
-	};
-
 	class Device;
 	using DeviceRef = std::shared_ptr<Device>;
 
@@ -34,19 +26,38 @@ namespace vk
 
 	public:
 
+		struct QueueFamilyIndices
+		{
+			uint32_t mGraphicsIndex = 0;
+			uint32_t mComputeIndex = 0;
+			uint32_t mTransferIndex = 0;
+			uint32_t mSparseBindingIndex = 0;
+		};
+
+		struct Queues
+		{
+			VkQueue mGraphicsQueue = VK_NULL_HANDLE;
+			VkQueue mComputeQueue = VK_NULL_HANDLE;
+			VkQueue mTransferQueue = VK_NULL_HANDLE;
+			VkQueue mSparseBindingQueue = VK_NULL_HANDLE;
+		};
+
 		struct Options
 		{
 			Options();
 
 			Options& requiredQueueFlags(VkQueueFlags tRequiredQueueFlags) { mRequiredQueueFlags = tRequiredQueueFlags; return *this; }
+			Options& requiredLayers(const std::vector<const char*> &tRequiredLayers) { mRequiredLayers = tRequiredLayers; return *this; }
 			Options& requiredDeviceExtensions(const std::vector<const char*> &tRequiredDeviceExtensions) { mRequiredDeviceExtensions = tRequiredDeviceExtensions; return *this; }
 			Options& useSwapchain(bool tUseSwapchain) { mUseSwapchain = tUseSwapchain; return *this; }
 
 			VkQueueFlags mRequiredQueueFlags;
+			std::vector<const char*> mRequiredLayers;
 			std::vector<const char*> mRequiredDeviceExtensions;
 			bool mUseSwapchain;
 		};
 
+		//! Factory method for returning a new DeviceRef.
 		static DeviceRef create(VkPhysicalDevice tPhysicalDevice, const Options &tOptions = Options())
 		{
 			return std::make_shared<Device>(tPhysicalDevice, tOptions);
@@ -69,7 +80,9 @@ namespace vk
 
 		VkDevice mDeviceHandle;
 		VkPhysicalDevice mPhysicalDeviceHandle;
-		VkQueue mQueueHandle;
+		QueueFamilyIndices mQueueFamilyIndices;
+		Queues mQueuesHandles;
+
 		VkPhysicalDeviceProperties mPhysicalDeviceProperties;
 		VkPhysicalDeviceFeatures mPhysicalDeviceFeatures;
 		VkPhysicalDeviceMemoryProperties mPhysicalDeviceMemoryProperties;
@@ -77,10 +90,9 @@ namespace vk
 		std::vector<VkExtensionProperties> mPhysicalDeviceExtensionProperties;
 
 		VkQueueFlags mRequiredQueueFlags;
+		std::vector<const char*> mRequiredLayers;
 		std::vector<const char*> mRequiredDeviceExtensions;
 		bool mUseSwapchain;
-
-		QueueFamilyIndices mQueueFamilyIndices;
 
 	};
 

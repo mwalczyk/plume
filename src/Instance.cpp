@@ -49,6 +49,20 @@ namespace vk
 		mRequiredExtensions(tOptions.mRequiredExtensions),
 		mApplicationInfo(tOptions.mApplicationInfo)
 	{
+		// Store the instance extension properties.
+		uint32_t instanceExtensionPropertiesCount = 0;
+		vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertiesCount, nullptr);
+
+		mInstanceExtensionProperties.resize(instanceExtensionPropertiesCount);
+		vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertiesCount, mInstanceExtensionProperties.data());
+
+		// Store the instance layer properties.
+		uint32_t instanceLayerCount = 0;
+		vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
+
+		mInstanceLayerProperties.resize(instanceLayerCount);
+		vkEnumerateInstanceLayerProperties(&instanceLayerCount, mInstanceLayerProperties.data());
+
 		if (!checkInstanceLayerSupport())
 		{
 			throw std::runtime_error("One or more of the requested validation layers are not supported on this platform");
@@ -77,6 +91,13 @@ namespace vk
 
 		setupDebugReportCallback();
 
+		// Store the handles to each of the present physical devices (note that this needs to happen after initialization).
+		uint32_t physicalDeviceCount = 0;
+		vkEnumeratePhysicalDevices(mInstanceHandle, &physicalDeviceCount, nullptr);
+
+		mPhysicalDevices.resize(physicalDeviceCount);
+		vkEnumeratePhysicalDevices(mInstanceHandle, &physicalDeviceCount, mPhysicalDevices.data());
+
 		std::cout << "Successfully created instance\n";
 	}
 
@@ -87,47 +108,12 @@ namespace vk
 		vkDestroyInstance(mInstanceHandle, nullptr);
 	}
 
-	std::vector<VkExtensionProperties> Instance::getInstanceExtensionProperties() const
-	{
-		uint32_t instanceExtensionPropertiesCount = 0;
-		vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertiesCount, nullptr);
-
-		std::vector<VkExtensionProperties> instanceExtensionProperties(instanceExtensionPropertiesCount);
-		vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertiesCount, instanceExtensionProperties.data());
-
-		return instanceExtensionProperties;
-	}
-
-	std::vector<VkLayerProperties> Instance::getInstanceLayerProperties() const
-	{
-		uint32_t instanceLayerCount = 0;
-		vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
-
-		std::vector<VkLayerProperties> instanceLayerProperties(instanceLayerCount);
-		vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayerProperties.data());
-
-		return instanceLayerProperties;
-	}
-
-	std::vector<VkPhysicalDevice> Instance::getPhysicalDevices() const
-	{
-		uint32_t physicalDeviceCount = 0;
-		vkEnumeratePhysicalDevices(mInstanceHandle, &physicalDeviceCount, nullptr);
-
-		std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
-		vkEnumeratePhysicalDevices(mInstanceHandle, &physicalDeviceCount, physicalDevices.data());
-
-		return physicalDevices;
-	}
-
 	bool Instance::checkInstanceLayerSupport()
 	{
-		auto instanceLayerProperties = getInstanceLayerProperties();
-
 		for (const auto& requiredLayerName: mRequiredLayers)
 		{
 			auto predicate = [&](const VkLayerProperties &layerProperty) { return strcmp(requiredLayerName, layerProperty.layerName) == 0; };
-			if (std::find_if(instanceLayerProperties.begin(), instanceLayerProperties.end(), predicate) == instanceLayerProperties.end())
+			if (std::find_if(mInstanceLayerProperties.begin(), mInstanceLayerProperties.end(), predicate) == mInstanceLayerProperties.end())
 			{
 				std::cout << "Required layer " << requiredLayerName << " is not supported\n";
 				return false;
