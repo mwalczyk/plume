@@ -16,6 +16,7 @@ namespace vk
 
 	public:
 
+		//! Factory method for returning a new SurfaceRef. Called by the Window class to create a SurfaceRef.
 		static SurfaceRef create(const InstanceRef &tInstance)
 		{
 			return std::make_shared<Surface>(tInstance);

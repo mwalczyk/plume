@@ -11,13 +11,6 @@
 namespace vk
 {
 
-	struct SwapchainSupportDetails
-	{
-		VkSurfaceCapabilitiesKHR mCapabilities;		
-		std::vector<VkSurfaceFormatKHR> mFormats;		
-		std::vector<VkPresentModeKHR> mPresentModes;	
-	};
-
 	class Device;
 	using DeviceRef = std::shared_ptr<Device>;
 
@@ -26,12 +19,20 @@ namespace vk
 
 	public:
 
+		struct SwapchainSupportDetails
+		{
+			VkSurfaceCapabilitiesKHR mCapabilities;
+			std::vector<VkSurfaceFormatKHR> mFormats;
+			std::vector<VkPresentModeKHR> mPresentModes;
+		};
+
 		struct QueueFamilyIndices
 		{
 			uint32_t mGraphicsIndex = 0;
 			uint32_t mComputeIndex = 0;
 			uint32_t mTransferIndex = 0;
 			uint32_t mSparseBindingIndex = 0;
+			uint32_t mPresentationIndex = 0;
 		};
 
 		struct Queues
@@ -47,12 +48,10 @@ namespace vk
 			Options();
 
 			Options& requiredQueueFlags(VkQueueFlags tRequiredQueueFlags) { mRequiredQueueFlags = tRequiredQueueFlags; return *this; }
-			Options& requiredLayers(const std::vector<const char*> &tRequiredLayers) { mRequiredLayers = tRequiredLayers; return *this; }
 			Options& requiredDeviceExtensions(const std::vector<const char*> &tRequiredDeviceExtensions) { mRequiredDeviceExtensions = tRequiredDeviceExtensions; return *this; }
 			Options& useSwapchain(bool tUseSwapchain) { mUseSwapchain = tUseSwapchain; return *this; }
 
 			VkQueueFlags mRequiredQueueFlags;
-			std::vector<const char*> mRequiredLayers;
 			std::vector<const char*> mRequiredDeviceExtensions;
 			bool mUseSwapchain;
 		};
@@ -63,6 +62,7 @@ namespace vk
 			return std::make_shared<Device>(tPhysicalDevice, tOptions);
 		}
 
+		//! Construct a logical device around a physical device (GPU).
 		Device(VkPhysicalDevice tPhysicalDevice, const Options &tOptions = Options());
 		~Device();
 
@@ -73,6 +73,9 @@ namespace vk
 		inline VkPhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties() const { return mPhysicalDeviceMemoryProperties; }
 		inline const std::vector<VkQueueFamilyProperties>& getPhysicalDeviceQueueFamilyProperties() const { return mPhysicalDeviceQueueFamilyProperties; }
 		inline const std::vector<VkExtensionProperties>& getPhysicalDeviceExtensionProperties() const { return mPhysicalDeviceExtensionProperties; }
+		
+		//! Returns a structure that contains information related to the chosen physical device's swapchain support.
+		SwapchainSupportDetails getSwapchainSupportDetails(const SurfaceRef &tSurface) const;
 
 	private:
 
@@ -90,7 +93,6 @@ namespace vk
 		std::vector<VkExtensionProperties> mPhysicalDeviceExtensionProperties;
 
 		VkQueueFlags mRequiredQueueFlags;
-		std::vector<const char*> mRequiredLayers;
 		std::vector<const char*> mRequiredDeviceExtensions;
 		bool mUseSwapchain;
 

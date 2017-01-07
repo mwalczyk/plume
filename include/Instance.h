@@ -74,4 +74,4 @@ namespace vk
 
 	};
 
-} // namespace
+} // namespace vk

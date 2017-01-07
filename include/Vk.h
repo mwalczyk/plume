@@ -35,6 +35,7 @@
 
 #include "Device.h"
 #include "Instance.h"
-#include "PhysicalDevice.h"
+#include "Pipeline.h"
+#include "Surface.h"
 #include "Swapchain.h"
 #include "Window.h"

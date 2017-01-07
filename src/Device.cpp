@@ -11,14 +11,12 @@ namespace vk
 	Device::Options::Options()
 	{
 		mRequiredQueueFlags = VK_QUEUE_GRAPHICS_BIT;
-		mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };
 		mUseSwapchain = true;
 	}
 
 	Device::Device(VkPhysicalDevice tPhysicalDevice, const Options &tOptions) :
 		mPhysicalDeviceHandle(tPhysicalDevice),
 		mRequiredQueueFlags(tOptions.mRequiredQueueFlags),
-		mRequiredLayers(tOptions.mRequiredLayers),
 		mRequiredDeviceExtensions(tOptions.mRequiredDeviceExtensions),
 		mUseSwapchain(tOptions.mUseSwapchain)
 	{		
@@ -26,23 +24,23 @@ namespace vk
 		assert(mPhysicalDeviceHandle != VK_NULL_HANDLE);
 
 		// Store the general properties, features, and memory properties of the chosen physical device.
-		vkGetPhysicalDeviceProperties(tPhysicalDevice, &mPhysicalDeviceProperties);
-		vkGetPhysicalDeviceFeatures(tPhysicalDevice, &mPhysicalDeviceFeatures);
-		vkGetPhysicalDeviceMemoryProperties(tPhysicalDevice, &mPhysicalDeviceMemoryProperties);
+		vkGetPhysicalDeviceProperties(mPhysicalDeviceHandle, &mPhysicalDeviceProperties);
+		vkGetPhysicalDeviceFeatures(mPhysicalDeviceHandle, &mPhysicalDeviceFeatures);
+		vkGetPhysicalDeviceMemoryProperties(mPhysicalDeviceHandle, &mPhysicalDeviceMemoryProperties);
 
 		// Store the queue family properties of the chosen physical device.
 		uint32_t physicalDeviceQueueFamilyPropertiesCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &physicalDeviceQueueFamilyPropertiesCount, nullptr);
+		vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDeviceHandle, &physicalDeviceQueueFamilyPropertiesCount, nullptr);
 		
 		mPhysicalDeviceQueueFamilyProperties.resize(physicalDeviceQueueFamilyPropertiesCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(tPhysicalDevice, &physicalDeviceQueueFamilyPropertiesCount, mPhysicalDeviceQueueFamilyProperties.data());
+		vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDeviceHandle, &physicalDeviceQueueFamilyPropertiesCount, mPhysicalDeviceQueueFamilyProperties.data());
 
 		// Store the device extensions of the chosen physical device.
 		uint32_t deviceExtensionPropertiesCount = 0;
-		vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, nullptr);
+		vkEnumerateDeviceExtensionProperties(mPhysicalDeviceHandle, nullptr, &deviceExtensionPropertiesCount, nullptr);
 
 		mPhysicalDeviceExtensionProperties.resize(deviceExtensionPropertiesCount);
-		vkEnumerateDeviceExtensionProperties(tPhysicalDevice, nullptr, &deviceExtensionPropertiesCount, mPhysicalDeviceExtensionProperties.data());
+		vkEnumerateDeviceExtensionProperties(mPhysicalDeviceHandle, nullptr, &deviceExtensionPropertiesCount, mPhysicalDeviceExtensionProperties.data());
 
 		// Print some useful information about the chosen physical device.
 		std::cout << "Found suitable physical device:\n";
@@ -65,6 +63,12 @@ namespace vk
 			deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 
 			deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+
+			// For now, perform presentation with the same queue as graphics operations.
+			if (mUseSwapchain)
+			{
+				mQueueFamilyIndices.mPresentationIndex = mQueueFamilyIndices.mGraphicsIndex;
+			}
 		}
 		if (mRequiredQueueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
@@ -128,13 +132,12 @@ namespace vk
 			mRequiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		}
 
-		// Create the logical device.
+		// Create the logical device: note that device layers were deprecated in Vulkan 1.0.13, and device layer 
+		// requests should be ignored by the driver.
 		VkDeviceCreateInfo deviceCreateInfo = {};
 		deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(mRequiredDeviceExtensions.size());
-		deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mRequiredLayers.size());
 		deviceCreateInfo.pEnabledFeatures = &mPhysicalDeviceFeatures;
 		deviceCreateInfo.ppEnabledExtensionNames = mRequiredDeviceExtensions.data();
-		deviceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
 		deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
 		deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
 		deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -204,6 +207,36 @@ namespace vk
 		}
 		
 		throw std::runtime_error("Could not find a matching queue family");
+	}
+
+	Device::SwapchainSupportDetails Device::getSwapchainSupportDetails(const SurfaceRef &tSurface) const
+	{
+		SwapchainSupportDetails swapchainSupportDetails;
+
+		// Return the basic surface capabilities, i.e. min/max number of images, min/max width and height, etc.
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mPhysicalDeviceHandle, tSurface->getHandle(), &swapchainSupportDetails.mCapabilities);
+
+		// Retrieve the available surface formats, i.e. pixel formats and color spaces.
+		uint32_t formatCount = 0;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDeviceHandle, tSurface->getHandle(), &formatCount, nullptr);
+
+		if (formatCount != 0)
+		{
+			swapchainSupportDetails.mFormats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDeviceHandle, tSurface->getHandle(), &formatCount, swapchainSupportDetails.mFormats.data());
+		}
+
+		// Retrieve the surface presentation modes, i.e. VK_PRESENT_MODE_MAILBOX_KHR.
+		uint32_t presentModeCount = 0;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDeviceHandle, tSurface->getHandle(), &presentModeCount, nullptr);
+
+		if (presentModeCount != 0) 
+		{
+			swapchainSupportDetails.mPresentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDeviceHandle, tSurface->getHandle(), &presentModeCount, swapchainSupportDetails.mPresentModes.data());
+		}
+
+		return swapchainSupportDetails;
 	}
 
 } // namespace vk

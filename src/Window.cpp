@@ -34,25 +34,26 @@ namespace vk
 		}
 
 		mWindowHandle = glfwCreateWindow(mWidth, mHeight, mTitle.c_str(), nullptr, nullptr);
-
-		// Create the surface
-		if (mMode != Mode::WINDOW_MODE_HEADLESS)
-		{
-			mSurface = Surface::create(mInstance);
-
-			// This class is a friend of the Surface class, so we can directly access the VkSurfaceKHR handle.
-			if (glfwCreateWindowSurface(mInstance->getHandle(), mWindowHandle, nullptr, &mSurface->mSurfaceHandle) != VK_SUCCESS)
-			{
-				throw std::runtime_error("Failed to create surface");
-			}
-
-			std::cout << "Successfully created surface\n";
-		}
 	}
 
 	Window::~Window()
 	{
 		glfwDestroyWindow(mWindowHandle);
+	}
+
+	SurfaceRef Window::createSurface()
+	{
+		auto surface = Surface::create(mInstance);
+
+		// This class is a friend of the Surface class, so we can directly access the VkSurfaceKHR handle.
+		if (glfwCreateWindowSurface(mInstance->getHandle(), mWindowHandle, nullptr, &surface->mSurfaceHandle) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create surface");
+		}
+
+		std::cout << "Successfully created surface\n";
+
+		return surface;
 	}
 
 	std::vector<const char*> Window::getRequiredInstanceExtensions() const

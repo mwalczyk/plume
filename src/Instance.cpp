@@ -8,12 +8,12 @@ namespace vk
 		mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };
 		mRequiredExtensions = { "VK_EXT_debug_report" };
 		
+		mApplicationInfo = {};
 		mApplicationInfo.apiVersion = VK_API_VERSION_1_0;
 		mApplicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		mApplicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 		mApplicationInfo.pApplicationName = "Application Name";
 		mApplicationInfo.pEngineName = "Engine Name";
-		mApplicationInfo.pNext = nullptr;
 		mApplicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	}
 
@@ -44,7 +44,6 @@ namespace vk
 	}
 
 	Instance::Instance(const Options &tOptions) :
-		mInstanceHandle(VK_NULL_HANDLE),
 		mRequiredLayers(tOptions.mRequiredLayers),
 		mRequiredExtensions(tOptions.mRequiredExtensions),
 		mApplicationInfo(tOptions.mApplicationInfo)
@@ -75,13 +74,11 @@ namespace vk
 		mRequiredExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 #endif
 		mRequiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-		
-		VkInstanceCreateInfo instanceCreateInfo;
-		instanceCreateInfo.enabledExtensionCount = mRequiredExtensions.size();
-		instanceCreateInfo.enabledLayerCount = mRequiredLayers.size();
-		instanceCreateInfo.flags = 0;
+
+		VkInstanceCreateInfo instanceCreateInfo = {};
+		instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(mRequiredExtensions.size());
+		instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mRequiredLayers.size());
 		instanceCreateInfo.pApplicationInfo = &mApplicationInfo;
-		instanceCreateInfo.pNext = nullptr;
 		instanceCreateInfo.ppEnabledExtensionNames = mRequiredExtensions.data();
 		instanceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
 		instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -128,7 +125,6 @@ namespace vk
 		VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = {};
 		debugReportCallbackCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
 		debugReportCallbackCreateInfo.pfnCallback = debugCallback;
-		debugReportCallbackCreateInfo.pNext = nullptr;
 		debugReportCallbackCreateInfo.pUserData = nullptr;
 		debugReportCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 		

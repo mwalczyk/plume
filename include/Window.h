@@ -54,8 +54,8 @@ namespace vk
 		Window(const InstanceRef &tInstance, const Options &tOptions = Options());
 		~Window();
 
+		SurfaceRef createSurface();
 		inline GLFWwindow* getWindowHandle() const { return mWindowHandle; }
-		inline SurfaceRef getSurface() const {	return mSurface; }
 		inline uint32_t getWidth() const { return mWidth; }
 		inline uint32_t getHeight() const { return mHeight; }
 		inline int shouldWindowClose() const { return glfwWindowShouldClose(mWindowHandle); }
@@ -69,7 +69,6 @@ namespace vk
 		GLFWwindow *mWindowHandle;
 
 		InstanceRef mInstance;
-		SurfaceRef mSurface;
 
 		uint32_t mWidth;
 		uint32_t mHeight;
