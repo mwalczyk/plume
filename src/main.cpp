@@ -1,4 +1,14 @@
+#include <chrono>
+
 #include "Vk.h"
+
+float getElapsedSeconds()
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+	return elapsed;
+}
 
 int main()
 {
@@ -26,7 +36,7 @@ int main()
 	for (size_t i = 0; i < queueFamilyProperties.size(); ++i)
 	{
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device->getPhysicalDeviceHandle(), i, surface->getHandle(), &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device->getPhysicalDeviceHandle(), static_cast<uint32_t>(i), surface->getHandle(), &presentSupport);
 
 		if (presentSupport)
 		{
@@ -41,7 +51,16 @@ int main()
 	auto renderPass = vk::RenderPass::create(device);
 
 	/// vk::Pipeline
-	auto pipeline = vk::Pipeline::create(device, renderPass);
+	VkPushConstantRange pushConstantRange = {};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(float);
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::vector<VkPushConstantRange> pushConstantRanges = { pushConstantRange };
+	auto pipelineOptions = vk::Pipeline::Options()
+		.pushConstantRanges(pushConstantRanges);
+	
+	auto pipeline = vk::Pipeline::create(device, renderPass, pipelineOptions);
 
 	/// vk::Framebuffer
 	auto swapchainImageViews = swapchain->getSwapchainImageViews();
@@ -53,8 +72,10 @@ int main()
 	}
 
 	/// vk::CommandPool
+	auto commandPoolOptions = vk::CommandPool::Options()
+		.commandPoolCreateFlags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 	uint32_t queueFamilyIndex = device->getQueueFamilyIndices().mGraphicsIndex;
-	auto commandPool = vk::CommandPool::create(queueFamilyIndex, device);
+	auto commandPool = vk::CommandPool::create(queueFamilyIndex, device, commandPoolOptions);
 
 	/// vk::CommandBuffer
 	std::vector<vk::CommandBufferRef> commandBuffers(framebuffers.size());
@@ -75,6 +96,10 @@ int main()
 	auto renderFinishedSemaphore = vk::Semaphore::create(device);
 
 	// Main draw loop
+	// https://developer.nvidia.com/vulkan-shader-resource-binding
+
+	auto startTime = std::chrono::high_resolution_clock::now();
+
 	while (!window->shouldWindowClose())
 	{
 		window->pollEvents();
@@ -82,7 +107,19 @@ int main()
 		// Get the index of the next available image.
 		uint32_t imageIndex = swapchain->acquireNextSwapchainImage(imageAvailableSemaphore);
 
+		float elapsed = getElapsedSeconds();
+
+		commandBuffers[imageIndex]->begin();
+		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex]);
+		commandBuffers[imageIndex]->bindPipeline(pipeline);
+		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &elapsed);
+		commandBuffers[imageIndex]->draw(3, 1, 0, 0);
+		commandBuffers[imageIndex]->endRenderPass();
+		commandBuffers[imageIndex]->end();
+
+		// Re-record the entire command buffer due to push constants (?)
 		auto commandBufferHandle = commandBuffers[imageIndex]->getHandle();
+
 		VkSemaphore waitSemaphores[] = { imageAvailableSemaphore->getHandle() };
 		VkSemaphore signalSemaphores[] = { renderFinishedSemaphore->getHandle() };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -111,6 +148,9 @@ int main()
 		presentInfo.pSwapchains = swapchains;
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr;
+
+		// This is equivalent to submitting a fence to a queue and waiting with an infinite timeout for that fence to signal.
+		vkQueueWaitIdle(device->getQueueHandles().mGraphicsQueue);
 
 		// Finally, present the image to the screen.
 		vkQueuePresentKHR(device->getQueueHandles().mPresentationQueue, &presentInfo);

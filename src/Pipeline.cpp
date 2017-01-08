@@ -33,7 +33,8 @@ namespace vk
 
 	Pipeline::Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions) :
 		mDevice(tDevice),
-		mRenderPass(tRenderPass)
+		mRenderPass(tRenderPass),
+		mPushConstantRanges(tOptions.mPushConstantRanges)
 	{
 		auto vertShaderSrc = readFile("assets/shaders/vert.spv");
 		auto fragShaderSrc = readFile("assets/shaders/frag.spv");
@@ -158,11 +159,11 @@ namespace vk
 
 		// A limited amount of the pipeline state can be changed without recreating the entire pipeline - see VkPipelineDynamicStateCreateInfo.
 
-		// For now, create an empty pipeline layout.
+		// Encapsulate any descriptor sets and push constant ranges into a pipeline layout.
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
-		pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+		pipelineLayoutCreateInfo.pPushConstantRanges = mPushConstantRanges.data();
 		pipelineLayoutCreateInfo.pSetLayouts = nullptr;
-		pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+		pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(mPushConstantRanges.size());
 		pipelineLayoutCreateInfo.setLayoutCount = 0;
 		pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 

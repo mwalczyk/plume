@@ -25,8 +25,9 @@ namespace vk
 		{
 			Options();
 			
-			float a;
-			float b;
+			Options& pushConstantRanges(const std::vector<VkPushConstantRange>& tPushConstantRanges) { mPushConstantRanges = tPushConstantRanges; return *this; }
+
+			std::vector<VkPushConstantRange> mPushConstantRanges;
 		};
 
 		//! Factory method for returning a new PipelineRef.
@@ -39,6 +40,7 @@ namespace vk
 		~Pipeline();
 
 		inline VkPipeline getHandle() const { return mPipelineHandle; }
+		inline VkPipelineLayout getPipelineLayoutHandle() const { return mPipelineLayoutHandle; }
 
 	private:
 
@@ -46,6 +48,7 @@ namespace vk
 
 		VkPipeline mPipelineHandle;
 		VkPipelineLayout mPipelineLayoutHandle;
+		std::vector<VkPushConstantRange> mPushConstantRanges;
 
 		DeviceRef mDevice;
 		RenderPassRef mRenderPass;

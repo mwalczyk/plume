@@ -63,6 +63,11 @@ namespace vk
 		vkCmdBindPipeline(mCommandBufferHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, tPipeline->getHandle());
 	}
 
+	void CommandBuffer::updatePushConstantRanges(const PipelineRef &tPipeline, VkShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData)
+	{
+		vkCmdPushConstants(mCommandBufferHandle, tPipeline->getPipelineLayoutHandle(), tStageFlags, tOffset, tSize, tData);
+	}
+
 	void CommandBuffer::draw(uint32_t tVertexCount, uint32_t tInstanceCount, uint32_t tFirstVertex, uint32_t tFirstInstance)
 	{
 		vkCmdDraw(mCommandBufferHandle, tVertexCount, tInstanceCount, tFirstVertex, tFirstInstance);
