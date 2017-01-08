@@ -1,5 +1,7 @@
 #pragma once
 
+#define NOMINMAX
+
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 	#define SPECTRA_MSW
 #elif defined(linux) || defined(__linux) || defined(__linux__)

@@ -31,8 +31,9 @@ namespace vk
 
 	}
 
-	Pipeline::Pipeline(const DeviceRef &tDevice, const Options &tOptions) :
-		mDevice(tDevice)
+	Pipeline::Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions) :
+		mDevice(tDevice),
+		mRenderPass(tRenderPass)
 	{
 		auto vertShaderSrc = readFile("assets/shaders/vert.spv");
 		auto fragShaderSrc = readFile("assets/shaders/frag.spv");
@@ -170,9 +171,6 @@ namespace vk
 
 		std::cout << "Successfully created pipeline layout\n";
 
-		/*
-
-
 		// Aggregate all of the structures above to create a graphics pipeline.
 		VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 		graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;	
@@ -188,7 +186,7 @@ namespace vk
 		graphicsPipelineCreateInfo.pTessellationState = nullptr;
 		graphicsPipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
 		graphicsPipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
-		graphicsPipelineCreateInfo.renderPass = mRenderPass;
+		graphicsPipelineCreateInfo.renderPass = mRenderPass->getHandle();
 		graphicsPipelineCreateInfo.stageCount = 2;
 		graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		graphicsPipelineCreateInfo.subpass = 0;
@@ -198,8 +196,6 @@ namespace vk
 
 		std::cout << "Successfully created pipeline\n";
 
-		*/
-
 		vkDestroyShaderModule(mDevice->getHandle(), vertShaderModule, nullptr);
 		vkDestroyShaderModule(mDevice->getHandle(), fragShaderModule, nullptr);
 	}
@@ -207,58 +203,6 @@ namespace vk
 	Pipeline::~Pipeline()
 	{
 		vkDestroyPipeline(mDevice->getHandle(), mPipelineHandle, nullptr);
-	}
-
-	void Pipeline::createRenderPass()
-	{
-		// For now, we simply have a single color attachment, represented by one of the images from the swapchain.
-		VkAttachmentDescription attachmentDescription = {};
-		attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		attachmentDescription.flags = 0;
-		attachmentDescription.format = mSwapchainImageFormat;
-		attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;		// clear the existing contents of the attachment prior to rendering
-		attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;			// no multisampling
-		attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;	// rendered contents will be stored in memory for later reads
-
-		// Create a reference to the attachment described above
-		VkAttachmentReference attachmentReference = {};
-		attachmentReference.attachment = 0;
-		attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		// A single render pass can consist of multiple subpasses (subsequent rendering operations).
-		VkSubpassDescription subpassDescription = {};
-		subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpassDescription.colorAttachmentCount = 1;
-		subpassDescription.pColorAttachments = &attachmentReference;
-
-		// Create a subpass dependency.
-		VkSubpassDependency subpassDependency = {};
-		subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		subpassDependency.dstSubpass = 0;
-		subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependency.srcAccessMask = 0;
-		subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-		// Create a render pass with the information above.
-		VkRenderPassCreateInfo renderPassCreateInfo = {};
-		renderPassCreateInfo.attachmentCount = 1;
-		renderPassCreateInfo.dependencyCount = 1;
-		renderPassCreateInfo.flags = 0;
-		renderPassCreateInfo.pAttachments = &attachmentDescription;
-		renderPassCreateInfo.pDependencies = &subpassDependency;
-		renderPassCreateInfo.pNext = nullptr;
-		renderPassCreateInfo.pSubpasses = &subpassDescription;
-		renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassCreateInfo.subpassCount = 1;
-
-		auto result = vkCreateRenderPass(mDevice->getHandle(), &renderPassCreateInfo, nullptr, &mRenderPassHandle);
-		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully created render pass\n";
 	}
 
 	void Pipeline::createShaderModule(const std::vector<char> &tSource, VkShaderModule *tShaderModule)

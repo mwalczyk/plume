@@ -35,12 +35,13 @@ namespace vk
 			uint32_t mPresentationIndex = 0;
 		};
 
-		struct Queues
+		struct QueueFamilyHandles
 		{
 			VkQueue mGraphicsQueue = VK_NULL_HANDLE;
 			VkQueue mComputeQueue = VK_NULL_HANDLE;
 			VkQueue mTransferQueue = VK_NULL_HANDLE;
 			VkQueue mSparseBindingQueue = VK_NULL_HANDLE;
+			VkQueue mPresentationQueue = VK_NULL_HANDLE;
 		};
 
 		struct Options
@@ -68,6 +69,8 @@ namespace vk
 
 		inline VkDevice getHandle() const { return mDeviceHandle; };
 		inline VkPhysicalDevice getPhysicalDeviceHandle() const { return mPhysicalDeviceHandle; }
+		inline QueueFamilyIndices getQueueFamilyIndices() const { return mQueueFamilyIndices; }
+		inline QueueFamilyHandles getQueueHandles() const { return mQueuesHandles; }
 		inline VkPhysicalDeviceProperties getPhysicalDeviceProperties() const { return mPhysicalDeviceProperties; }
 		inline VkPhysicalDeviceFeatures getPhysicalDeviceFeatures() const { return mPhysicalDeviceFeatures;  }
 		inline VkPhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties() const { return mPhysicalDeviceMemoryProperties; }
@@ -84,7 +87,7 @@ namespace vk
 		VkDevice mDeviceHandle;
 		VkPhysicalDevice mPhysicalDeviceHandle;
 		QueueFamilyIndices mQueueFamilyIndices;
-		Queues mQueuesHandles;
+		QueueFamilyHandles mQueuesHandles;
 
 		VkPhysicalDeviceProperties mPhysicalDeviceProperties;
 		VkPhysicalDeviceFeatures mPhysicalDeviceFeatures;

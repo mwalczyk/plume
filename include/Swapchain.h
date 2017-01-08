@@ -3,8 +3,9 @@
 #include <memory>
 #include <vector>
 
-#include "vulkan/vulkan.h"
+#include "Platform.h"
 #include "Device.h"
+#include "Semaphore.h"
 
 namespace vk
 {
@@ -38,6 +39,9 @@ namespace vk
 		~Swapchain();
 
 		inline VkSwapchainKHR getHandle() const { return mSwapchainHandle; };
+		inline const std::vector<VkImage>& getSwapchainImages() const { return mSwapchainImages; }
+		inline const std::vector<VkImageView>& getSwapchainImageViews() const { return mSwapchainImageViews; }
+		uint32_t acquireNextSwapchainImage(const SemaphoreRef &tSemaphore, uint32_t tNanosecondsTimeout = std::numeric_limits<uint64_t>::max());
 
 	private:
 
@@ -54,7 +58,6 @@ namespace vk
 		VkExtent2D mSwapchainImageExtent;
 		std::vector<VkImage> mSwapchainImages;
 		std::vector<VkImageView> mSwapchainImageViews;
-		std::vector<VkFramebuffer> mSwapchainFramebuffers;
 
 		uint32_t mWidth;
 		uint32_t mHeight;

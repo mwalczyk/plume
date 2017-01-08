@@ -33,9 +33,14 @@
 ///		Private methods
 ///		Private member variables
 
+#include "CommandBuffer.h"
+#include "CommandPool.h"
 #include "Device.h"
+#include "Framebuffer.h"
 #include "Instance.h"
 #include "Pipeline.h"
+#include "RenderPass.h"
+#include "Semaphore.h"
 #include "Surface.h"
 #include "Swapchain.h"
 #include "Window.h"

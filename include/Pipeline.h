@@ -8,6 +8,7 @@
 
 #include "Platform.h"
 #include "Device.h"
+#include "RenderPass.h"
 
 namespace vk
 {
@@ -29,26 +30,25 @@ namespace vk
 		};
 
 		//! Factory method for returning a new PipelineRef.
-		static PipelineRef create(const DeviceRef &tDevice, const Options &tOptions = Options()) 
+		static PipelineRef create(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions = Options()) 
 		{ 
-			return std::make_shared<Pipeline>(tDevice, tOptions);
+			return std::make_shared<Pipeline>(tDevice, tRenderPass, tOptions);
 		}
 
-		Pipeline(const DeviceRef &tDevice, const Options &tOptions = Options());
+		Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions = Options());
 		~Pipeline();
 
 		inline VkPipeline getHandle() const { return mPipelineHandle; }
 
 	private:
 
-		void createRenderPass();
 		void createShaderModule(const std::vector<char> &tSource, VkShaderModule *tShaderModule);
 
 		VkPipeline mPipelineHandle;
 		VkPipelineLayout mPipelineLayoutHandle;
-		VkRenderPass mRenderPassHandle;
 
 		DeviceRef mDevice;
+		RenderPassRef mRenderPass;
 
 	};
 

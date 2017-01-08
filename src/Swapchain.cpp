@@ -74,6 +74,14 @@ namespace vk
 		vkDestroySwapchainKHR(mDevice->getHandle(), mSwapchainHandle, nullptr);
 	}
 
+	uint32_t Swapchain::acquireNextSwapchainImage(const SemaphoreRef &tSemaphore, uint32_t tNanosecondsTimeout)
+	{
+		uint32_t imageIndex = 0;
+		vkAcquireNextImageKHR(mDevice->getHandle(), mSwapchainHandle, tNanosecondsTimeout, tSemaphore->getHandle(), VK_NULL_HANDLE, &imageIndex);
+
+		return imageIndex;
+	}
+
 	VkSurfaceFormatKHR Swapchain::selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &tSurfaceFormats) const
 	{
 		// If there is only one VkSurfaceFormatKHR entry with format VK_FORMAT_UNDEFINED, this means that the surface has no preferred format.

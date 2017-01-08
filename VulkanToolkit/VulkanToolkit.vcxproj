@@ -158,23 +158,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\App.cpp" />
+    <ClCompile Include="..\src\CommandBuffer.cpp" />
+    <ClCompile Include="..\src\CommandPool.cpp" />
     <ClCompile Include="..\src\Device.cpp" />
+    <ClCompile Include="..\src\Framebuffer.cpp" />
     <ClCompile Include="..\src\Instance.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Pipeline.cpp" />
     <ClCompile Include="..\src\RenderPass.cpp" />
+    <ClCompile Include="..\src\Semaphore.cpp" />
     <ClCompile Include="..\src\Surface.cpp" />
     <ClCompile Include="..\src\Swapchain.cpp" />
     <ClCompile Include="..\src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\App.h" />
+    <ClInclude Include="..\include\CommandBuffer.h" />
+    <ClInclude Include="..\include\CommandPool.h" />
     <ClInclude Include="..\include\Device.h" />
+    <ClInclude Include="..\include\Framebuffer.h" />
     <ClInclude Include="..\include\Instance.h" />
     <ClInclude Include="..\include\Pipeline.h" />
     <ClInclude Include="..\include\Platform.h" />
     <ClInclude Include="..\include\RenderPass.h" />
+    <ClInclude Include="..\include\Semaphore.h" />
     <ClInclude Include="..\include\Surface.h" />
     <ClInclude Include="..\include\Swapchain.h" />
     <ClInclude Include="..\include\Vk.h" />

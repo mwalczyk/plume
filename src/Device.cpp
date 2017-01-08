@@ -150,6 +150,7 @@ namespace vk
 		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mComputeIndex, 0, &mQueuesHandles.mComputeQueue);
 		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mTransferIndex, 0, &mQueuesHandles.mTransferQueue);
 		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mSparseBindingIndex, 0, &mQueuesHandles.mSparseBindingQueue);
+		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mPresentationIndex, 0, &mQueuesHandles.mPresentationQueue);
 
 		std::cout << "Sucessfully created logical and physical devices\n";
 	}
