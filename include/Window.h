@@ -13,6 +13,7 @@
 namespace vk
 {
 	
+
 	class Window;
 	using WindowRef = std::shared_ptr<Window>;
 
@@ -65,6 +66,8 @@ namespace vk
 		std::vector<const char*> getRequiredInstanceExtensions() const;
 
 	private:
+
+		static void onMouseMoved(GLFWwindow* tWindow, double tX, double tY);
 
 		GLFWwindow *mWindowHandle;
 

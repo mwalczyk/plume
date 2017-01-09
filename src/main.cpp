@@ -11,7 +11,7 @@ float getElapsedSeconds()
 }
 
 int main()
-{
+{	
 	/// vk::Instance
 	auto instance = vk::Instance::create();
 	auto physicalDevices = instance->getPhysicalDevices();
@@ -74,21 +74,13 @@ int main()
 	/// vk::CommandPool
 	auto commandPoolOptions = vk::CommandPool::Options()
 		.commandPoolCreateFlags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	uint32_t queueFamilyIndex = device->getQueueFamilyIndices().mGraphicsIndex;
-	auto commandPool = vk::CommandPool::create(queueFamilyIndex, device, commandPoolOptions);
+	auto commandPool = vk::CommandPool::create(device->getQueueFamilyIndices().mGraphicsIndex, device, commandPoolOptions);
 
 	/// vk::CommandBuffer
 	std::vector<vk::CommandBufferRef> commandBuffers(framebuffers.size());
 	for (size_t i = 0; i < framebuffers.size(); ++i)
 	{
 		commandBuffers[i] = vk::CommandBuffer::create(device, commandPool);
-		
-		commandBuffers[i]->begin();
-		commandBuffers[i]->beginRenderPass(renderPass, framebuffers[i]);
-		commandBuffers[i]->bindPipeline(pipeline);
-		commandBuffers[i]->draw(3, 1, 0, 0);
-		commandBuffers[i]->endRenderPass();
-		commandBuffers[i]->end();
 	}
 	
 	/// vk::Semaphore
@@ -107,17 +99,16 @@ int main()
 		// Get the index of the next available image.
 		uint32_t imageIndex = swapchain->acquireNextSwapchainImage(imageAvailableSemaphore);
 
+		// Re-record the entire command buffer due to push constants (?)
 		float elapsed = getElapsedSeconds();
-
 		commandBuffers[imageIndex]->begin();
 		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex]);
 		commandBuffers[imageIndex]->bindPipeline(pipeline);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &elapsed);
-		commandBuffers[imageIndex]->draw(3, 1, 0, 0);
+		commandBuffers[imageIndex]->draw(6, 1, 0, 0);
 		commandBuffers[imageIndex]->endRenderPass();
 		commandBuffers[imageIndex]->end();
 
-		// Re-record the entire command buffer due to push constants (?)
 		auto commandBufferHandle = commandBuffers[imageIndex]->getHandle();
 
 		VkSemaphore waitSemaphores[] = { imageAvailableSemaphore->getHandle() };

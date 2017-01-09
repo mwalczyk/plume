@@ -72,22 +72,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -95,7 +95,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -104,8 +104,13 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ../assets/shaders &amp;&amp; compile.bat</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
+    <CustomBuildStep>
+      <Command>cd ../assets/shaders &amp;&amp; compile.bat</Command>
+      <Outputs>noexist</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -113,7 +118,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,8 +127,13 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ../assets/shaders &amp;&amp; compile.bat</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
+    <CustomBuildStep>
+      <Command>cd ../assets/shaders &amp;&amp; compile.bat</Command>
+      <Outputs>noexist</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -133,7 +143,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,8 +154,13 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ../assets/shaders &amp;&amp; compile.bat</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
+    <CustomBuildStep>
+      <Command>cd ../assets/shaders &amp;&amp; compile.bat</Command>
+      <Outputs>noexist</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -155,7 +170,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -166,10 +181,21 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ../assets/shaders &amp;&amp; compile.bat</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
+    <CustomBuildStep>
+      <Command>cd ../assets/shaders &amp;&amp; compile.bat</Command>
+      <Outputs>noexist</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\include\spirv-cross\spirv_cfg.cpp" />
+    <ClCompile Include="..\include\spirv-cross\spirv_cpp.cpp" />
+    <ClCompile Include="..\include\spirv-cross\spirv_cross.cpp" />
+    <ClCompile Include="..\include\spirv-cross\spirv_glsl.cpp" />
+    <ClCompile Include="..\include\spirv-cross\spirv_msl.cpp" />
+    <ClCompile Include="..\src\Buffer.cpp" />
     <ClCompile Include="..\src\CommandBuffer.cpp" />
     <ClCompile Include="..\src\CommandPool.cpp" />
     <ClCompile Include="..\src\Device.cpp" />
@@ -184,6 +210,7 @@
     <ClCompile Include="..\src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\Buffer.h" />
     <ClInclude Include="..\include\CommandBuffer.h" />
     <ClInclude Include="..\include\CommandPool.h" />
     <ClInclude Include="..\include\Device.h" />
@@ -193,6 +220,14 @@
     <ClInclude Include="..\include\Platform.h" />
     <ClInclude Include="..\include\RenderPass.h" />
     <ClInclude Include="..\include\Semaphore.h" />
+    <ClInclude Include="..\include\spirv-cross\GLSL.std.450.h" />
+    <ClInclude Include="..\include\spirv-cross\spirv.hpp" />
+    <ClInclude Include="..\include\spirv-cross\spirv_cfg.hpp" />
+    <ClInclude Include="..\include\spirv-cross\spirv_common.hpp" />
+    <ClInclude Include="..\include\spirv-cross\spirv_cpp.hpp" />
+    <ClInclude Include="..\include\spirv-cross\spirv_cross.hpp" />
+    <ClInclude Include="..\include\spirv-cross\spirv_glsl.hpp" />
+    <ClInclude Include="..\include\spirv-cross\spirv_msl.hpp" />
     <ClInclude Include="..\include\Surface.h" />
     <ClInclude Include="..\include\Swapchain.h" />
     <ClInclude Include="..\include\Vk.h" />

@@ -3,6 +3,11 @@
 namespace vk
 {
 
+	void Window::onMouseMoved(GLFWwindow* tWindow, double tX, double tY)
+	{
+		
+	}
+
 	Window::Options::Options()
 	{
 		mWidth = 640;
@@ -34,6 +39,8 @@ namespace vk
 		}
 
 		mWindowHandle = glfwCreateWindow(mWidth, mHeight, mTitle.c_str(), nullptr, nullptr);
+
+		glfwSetCursorPosCallback(mWindowHandle, (GLFWcursorposfun) onMouseMoved);
 	}
 
 	Window::~Window()

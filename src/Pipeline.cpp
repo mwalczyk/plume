@@ -3,7 +3,7 @@
 namespace vk
 {
 
-	static std::vector<char> readFile(const std::string &tFileName)
+	static std::vector<uint32_t> readFile(const std::string &tFileName)
 	{
 		// Start reading at the end of the file to determine file size.
 		std::ifstream file(tFileName, std::ios::ate | std::ios::binary);
@@ -14,10 +14,10 @@ namespace vk
 		}
 
 		size_t fileSize = static_cast<size_t>(file.tellg());
-		std::vector<char> fileContents(fileSize);
+		std::vector<uint32_t> fileContents(fileSize);
 
 		file.seekg(0);
-		file.read(fileContents.data(), fileSize);
+		file.read(reinterpret_cast<char*>(fileContents.data()), fileSize);
 
 		file.close();
 
@@ -38,6 +38,7 @@ namespace vk
 	{
 		auto vertShaderSrc = readFile("assets/shaders/vert.spv");
 		auto fragShaderSrc = readFile("assets/shaders/frag.spv");
+		//spirv_cross::CompilerGLSL glsl(fragShaderSrc);
 
 		// Shader module objects are only required during the pipeline creation process.
 		VkShaderModule vertShaderModule{ VK_NULL_HANDLE };
@@ -47,19 +48,15 @@ namespace vk
 
 		// Assign shader modules to specific shader stages.
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-		vertShaderStageInfo.flags = 0;
 		vertShaderStageInfo.module = vertShaderModule;
 		vertShaderStageInfo.pName = "main";
-		vertShaderStageInfo.pNext = nullptr;
 		vertShaderStageInfo.pSpecializationInfo = nullptr;
 		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
 		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-		fragShaderStageInfo.flags = 0;
 		fragShaderStageInfo.module = fragShaderModule;
 		fragShaderStageInfo.pName = "main";
-		fragShaderStageInfo.pNext = nullptr;
 		fragShaderStageInfo.pSpecializationInfo = nullptr;
 		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -69,8 +66,6 @@ namespace vk
 
 		// Describe the format of the vertex data that will be passed to the vertex shader.
 		VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
-		vertexInputStateCreateInfo.flags = 0;
-		vertexInputStateCreateInfo.pNext = nullptr;
 		vertexInputStateCreateInfo.pVertexAttributeDescriptions = nullptr;
 		vertexInputStateCreateInfo.pVertexBindingDescriptions = nullptr;
 		vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -79,8 +74,6 @@ namespace vk
 
 		// Describe the type of geometry that will be drawn and if primitive restart should be enabled.
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {};
-		inputAssemblyStateCreateInfo.flags = 0;
-		inputAssemblyStateCreateInfo.pNext = nullptr;
 		inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 		inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -206,11 +199,11 @@ namespace vk
 		vkDestroyPipeline(mDevice->getHandle(), mPipelineHandle, nullptr);
 	}
 
-	void Pipeline::createShaderModule(const std::vector<char> &tSource, VkShaderModule *tShaderModule)
+	void Pipeline::createShaderModule(const std::vector<uint32_t> &tSource, VkShaderModule *tShaderModule)
 	{
 		VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
 		shaderModuleCreateInfo.codeSize = tSource.size();
-		shaderModuleCreateInfo.pCode = (uint32_t*)tSource.data();
+		shaderModuleCreateInfo.pCode = tSource.data();
 		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 
 		auto result = vkCreateShaderModule(mDevice->getHandle(), &shaderModuleCreateInfo, nullptr, tShaderModule);

@@ -6,6 +6,9 @@
 #include <fstream>
 #include <string>
 
+#include "spirv_glsl.hpp"
+#include <utility>
+
 #include "Platform.h"
 #include "Device.h"
 #include "RenderPass.h"
@@ -26,8 +29,12 @@ namespace vk
 			Options();
 			
 			Options& pushConstantRanges(const std::vector<VkPushConstantRange>& tPushConstantRanges) { mPushConstantRanges = tPushConstantRanges; return *this; }
+			Options& vertexInputBindingDescriptions(const std::vector<VkVertexInputBindingDescription>& tVertexInputBindingDescriptions) { mVertexInputBindingDescriptions = tVertexInputBindingDescriptions; return *this; }
+			Options& vertexInputAttributeDescriptions(const std::vector<VkVertexInputAttributeDescription>& tVertexInputAttributeDescriptions) { mVertexInputAttributeDescriptions = tVertexInputAttributeDescriptions; return *this; }
 
 			std::vector<VkPushConstantRange> mPushConstantRanges;
+			std::vector<VkVertexInputBindingDescription> mVertexInputBindingDescriptions;
+			std::vector<VkVertexInputAttributeDescription> mVertexInputAttributeDescriptions;
 		};
 
 		//! Factory method for returning a new PipelineRef.
@@ -44,7 +51,7 @@ namespace vk
 
 	private:
 
-		void createShaderModule(const std::vector<char> &tSource, VkShaderModule *tShaderModule);
+		void createShaderModule(const std::vector<uint32_t> &tSource, VkShaderModule *tShaderModule);
 
 		VkPipeline mPipelineHandle;
 		VkPipelineLayout mPipelineLayoutHandle;
