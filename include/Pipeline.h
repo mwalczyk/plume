@@ -27,17 +27,33 @@ namespace vk
 
 		struct PushConstantsBlock
 		{
-			uint32_t layout;
+			uint32_t layoutLocation;
 			uint32_t totalSize;
 			std::string name;
 		};
 
 		struct PushConstantsMember
 		{
+			/*PushConstantsMember(uint32_t tIndex, uint32_t tSize, uint32_t tOffset, const std::string &tName) :
+				index(tIndex),
+				size(tSize),
+				offset(tOffset),
+				name(tName)
+			{
+			}*/
+
 			uint32_t index;
 			uint32_t size;
 			uint32_t offset;
 			std::string name;
+		};
+
+		struct PushConstantsBlockOrdering
+		{
+			bool operator() (const PushConstantsBlock& lhs, const PushConstantsBlock& rhs) const
+			{
+				return lhs.layoutLocation < rhs.layoutLocation;
+			}
 		};
 
 		static ShaderModuleRef create(const DeviceRef &tDevice, const std::string &tFilePath)
@@ -60,7 +76,7 @@ namespace vk
 
 		std::vector<uint32_t> mShaderCode;
 		std::vector<std::string> mEntryPoints;
-		std::map<PushConstantsBlock, std::vector<PushConstantsMember>> mPushConstantsMapping;
+		std::map<PushConstantsBlock, std::vector<PushConstantsMember>, PushConstantsBlockOrdering> mPushConstantsMapping;
 
 	};
 

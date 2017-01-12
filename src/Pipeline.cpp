@@ -79,7 +79,7 @@ namespace vk
 		for (const auto &resource : shaderResources.push_constant_buffers)
 		{
 			PushConstantsBlock pushConstantsBlock;
-			pushConstantsBlock.layout = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
+			pushConstantsBlock.layoutLocation = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
 			pushConstantsBlock.totalSize = compilerGlsl.get_declared_struct_size(compilerGlsl.get_type(resource.base_type_id));
 			pushConstantsBlock.name = resource.name;
 
@@ -105,14 +105,15 @@ namespace vk
 					break;
 				case spirv_cross::SPIRType::Int:
 					size = rows * columns * sizeof(int);
+					break;
 				default:
 					break;
 				}				
 
-				auto offset = range.offset;
+				auto offset = static_cast<uint32_t>(range.offset);
 				auto name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
 			
-				pushConstantsMembers.emplace_back(index, size, offset, name);
+				pushConstantsMembers.emplace_back(PushConstantsMember{ index, size, offset, name });
 			}
 
 			mPushConstantsMapping.emplace(pushConstantsBlock, pushConstantsMembers);
@@ -131,6 +132,23 @@ namespace vk
 			std::cout << "\tName: " << resource.name << std::endl;
 			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
 		}
+
+		std::cout << "Recorded push constants: " << std::endl;
+		
+		for (const auto &mapping : mPushConstantsMapping)
+		{
+			std::cout << "Push constants block: " << std::endl;
+			std::cout << "\tName: " << mapping.first.name << std::endl;
+			std::cout << "\tLayout (location)" << mapping.first.layoutLocation << std::endl;
+			std::cout << "--------" << std::endl;
+			for (const auto &member : mapping.second)
+			{
+				std::cout << "Member at index: " << member.index << std::endl;
+				std::cout << "\tName: " << member.name << std::endl;
+				std::cout << "\tSize: " << member.size << std::endl;
+				std::cout << "\tOffset: " << member.offset << std::endl;
+			}
+		}
 	}
 
 	Pipeline::Options::Options()
@@ -144,8 +162,8 @@ namespace vk
 		mPushConstantRanges(tOptions.mPushConstantRanges)
 	{
 		// Shader module objects are only required during the pipeline creation process.
-		auto vertShaderModule = ShaderModule::create(mDevice, "../assets/shaders/vert.spv");
-		auto fragShaderModule = ShaderModule::create(mDevice, "../assets/shaders/frag.spv");
+		auto vertShaderModule = ShaderModule::create(mDevice, "assets/shaders/vert.spv");
+		auto fragShaderModule = ShaderModule::create(mDevice, "assets/shaders/frag.spv");
 
 		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
 		std::cout << "Maximum size of push constants: " << maxPushConstantsSize << std::endl;
