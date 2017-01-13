@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <iterator>
 #include <fstream>
 #include <string>
 
@@ -34,14 +35,6 @@ namespace vk
 
 		struct PushConstantsMember
 		{
-			/*PushConstantsMember(uint32_t tIndex, uint32_t tSize, uint32_t tOffset, const std::string &tName) :
-				index(tIndex),
-				size(tSize),
-				offset(tOffset),
-				name(tName)
-			{
-			}*/
-
 			uint32_t index;
 			uint32_t size;
 			uint32_t offset;
@@ -56,6 +49,8 @@ namespace vk
 			}
 		};
 
+		using PushConstantsMapping = std::map<PushConstantsBlock, std::vector<PushConstantsMember>, PushConstantsBlockOrdering>;
+
 		static ShaderModuleRef create(const DeviceRef &tDevice, const std::string &tFilePath)
 		{
 			return std::make_shared<ShaderModule>(tDevice, tFilePath);
@@ -65,6 +60,9 @@ namespace vk
 		~ShaderModule();
 
 		inline VkShaderModule getHandle() const { return mShaderModuleHandle; }
+		inline const std::vector<uint32_t>& getShaderCode() const { return mShaderCode; }
+		inline const std::vector<std::string>& getEntryPoints() const { return mEntryPoints; }
+		inline const PushConstantsMapping& getPushConstantsMapping() const { return mPushConstantsMapping; }
 
 	private:
 
@@ -76,7 +74,7 @@ namespace vk
 
 		std::vector<uint32_t> mShaderCode;
 		std::vector<std::string> mEntryPoints;
-		std::map<PushConstantsBlock, std::vector<PushConstantsMember>, PushConstantsBlockOrdering> mPushConstantsMapping;
+		PushConstantsMapping mPushConstantsMapping;
 
 	};
 
@@ -92,17 +90,21 @@ namespace vk
 		{
 			Options();
 			
-			Options& pushConstantRanges(const std::vector<VkPushConstantRange>& tPushConstantRanges) { mPushConstantRanges = tPushConstantRanges; return *this; }
 			Options& vertexInputBindingDescriptions(const std::vector<VkVertexInputBindingDescription>& tVertexInputBindingDescriptions) { mVertexInputBindingDescriptions = tVertexInputBindingDescriptions; return *this; }
 			Options& vertexInputAttributeDescriptions(const std::vector<VkVertexInputAttributeDescription>& tVertexInputAttributeDescriptions) { mVertexInputAttributeDescriptions = tVertexInputAttributeDescriptions; return *this; }
+			Options& vertexShader(const ShaderModuleRef &tShaderModule) { mVertexShader = tShaderModule; return *this; }
+			Options& tessellationControlShader(const ShaderModuleRef &tShaderModule) { mTessellationControlShader = tShaderModule; return *this; }
+			Options& tessellationEvaluationShader(const ShaderModuleRef &tShaderModule) { mTessellationEvaluationShader = tShaderModule; return *this; }
+			Options& geometryShader(const ShaderModuleRef &tShaderModule) { mGeometryShader = tShaderModule; return *this; }
+			Options& fragmentShader(const ShaderModuleRef &tShaderModule) { mFragmentShader = tShaderModule; return *this; }
 
-			std::vector<VkPushConstantRange> mPushConstantRanges;
 			std::vector<VkVertexInputBindingDescription> mVertexInputBindingDescriptions;
 			std::vector<VkVertexInputAttributeDescription> mVertexInputAttributeDescriptions;
 			ShaderModuleRef mVertexShader;
 			ShaderModuleRef mTessellationControlShader;
 			ShaderModuleRef mTessellationEvaluationShader;
 			ShaderModuleRef mGeometryShader;
+			ShaderModuleRef mFragmentShader;
 		};
 
 		//! Factory method for returning a new PipelineRef.
@@ -116,8 +118,15 @@ namespace vk
 
 		inline VkPipeline getHandle() const { return mPipelineHandle; }
 		inline VkPipelineLayout getPipelineLayoutHandle() const { return mPipelineLayoutHandle; }
+		VkPushConstantRange getPushConstantsMember(const std::string &tMemberName) const;
 
 	private:
+
+		VkPipelineShaderStageCreateInfo buildPipelineShaderStageCreateInfo(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
+		//! For each shader stage that is present during the pipeline creation process, add its push constant ranges to the global map.
+		void buildPushConstantRanges();
+		//! Given a shader module and shader stage, add all of the module's push constant ranges to the pipeline object's global map.
+		void addPushConstantRangesToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
 
 		VkPipeline mPipelineHandle;
 		VkPipelineLayout mPipelineLayoutHandle;
@@ -125,7 +134,13 @@ namespace vk
 
 		DeviceRef mDevice;
 		RenderPassRef mRenderPass;
+		ShaderModuleRef mVertexShader;
+		ShaderModuleRef mTessellationControlShader;
+		ShaderModuleRef mTessellationEvaluationShader;
+		ShaderModuleRef mGeometryShader;
+		ShaderModuleRef mFragmentShader;
 
+		std::map<std::string, VkPushConstantRange> mPushConstantRangesMapping;
 	};
 
 } // namespace vk

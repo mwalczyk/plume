@@ -51,15 +51,11 @@ int main()
 	auto renderPass = vk::RenderPass::create(device);
 
 	/// vk::Pipeline
-	VkPushConstantRange pushConstantRange = {};
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(float);
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	std::vector<VkPushConstantRange> pushConstantRanges = { pushConstantRange };
+	auto vertexShader = vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
+	auto fragmentShader = vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
 	auto pipelineOptions = vk::Pipeline::Options()
-		.pushConstantRanges(pushConstantRanges);
-	
+		.vertexShader(vertexShader)
+		.fragmentShader(fragmentShader);
 	auto pipeline = vk::Pipeline::create(device, renderPass, pipelineOptions);
 
 	/// vk::Framebuffer
@@ -104,7 +100,7 @@ int main()
 		commandBuffers[imageIndex]->begin();
 		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex]);
 		commandBuffers[imageIndex]->bindPipeline(pipeline);
-		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &elapsed);
+		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "time", &elapsed);
 		commandBuffers[imageIndex]->draw(6, 1, 0, 0);
 		commandBuffers[imageIndex]->endRenderPass();
 		commandBuffers[imageIndex]->end();

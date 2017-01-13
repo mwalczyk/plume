@@ -16,5 +16,7 @@ void main()
 {
 	float a = constants.mouse.x;
 	float b = constants.position.x;
+	vec3 newColor = vsColor;
+	newColor.r = a;
 	oColor = vec4(vsColor * sin(constants.time), 1.0);
 }

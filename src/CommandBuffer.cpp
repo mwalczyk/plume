@@ -2,7 +2,7 @@
 
 namespace vk
 {
-	
+
 	CommandBuffer::Options::Options()
 	{
 		mCommandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -66,6 +66,12 @@ namespace vk
 	void CommandBuffer::updatePushConstantRanges(const PipelineRef &tPipeline, VkShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData)
 	{
 		vkCmdPushConstants(mCommandBufferHandle, tPipeline->getPipelineLayoutHandle(), tStageFlags, tOffset, tSize, tData);
+	}
+
+	void CommandBuffer::updatePushConstantRanges(const PipelineRef &tPipeline, const std::string &tMemberName, const void* tData)
+	{
+		auto pushConstantsMember = tPipeline->getPushConstantsMember(tMemberName);
+		vkCmdPushConstants(mCommandBufferHandle, tPipeline->getPipelineLayoutHandle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, tData);
 	}
 
 	void CommandBuffer::draw(uint32_t tVertexCount, uint32_t tInstanceCount, uint32_t tFirstVertex, uint32_t tFirstInstance)

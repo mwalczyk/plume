@@ -13,6 +13,10 @@
 - [ ] Remove the hardcoded pipeline bind point (graphics / compute) in the `bindPipeline` method of the command buffer class
 - [ ] Create a wrapper around VkFence objects
 - [ ] Add a fence parameter to the `acquireNextSwapchainImage` method of the swapchain class
+- [ ] Move the shader module class to a separate file
+- [ ] Add reflection support for ubos, textures, etc.
+- [ ] Remove the hardcoded entry point in the `VkPipelineShaderStageCreateInfo` structure
+- [ ] Add error handling to `updatePushConstantRanges` method of the command buffer class to prevent the user from passing data that is larger than the push constants member
 
 ### Long term:
 

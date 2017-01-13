@@ -75,6 +75,8 @@ namespace vk
 		spirv_cross::CompilerGLSL compilerGlsl = spirv_cross::CompilerGLSL(mShaderCode);
 		spirv_cross::ShaderResources shaderResources = compilerGlsl.get_shader_resources();
 
+		mEntryPoints = compilerGlsl.get_entry_points();
+
 		// Get all of the push constants blocks and their members (currently, Vulkan only supports one block).
 		for (const auto &resource : shaderResources.push_constant_buffers)
 		{
@@ -82,8 +84,6 @@ namespace vk
 			pushConstantsBlock.layoutLocation = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
 			pushConstantsBlock.totalSize = compilerGlsl.get_declared_struct_size(compilerGlsl.get_type(resource.base_type_id));
 			pushConstantsBlock.name = resource.name;
-
-			mEntryPoints = compilerGlsl.get_entry_points();
 
 			std::vector<PushConstantsMember> pushConstantsMembers;
 
@@ -159,29 +159,23 @@ namespace vk
 	Pipeline::Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions) :
 		mDevice(tDevice),
 		mRenderPass(tRenderPass),
-		mPushConstantRanges(tOptions.mPushConstantRanges)
+		mVertexShader(tOptions.mVertexShader),
+		mTessellationControlShader(tOptions.mTessellationControlShader),
+		mTessellationEvaluationShader(tOptions.mTessellationEvaluationShader),
+		mGeometryShader(tOptions.mGeometryShader),
+		mFragmentShader(tOptions.mFragmentShader)
 	{
-		// Shader module objects are only required during the pipeline creation process.
-		auto vertShaderModule = ShaderModule::create(mDevice, "assets/shaders/vert.spv");
-		auto fragShaderModule = ShaderModule::create(mDevice, "assets/shaders/frag.spv");
+		if (!mVertexShader || !mFragmentShader)
+		{
+			throw std::runtime_error("The vertex and fragment shader stages are not optional");
+		}
 
 		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
 		std::cout << "Maximum size of push constants: " << maxPushConstantsSize << std::endl;
 		
 		// Assign shader modules to specific shader stages.
-		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-		vertShaderStageInfo.module = vertShaderModule->getHandle();
-		vertShaderStageInfo.pName = "main";
-		vertShaderStageInfo.pSpecializationInfo = nullptr; 
-		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-
-		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-		fragShaderStageInfo.module = fragShaderModule->getHandle();
-		fragShaderStageInfo.pName = "main";
-		fragShaderStageInfo.pSpecializationInfo = nullptr;
-		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		auto vertShaderStageInfo = buildPipelineShaderStageCreateInfo(mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
+		auto fragShaderStageInfo = buildPipelineShaderStageCreateInfo(mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		// Group the create info structures together.
 		VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfos[] = { vertShaderStageInfo, fragShaderStageInfo };
@@ -274,11 +268,17 @@ namespace vk
 
 		// A limited amount of the pipeline state can be changed without recreating the entire pipeline - see VkPipelineDynamicStateCreateInfo.
 
+		// Get all of the values in the push constant ranges map. These correspond to all of the VkPushConstantRange structures 
+		// found through the SPIR-V reflection process.
+		buildPushConstantRanges();
+		std::vector<VkPushConstantRange> pushConstantRanges;
+		std::transform(mPushConstantRangesMapping.begin(), mPushConstantRangesMapping.end(), std::back_inserter(pushConstantRanges), [](const auto& val) {return val.second; });
+
 		// Encapsulate any descriptor sets and push constant ranges into a pipeline layout.
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
-		pipelineLayoutCreateInfo.pPushConstantRanges = mPushConstantRanges.data();
+		pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
 		pipelineLayoutCreateInfo.pSetLayouts = nullptr;
-		pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(mPushConstantRanges.size());
+		pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
 		pipelineLayoutCreateInfo.setLayoutCount = 0;
 		pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
@@ -316,6 +316,72 @@ namespace vk
 	Pipeline::~Pipeline()
 	{
 		vkDestroyPipeline(mDevice->getHandle(), mPipelineHandle, nullptr);
+	}
+
+	VkPushConstantRange Pipeline::getPushConstantsMember(const std::string &tMemberName) const
+	{
+		auto it = mPushConstantRangesMapping.find(tMemberName);
+
+		if (it == mPushConstantRangesMapping.end())
+		{
+			throw std::runtime_error("Push constant with name " + tMemberName + " not found");
+		}
+
+		return it->second;
+	}
+
+	VkPipelineShaderStageCreateInfo Pipeline::buildPipelineShaderStageCreateInfo(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits)
+	{
+		VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo = {};
+		pipelineShaderStageCreateInfo.module = tShaderModule->getHandle();
+		pipelineShaderStageCreateInfo.pName = tShaderModule->getEntryPoints()[0].c_str();
+		pipelineShaderStageCreateInfo.pSpecializationInfo = nullptr;
+		pipelineShaderStageCreateInfo.stage = tShaderStageFlagBits;
+		pipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+		return pipelineShaderStageCreateInfo;
+	}
+
+	void Pipeline::buildPushConstantRanges()
+	{
+		if (mVertexShader)
+		{
+			addPushConstantRangesToGlobalMap(mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
+		}
+		if (mTessellationControlShader)
+		{
+			addPushConstantRangesToGlobalMap(mTessellationControlShader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+		}
+		if (mTessellationEvaluationShader)
+		{
+			addPushConstantRangesToGlobalMap(mTessellationEvaluationShader, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+		}
+		if (mGeometryShader)
+		{
+			addPushConstantRangesToGlobalMap(mGeometryShader, VK_SHADER_STAGE_GEOMETRY_BIT);
+		}
+		if (mFragmentShader)
+		{
+			addPushConstantRangesToGlobalMap(mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
+		}
+	}
+
+	void Pipeline::addPushConstantRangesToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits)
+	{
+		for (const auto &mapping : tShaderModule->getPushConstantsMapping())
+		{
+			// For now, we ignore information about the block.
+
+			for (const auto &member : mapping.second)
+			{
+				VkPushConstantRange pushConstantRange = {};
+				pushConstantRange.offset = member.offset;
+				pushConstantRange.size = member.size;
+				pushConstantRange.stageFlags = tShaderStageFlagBits;
+
+				mPushConstantRangesMapping.insert({ member.name, pushConstantRange });
+			}
+		}
 	}
 
 } // namespace vk
