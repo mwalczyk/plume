@@ -26,6 +26,11 @@ namespace vk
 		
 	public:
 
+		//! A struct representing a push constants block inside of a GLSL shader. For example:
+		//! layout (std430, push_constant) uniform PushConstants	<--- this
+		//! {
+		//!		float time;
+		//! } constants;
 		struct PushConstantsBlock
 		{
 			uint32_t layoutLocation;
@@ -33,6 +38,11 @@ namespace vk
 			std::string name;
 		};
 
+		//! A struct representing a memmber within a push constants block inside of a GLSL shader. For example:
+		//! layout (std430, push_constant) uniform PushConstants
+		//! {
+		//!		float time;		<--- this
+		//! } constants;
 		struct PushConstantsMember
 		{
 			uint32_t index;
@@ -41,6 +51,7 @@ namespace vk
 			std::string name;
 		};
 
+		//! A functor class that is used for constructing a mapping between PushConstantsBlock structures and PushConstantsMember structures.
 		struct PushConstantsBlockOrdering
 		{
 			bool operator() (const PushConstantsBlock& lhs, const PushConstantsBlock& rhs) const
@@ -49,8 +60,10 @@ namespace vk
 			}
 		};
 
-		using PushConstantsMapping = std::map<PushConstantsBlock, std::vector<PushConstantsMember>, PushConstantsBlockOrdering>;
+		//! A mapping between PushConstantsBlock structures and PushConstantsMember structures.
+		using PushConstantsBlocksMapping = std::map<PushConstantsBlock, std::vector<PushConstantsMember>, PushConstantsBlockOrdering>;
 
+		//! Factory method for returning a new ShaderModuleRef.
 		static ShaderModuleRef create(const DeviceRef &tDevice, const std::string &tFilePath)
 		{
 			return std::make_shared<ShaderModule>(tDevice, tFilePath);
@@ -60,9 +73,15 @@ namespace vk
 		~ShaderModule();
 
 		inline VkShaderModule getHandle() const { return mShaderModuleHandle; }
+
+		//! Retrieve the binary SPIR-V shader code that is held by this shader.
 		inline const std::vector<uint32_t>& getShaderCode() const { return mShaderCode; }
+
+		//! Retrieve a list of available entry points within this GLSL shader (usually "main").
 		inline const std::vector<std::string>& getEntryPoints() const { return mEntryPoints; }
-		inline const PushConstantsMapping& getPushConstantsMapping() const { return mPushConstantsMapping; }
+
+		//! Retrieve a map of low-level details about the push constant blocks contained within this GLSL shader.
+		inline const PushConstantsBlocksMapping& getPushConstantsBlocksMapping() const { return mPushConstantsBlocksMapping; }
 
 	private:
 
@@ -74,7 +93,7 @@ namespace vk
 
 		std::vector<uint32_t> mShaderCode;
 		std::vector<std::string> mEntryPoints;
-		PushConstantsMapping mPushConstantsMapping;
+		PushConstantsBlocksMapping mPushConstantsBlocksMapping;
 
 	};
 

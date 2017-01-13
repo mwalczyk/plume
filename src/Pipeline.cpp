@@ -39,15 +39,13 @@ namespace vk
 		mDevice(tDevice)
 	{
 		auto shaderSrc = readFile(tFilePath);
-		
 		if (shaderSrc.size() % 4)
 		{
 			throw std::runtime_error("Shader source code is an invalid size");
 		}
 
-		auto pCode = reinterpret_cast<const uint32_t*>(shaderSrc.data());
-
 		// Store the SPIR-V code for reflection.
+		auto pCode = reinterpret_cast<const uint32_t*>(shaderSrc.data());
 		mShaderCode = std::vector<uint32_t>(pCode, pCode + shaderSrc.size() / sizeof(uint32_t));
 
 		// Create the actual shader module.
@@ -103,10 +101,31 @@ namespace vk
 				case spirv_cross::SPIRType::Float:
 					size = rows * columns * sizeof(float);
 					break;
+				case spirv_cross::SPIRType::Double:
+					break;
 				case spirv_cross::SPIRType::Int:
 					size = rows * columns * sizeof(int);
 					break;
+				case spirv_cross::SPIRType::Int64:
+					break;
+				case spirv_cross::SPIRType::UInt:
+					break;
+				case spirv_cross::SPIRType::UInt64:
+					break;
+				case spirv_cross::SPIRType::Boolean:
+					break;
+				case spirv_cross::SPIRType::Char:
+					break;
+				case spirv_cross::SPIRType::AtomicCounter:
+					break;
+				case spirv_cross::SPIRType::Sampler:
+					break;
+				case spirv_cross::SPIRType::SampledImage:
+					break;
+				case spirv_cross::SPIRType::Struct:
+					break;	
 				default:
+					// Unknown type.
 					break;
 				}				
 
@@ -116,7 +135,7 @@ namespace vk
 				pushConstantsMembers.emplace_back(PushConstantsMember{ index, size, offset, name });
 			}
 
-			mPushConstantsMapping.emplace(pushConstantsBlock, pushConstantsMembers);
+			mPushConstantsBlocksMapping.emplace(pushConstantsBlock, pushConstantsMembers);
 		}
 
 		for (const auto &resource : shaderResources.stage_inputs)
@@ -131,23 +150,6 @@ namespace vk
 			std::cout << "Output resource ID: " << resource.id << std::endl;
 			std::cout << "\tName: " << resource.name << std::endl;
 			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
-		}
-
-		std::cout << "Recorded push constants: " << std::endl;
-		
-		for (const auto &mapping : mPushConstantsMapping)
-		{
-			std::cout << "Push constants block: " << std::endl;
-			std::cout << "\tName: " << mapping.first.name << std::endl;
-			std::cout << "\tLayout (location)" << mapping.first.layoutLocation << std::endl;
-			std::cout << "--------" << std::endl;
-			for (const auto &member : mapping.second)
-			{
-				std::cout << "Member at index: " << member.index << std::endl;
-				std::cout << "\tName: " << member.name << std::endl;
-				std::cout << "\tSize: " << member.size << std::endl;
-				std::cout << "\tOffset: " << member.offset << std::endl;
-			}
 		}
 	}
 
@@ -368,7 +370,7 @@ namespace vk
 
 	void Pipeline::addPushConstantRangesToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits)
 	{
-		for (const auto &mapping : tShaderModule->getPushConstantsMapping())
+		for (const auto &mapping : tShaderModule->getPushConstantsBlocksMapping())
 		{
 			// For now, we ignore information about the block.
 
