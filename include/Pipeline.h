@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 #include <fstream>
 #include <string>
 
@@ -15,6 +16,53 @@
 
 namespace vk
 {
+
+	class ShaderModule;
+	using ShaderModuleRef = std::shared_ptr<ShaderModule>;
+
+	class ShaderModule
+	{
+		
+	public:
+
+		struct PushConstantsBlock
+		{
+			uint32_t layout;
+			uint32_t totalSize;
+			std::string name;
+		};
+
+		struct PushConstantsMember
+		{
+			uint32_t index;
+			uint32_t size;
+			uint32_t offset;
+			std::string name;
+		};
+
+		static ShaderModuleRef create(const DeviceRef &tDevice, const std::string &tFilePath)
+		{
+			return std::make_shared<ShaderModule>(tDevice, tFilePath);
+		}
+
+		ShaderModule(const DeviceRef &tDevice, const std::string &tFilePath);
+		~ShaderModule();
+
+		inline VkShaderModule getHandle() const { return mShaderModuleHandle; }
+
+	private:
+
+		void performReflection();
+
+		DeviceRef mDevice;
+
+		VkShaderModule mShaderModuleHandle;
+
+		std::vector<uint32_t> mShaderCode;
+		std::vector<std::string> mEntryPoints;
+		std::map<PushConstantsBlock, std::vector<PushConstantsMember>> mPushConstantsMapping;
+
+	};
 
 	class Pipeline;
 	using PipelineRef = std::shared_ptr<Pipeline>;
@@ -35,6 +83,10 @@ namespace vk
 			std::vector<VkPushConstantRange> mPushConstantRanges;
 			std::vector<VkVertexInputBindingDescription> mVertexInputBindingDescriptions;
 			std::vector<VkVertexInputAttributeDescription> mVertexInputAttributeDescriptions;
+			ShaderModuleRef mVertexShader;
+			ShaderModuleRef mTessellationControlShader;
+			ShaderModuleRef mTessellationEvaluationShader;
+			ShaderModuleRef mGeometryShader;
 		};
 
 		//! Factory method for returning a new PipelineRef.
@@ -50,8 +102,6 @@ namespace vk
 		inline VkPipelineLayout getPipelineLayoutHandle() const { return mPipelineLayoutHandle; }
 
 	private:
-
-		void createShaderModule(const std::vector<uint32_t> &tSource, VkShaderModule *tShaderModule);
 
 		VkPipeline mPipelineHandle;
 		VkPipelineLayout mPipelineLayoutHandle;

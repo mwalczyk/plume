@@ -8,9 +8,13 @@ layout(location = 0) out vec4 oColor;
 layout(std430, push_constant) uniform PushConstants
 {
 	float time;
+	vec2 mouse;
+	vec3 position;
 } constants;
 
 void main()
 {
+	float a = constants.mouse.x;
+	float b = constants.position.x;
 	oColor = vec4(vsColor * sin(constants.time), 1.0);
 }

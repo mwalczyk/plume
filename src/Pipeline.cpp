@@ -2,28 +2,135 @@
 
 namespace vk
 {
+	static std::string spectraUniformNames[] =
+	{
+		"u_time",
+		"u_resolution",
+		"u_mouse"
+	};
 
-	static std::vector<uint32_t> readFile(const std::string &tFileName)
+	static std::vector<uint8_t> readFile(const std::string &tFileName)
 	{
 		// Start reading at the end of the file to determine file size.
 		std::ifstream file(tFileName, std::ios::ate | std::ios::binary);
 		
 		if (!file.is_open())
 		{
-			std::cerr << "Failed to open file " << tFileName << "\n";
+			throw std::runtime_error("Failed to open file " + tFileName);
 		}
 
 		size_t fileSize = static_cast<size_t>(file.tellg());
-		std::vector<uint32_t> fileContents(fileSize);
+		std::vector<uint8_t> fileContents(fileSize);
 
+		// Go back to the beginning of the file.
 		file.seekg(0);
-		file.read(reinterpret_cast<char*>(fileContents.data()), fileSize);
 
+		// Read and close the file.
+		auto data = reinterpret_cast<char*>(fileContents.data());
+		file.read(data, fileSize);
 		file.close();
 
 		std::cout << "Successfully read " << fileSize << " bytes from file: " << tFileName << "\n";
 
 		return fileContents;
+	}
+
+	ShaderModule::ShaderModule(const DeviceRef &tDevice, const std::string &tFilePath) :
+		mDevice(tDevice)
+	{
+		auto shaderSrc = readFile(tFilePath);
+		
+		if (shaderSrc.size() % 4)
+		{
+			throw std::runtime_error("Shader source code is an invalid size");
+		}
+
+		auto pCode = reinterpret_cast<const uint32_t*>(shaderSrc.data());
+
+		// Store the SPIR-V code for reflection.
+		mShaderCode = std::vector<uint32_t>(pCode, pCode + shaderSrc.size() / sizeof(uint32_t));
+
+		// Create the actual shader module.
+		VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
+		shaderModuleCreateInfo.codeSize = shaderSrc.size();
+		shaderModuleCreateInfo.pCode = pCode;
+		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+
+		auto result = vkCreateShaderModule(mDevice->getHandle(), &shaderModuleCreateInfo, nullptr, &mShaderModuleHandle);
+		assert(result == VK_SUCCESS);
+
+		std::cout << "Successfully created shader module\n";
+
+		performReflection();
+	}
+
+	ShaderModule::~ShaderModule()
+	{
+		vkDestroyShaderModule(mDevice->getHandle(), mShaderModuleHandle, nullptr);
+	}
+
+	void ShaderModule::performReflection()
+	{
+		// Parse the shader resources.
+		spirv_cross::CompilerGLSL compilerGlsl = spirv_cross::CompilerGLSL(mShaderCode);
+		spirv_cross::ShaderResources shaderResources = compilerGlsl.get_shader_resources();
+
+		// Get all of the push constants blocks and their members (currently, Vulkan only supports one block).
+		for (const auto &resource : shaderResources.push_constant_buffers)
+		{
+			PushConstantsBlock pushConstantsBlock;
+			pushConstantsBlock.layout = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
+			pushConstantsBlock.totalSize = compilerGlsl.get_declared_struct_size(compilerGlsl.get_type(resource.base_type_id));
+			pushConstantsBlock.name = resource.name;
+
+			mEntryPoints = compilerGlsl.get_entry_points();
+
+			std::vector<PushConstantsMember> pushConstantsMembers;
+
+			// Store some information about each member of the push constants block.
+			auto ranges = compilerGlsl.get_active_buffer_ranges(resource.id);
+			for (auto &range : ranges)
+			{
+				auto index = range.index;
+				
+				// Determine the total size of this block member. 
+				auto type = compilerGlsl.get_type(compilerGlsl.get_type(resource.base_type_id).member_types[range.index]);
+				auto rows = type.vecsize;
+				auto columns = type.columns;
+				uint32_t size = 0;
+				switch (type.basetype)
+				{
+				case spirv_cross::SPIRType::Float:
+					size = rows * columns * sizeof(float);
+					break;
+				case spirv_cross::SPIRType::Int:
+					size = rows * columns * sizeof(int);
+				default:
+					break;
+				}				
+
+				auto offset = range.offset;
+				auto name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
+			
+				pushConstantsMembers.emplace_back(index, size, offset, name);
+			}
+
+			mPushConstantsMapping.emplace(pushConstantsBlock, pushConstantsMembers);
+		}
+
+		for (const auto &resource : shaderResources.stage_inputs)
+		{
+			std::cout << "Input resource ID: " << resource.id << std::endl;
+			std::cout << "\tName: " << resource.name << std::endl;
+			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
+		}
+
+		for (const auto &resource : shaderResources.stage_outputs)
+		{
+			std::cout << "Output resource ID: " << resource.id << std::endl;
+			std::cout << "\tName: " << resource.name << std::endl;
+			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
+		}
 	}
 
 	Pipeline::Options::Options()
@@ -36,26 +143,23 @@ namespace vk
 		mRenderPass(tRenderPass),
 		mPushConstantRanges(tOptions.mPushConstantRanges)
 	{
-		auto vertShaderSrc = readFile("assets/shaders/vert.spv");
-		auto fragShaderSrc = readFile("assets/shaders/frag.spv");
-		//spirv_cross::CompilerGLSL glsl(fragShaderSrc);
-
 		// Shader module objects are only required during the pipeline creation process.
-		VkShaderModule vertShaderModule{ VK_NULL_HANDLE };
-		VkShaderModule fragShaderModule{ VK_NULL_HANDLE };
-		createShaderModule(vertShaderSrc, &vertShaderModule);
-		createShaderModule(fragShaderSrc, &fragShaderModule);
+		auto vertShaderModule = ShaderModule::create(mDevice, "../assets/shaders/vert.spv");
+		auto fragShaderModule = ShaderModule::create(mDevice, "../assets/shaders/frag.spv");
 
+		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
+		std::cout << "Maximum size of push constants: " << maxPushConstantsSize << std::endl;
+		
 		// Assign shader modules to specific shader stages.
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-		vertShaderStageInfo.module = vertShaderModule;
+		vertShaderStageInfo.module = vertShaderModule->getHandle();
 		vertShaderStageInfo.pName = "main";
-		vertShaderStageInfo.pSpecializationInfo = nullptr;
+		vertShaderStageInfo.pSpecializationInfo = nullptr; 
 		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
 		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-		fragShaderStageInfo.module = fragShaderModule;
+		fragShaderStageInfo.module = fragShaderModule->getHandle();
 		fragShaderStageInfo.pName = "main";
 		fragShaderStageInfo.pSpecializationInfo = nullptr;
 		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -189,27 +293,11 @@ namespace vk
 		assert(result == VK_SUCCESS);
 
 		std::cout << "Successfully created pipeline\n";
-
-		vkDestroyShaderModule(mDevice->getHandle(), vertShaderModule, nullptr);
-		vkDestroyShaderModule(mDevice->getHandle(), fragShaderModule, nullptr);
 	}
 
 	Pipeline::~Pipeline()
 	{
 		vkDestroyPipeline(mDevice->getHandle(), mPipelineHandle, nullptr);
-	}
-
-	void Pipeline::createShaderModule(const std::vector<uint32_t> &tSource, VkShaderModule *tShaderModule)
-	{
-		VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
-		shaderModuleCreateInfo.codeSize = tSource.size();
-		shaderModuleCreateInfo.pCode = tSource.data();
-		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-
-		auto result = vkCreateShaderModule(mDevice->getHandle(), &shaderModuleCreateInfo, nullptr, tShaderModule);
-		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully created shader module\n";
 	}
 
 } // namespace vk
