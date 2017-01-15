@@ -59,11 +59,18 @@ namespace vk
 		inline GLFWwindow* getWindowHandle() const { return mWindowHandle; }
 		inline uint32_t getWidth() const { return mWidth; }
 		inline uint32_t getHeight() const { return mHeight; }
-		inline int shouldWindowClose() const { return glfwWindowShouldClose(mWindowHandle); }
-		inline void pollEvents() const { glfwPollEvents(); }
 
 		//! Returns the instance extensions required by the windowing system
 		std::vector<const char*> getRequiredInstanceExtensions() const;
+
+		//! Returns a VkViewport structure that corresponds to the full extents of this window.
+		VkViewport getFullscreenViewport() const;
+
+		//! Returns a VkRect2D structure (scissor region) that corresponds to the full extents of this window.
+		VkRect2D getFullscreenScissorRect2D() const;
+
+		inline int shouldWindowClose() const { return glfwWindowShouldClose(mWindowHandle); }
+		inline void pollEvents() const { glfwPollEvents(); }
 
 	private:
 

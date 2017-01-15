@@ -50,6 +50,10 @@ int main()
 	/// vk::RenderPass
 	auto renderPass = vk::RenderPass::create(device);
 
+	/// vk::Buffer
+	auto vertexBuffer = vk::Buffer::create(device);
+	std::vector<vk::BufferRef> vertexBuffers = { vertexBuffer };
+
 	/// vk::Pipeline
 	auto vertexShader = vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
 	auto fragmentShader = vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
@@ -100,8 +104,9 @@ int main()
 		commandBuffers[imageIndex]->begin();
 		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex]);
 		commandBuffers[imageIndex]->bindPipeline(pipeline);
+	//	commandBuffers[imageIndex]->bindVertexBuffers(vertexBuffers);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "time", &elapsed);
-		commandBuffers[imageIndex]->draw(6, 1, 0, 0);
+		commandBuffers[imageIndex]->draw(3, 1, 0, 0);
 		commandBuffers[imageIndex]->endRenderPass();
 		commandBuffers[imageIndex]->end();
 

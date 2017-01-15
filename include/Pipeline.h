@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include <memory>
 #include <vector>
@@ -7,9 +6,9 @@
 #include <iterator>
 #include <fstream>
 #include <string>
+#include <utility>
 
 #include "spirv_glsl.hpp"
-#include <utility>
 
 #include "Platform.h"
 #include "Device.h"
@@ -142,8 +141,10 @@ namespace vk
 	private:
 
 		VkPipelineShaderStageCreateInfo buildPipelineShaderStageCreateInfo(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
+
 		//! For each shader stage that is present during the pipeline creation process, add its push constant ranges to the global map.
 		void buildPushConstantRanges();
+
 		//! Given a shader module and shader stage, add all of the module's push constant ranges to the pipeline object's global map.
 		void addPushConstantRangesToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
 
@@ -160,6 +161,7 @@ namespace vk
 		ShaderModuleRef mFragmentShader;
 
 		std::map<std::string, VkPushConstantRange> mPushConstantRangesMapping;
+
 	};
 
 } // namespace vk

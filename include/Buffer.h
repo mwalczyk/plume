@@ -16,12 +16,6 @@ namespace vk
 	{
 
 	public:
-		/*
-	   const std::vector<Vertex> vertices = {
-			{ { 0.0f, -0.5f },{ 1.0f, 0.0f, 0.0f } },
-			{ { 0.5f, 0.5f },{ 0.0f, 1.0f, 0.0f } },
-			{ { -0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f } }
-		};*/
 
 		struct VertexAttribute
 		{
@@ -50,7 +44,7 @@ namespace vk
 
 		struct Options
 		{
-			Options();
+		
 		};
 
 		//! Factory method for returning a new BufferRef.
@@ -67,8 +61,12 @@ namespace vk
 
 	private:
 
+		//! Based on the memory requirements of this buffer, find the index of the memory heap that should be used to back this buffer.
+		void allocateMemory();
+
 		VkBuffer mBufferHandle;
 		VkDeviceMemory mDeviceMemoryHandle;
+		VkMemoryRequirements mMemoryRequirements;
 
 		DeviceRef mDevice;
 

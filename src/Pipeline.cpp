@@ -107,6 +107,7 @@ namespace vk
 					size = rows * columns * sizeof(int);
 					break;
 				case spirv_cross::SPIRType::Int64:
+					size = rows * columns * sizeof(uint64_t);
 					break;
 				case spirv_cross::SPIRType::UInt:
 					break;
@@ -125,7 +126,7 @@ namespace vk
 				case spirv_cross::SPIRType::Struct:
 					break;	
 				default:
-					// Unknown type.
+					// Unknown type
 					break;
 				}				
 
@@ -138,6 +139,7 @@ namespace vk
 			mPushConstantsBlocksMapping.emplace(pushConstantsBlock, pushConstantsMembers);
 		}
 
+		// Stage inputs
 		for (const auto &resource : shaderResources.stage_inputs)
 		{
 			std::cout << "Input resource ID: " << resource.id << std::endl;
@@ -145,12 +147,54 @@ namespace vk
 			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
 		}
 
+		// Stage outputs
 		for (const auto &resource : shaderResources.stage_outputs)
 		{
 			std::cout << "Output resource ID: " << resource.id << std::endl;
 			std::cout << "\tName: " << resource.name << std::endl;
 			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
 		}
+
+		// Sampled images
+		for (const auto &resource : shaderResources.sampled_images)
+		{
+		}
+		
+		// Seperate samplers
+		for (const auto &resource : shaderResources.separate_samplers)
+		{
+		}
+
+		// Separate images
+		for (const auto &resource : shaderResources.separate_images)
+		{
+		}
+
+		// Atomic counters
+		for (const auto &resource : shaderResources.atomic_counters)
+		{
+		}
+
+		// Subpass inputs
+		for (const auto &resource : shaderResources.subpass_inputs)
+		{
+		}
+
+		// Storage buffers (SSBOs)
+		for (const auto &resource : shaderResources.storage_buffers)
+		{
+		}
+
+		// Storage images
+		for (const auto &resource : shaderResources.storage_images)
+		{
+		}
+
+		// Uniform buffers (UBOs)
+		for (const auto &resource : shaderResources.uniform_buffers)
+		{
+		}
+
 	}
 
 	Pipeline::Options::Options()
@@ -175,20 +219,62 @@ namespace vk
 		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
 		std::cout << "Maximum size of push constants: " << maxPushConstantsSize << std::endl;
 		
-		// Assign shader modules to specific shader stages.
-		auto vertShaderStageInfo = buildPipelineShaderStageCreateInfo(mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
-		auto fragShaderStageInfo = buildPipelineShaderStageCreateInfo(mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
-
 		// Group the create info structures together.
-		VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfos[] = { vertShaderStageInfo, fragShaderStageInfo };
+		std::vector<VkPipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
+		
+		if (mVertexShader)
+		{
+			auto vertexShaderStageInfo = buildPipelineShaderStageCreateInfo(mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
+			pipelineShaderStageCreateInfos.push_back(vertexShaderStageInfo);
+		}
+		if (mTessellationControlShader)
+		{
+			auto tessellationControlShaderStageInfo = buildPipelineShaderStageCreateInfo(mTessellationControlShader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+			pipelineShaderStageCreateInfos.push_back(tessellationControlShaderStageInfo);
+		}
+		if (mTessellationEvaluationShader)
+		{
+			auto tessellationEvaluationShaderStageInfo = buildPipelineShaderStageCreateInfo(mTessellationEvaluationShader, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+			pipelineShaderStageCreateInfos.push_back(tessellationEvaluationShaderStageInfo);
+		}
+		if (mGeometryShader)
+		{
+			auto geometryShaderStageInfo = buildPipelineShaderStageCreateInfo(mGeometryShader, VK_SHADER_STAGE_GEOMETRY_BIT);
+			pipelineShaderStageCreateInfos.push_back(geometryShaderStageInfo);
+		}
+		if (mFragmentShader)
+		{
+			auto fragmentShaderStageInfo = buildPipelineShaderStageCreateInfo(mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
+			pipelineShaderStageCreateInfos.push_back(fragmentShaderStageInfo);
+		}
+
+		// Describe the vertex inputs
+		VkVertexInputBindingDescription bindingDescription = {};
+		bindingDescription.binding = 0;
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		bindingDescription.stride = sizeof(float) * 5;
+
+		VkVertexInputAttributeDescription attributeDescriptionPosition = {};
+		attributeDescriptionPosition.binding = 0;
+		attributeDescriptionPosition.format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptionPosition.location = 0;
+		attributeDescriptionPosition.offset = 0;
+
+		VkVertexInputAttributeDescription attributeDescriptionColor = {};
+		attributeDescriptionPosition.binding = 0;
+		attributeDescriptionPosition.format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptionPosition.location = 1;
+		attributeDescriptionPosition.offset = sizeof(float) * 2;
+
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 
 		// Describe the format of the vertex data that will be passed to the vertex shader.
 		VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
-		vertexInputStateCreateInfo.pVertexAttributeDescriptions = nullptr;
-		vertexInputStateCreateInfo.pVertexBindingDescriptions = nullptr;
+		vertexInputStateCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+		vertexInputStateCreateInfo.pVertexBindingDescriptions = &bindingDescription;
 		vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 0;
-		vertexInputStateCreateInfo.vertexBindingDescriptionCount = 0;
+		vertexInputStateCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
 
 		// Describe the type of geometry that will be drawn and if primitive restart should be enabled.
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {};
@@ -300,12 +386,12 @@ namespace vk
 		graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
 		graphicsPipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
 		graphicsPipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
-		graphicsPipelineCreateInfo.pStages = pipelineShaderStageCreateInfos;
+		graphicsPipelineCreateInfo.pStages = pipelineShaderStageCreateInfos.data();
 		graphicsPipelineCreateInfo.pTessellationState = nullptr;
 		graphicsPipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
 		graphicsPipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
 		graphicsPipelineCreateInfo.renderPass = mRenderPass->getHandle();
-		graphicsPipelineCreateInfo.stageCount = 2;
+		graphicsPipelineCreateInfo.stageCount = static_cast<uint32_t>(pipelineShaderStageCreateInfos.size());
 		graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		graphicsPipelineCreateInfo.subpass = 0;
 

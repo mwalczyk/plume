@@ -8,6 +8,7 @@
 #include "Framebuffer.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
+#include "Buffer.h"
 
 namespace vk
 {
@@ -44,6 +45,7 @@ namespace vk
 		void begin();
 		void beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer);
 		void bindPipeline(const PipelineRef &tPipeline);
+		void bindVertexBuffers(const std::vector<BufferRef> &tBuffers);
 		void updatePushConstantRanges(const PipelineRef &tPipeline, VkShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData);
 		void updatePushConstantRanges(const PipelineRef &tPipeline, const std::string &tMemberName, const void* tData);
 		void draw(uint32_t tVertexCount, uint32_t tInstanceCount, uint32_t tFirstVertex, uint32_t tFirstInstance);

@@ -78,4 +78,26 @@ namespace vk
 		return requiredExtensionNames;
 	}
 
+	VkViewport Window::getFullscreenViewport() const
+	{
+		VkViewport viewport = {};
+		viewport.x = 0;
+		viewport.y = 0;
+		viewport.width = mWidth;
+		viewport.height = mHeight;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+
+		return viewport;
+	}
+
+	VkRect2D Window::getFullscreenScissorRect2D() const
+	{
+		VkRect2D scissor = {};
+		scissor.extent = { mWidth, mHeight };
+		scissor.offset = { 0, 0 };
+
+		return scissor;
+	}
+
 } // namespace vk

@@ -33,6 +33,7 @@
 ///		Private methods
 ///		Private member variables
 
+#include "Buffer.h"
 #include "CommandBuffer.h"
 #include "CommandPool.h"
 #include "Device.h"
