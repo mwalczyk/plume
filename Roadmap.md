@@ -17,9 +17,13 @@
 - [ ] Add reflection support for ubos, textures, etc.
 - [ ] Remove the hardcoded entry point in the `VkPipelineShaderStageCreateInfo` structure
 - [ ] Add error handling to `updatePushConstantRanges` method of the command buffer class to prevent the user from passing data that is larger than the push constants member
+- [ ] Fix `glm` include paths
+- [ ] Finish the `bindVertexBuffers` method inside of the command buffer class
+- [ ] Figure out how to implement staging buffers
 
 ### Long term:
 
+- [ ] Do the members of the `Options` classes need to be stored in the enclosing class as well?
 - [ ] Change structure member variable naming semantics (remove the "m" prefix)
 - [ ] Create a separate class for resource management (i.e. shader files, etc.)
 - [ ] Create an event handling system

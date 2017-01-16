@@ -8,14 +8,12 @@ namespace vk
 		mCommandPoolCreateFlags = 0;
 	}
 
-	CommandPool::CommandPool(uint32_t tQueueFamilyIndex, const DeviceRef &tDevice, const Options &tOptions) :
-		mQueueFamilyIndex(tQueueFamilyIndex),
-		mDevice(tDevice),
-		mCommandPoolCreateFlags(tOptions.mCommandPoolCreateFlags)
+	CommandPool::CommandPool(const DeviceRef &tDevice, uint32_t tQueueFamilyIndex, const Options &tOptions) :
+		mDevice(tDevice)
 	{
 		VkCommandPoolCreateInfo commandPoolCreateInfo = {};
-		commandPoolCreateInfo.flags = mCommandPoolCreateFlags;
-		commandPoolCreateInfo.queueFamilyIndex = mQueueFamilyIndex;
+		commandPoolCreateInfo.flags = tOptions.mCommandPoolCreateFlags;
+		commandPoolCreateInfo.queueFamilyIndex = tQueueFamilyIndex;
 		commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 
 		auto result = vkCreateCommandPool(mDevice->getHandle(), &commandPoolCreateInfo, nullptr, &mCommandPoolHandle);

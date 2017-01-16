@@ -18,5 +18,5 @@ void main()
 	float b = constants.position.x;
 	vec3 newColor = vsColor;
 	newColor.r = a;
-	oColor = vec4(vsColor * sin(constants.time), 1.0);
+	oColor = vec4(newColor * sin(constants.time), 1.0);
 }

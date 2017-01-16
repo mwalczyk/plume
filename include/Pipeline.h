@@ -102,7 +102,7 @@ namespace vk
 		std::vector<uint32_t> mShaderCode;
 		std::vector<std::string> mEntryPoints;
 		PushConstantsBlocksMapping mPushConstantsBlocksMapping;
-
+		std::vector<StageInput> mStageInputs;
 	};
 
 	class Pipeline;
@@ -113,25 +113,41 @@ namespace vk
 
 	public:
 
-		struct Options
+		class Options
 		{
+
+		public:
+
 			Options();
 			
 			Options& vertexInputBindingDescriptions(const std::vector<VkVertexInputBindingDescription>& tVertexInputBindingDescriptions) { mVertexInputBindingDescriptions = tVertexInputBindingDescriptions; return *this; }
 			Options& vertexInputAttributeDescriptions(const std::vector<VkVertexInputAttributeDescription>& tVertexInputAttributeDescriptions) { mVertexInputAttributeDescriptions = tVertexInputAttributeDescriptions; return *this; }
+			Options& viewport(const VkViewport &tViewport) { mViewport = tViewport; return *this; }
+			Options& scissor(const VkRect2D &tScissor) { mScissor = tScissor; return *this; }
 			Options& vertexShader(const ShaderModuleRef &tShaderModule) { mVertexShader = tShaderModule; return *this; }
 			Options& tessellationControlShader(const ShaderModuleRef &tShaderModule) { mTessellationControlShader = tShaderModule; return *this; }
 			Options& tessellationEvaluationShader(const ShaderModuleRef &tShaderModule) { mTessellationEvaluationShader = tShaderModule; return *this; }
 			Options& geometryShader(const ShaderModuleRef &tShaderModule) { mGeometryShader = tShaderModule; return *this; }
 			Options& fragmentShader(const ShaderModuleRef &tShaderModule) { mFragmentShader = tShaderModule; return *this; }
+			Options& primitiveRestart(bool tPrimitiveRestart) { mPrimitiveRestart = tPrimitiveRestart; return *this; }
+			Options& primitiveTopology(VkPrimitiveTopology tPrimitiveTopology) { mPrimitiveTopology = tPrimitiveTopology; return *this; }
+
+		private:
 
 			std::vector<VkVertexInputBindingDescription> mVertexInputBindingDescriptions;
 			std::vector<VkVertexInputAttributeDescription> mVertexInputAttributeDescriptions;
+			VkViewport mViewport;
+			VkRect2D mScissor;
 			ShaderModuleRef mVertexShader;
 			ShaderModuleRef mTessellationControlShader;
 			ShaderModuleRef mTessellationEvaluationShader;
 			ShaderModuleRef mGeometryShader;
 			ShaderModuleRef mFragmentShader;
+			bool mPrimitiveRestart;
+			VkPrimitiveTopology mPrimitiveTopology;
+
+			friend class Pipeline;
+
 		};
 
 		//! Factory method for returning a new PipelineRef.
@@ -151,23 +167,14 @@ namespace vk
 
 		VkPipelineShaderStageCreateInfo buildPipelineShaderStageCreateInfo(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
 
-		//! For each shader stage that is present during the pipeline creation process, add its push constant ranges to the global map.
-		void buildPushConstantRanges();
-
 		//! Given a shader module and shader stage, add all of the module's push constant ranges to the pipeline object's global map.
 		void addPushConstantRangesToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
 
 		VkPipeline mPipelineHandle;
 		VkPipelineLayout mPipelineLayoutHandle;
-		std::vector<VkPushConstantRange> mPushConstantRanges;
 
 		DeviceRef mDevice;
 		RenderPassRef mRenderPass;
-		ShaderModuleRef mVertexShader;
-		ShaderModuleRef mTessellationControlShader;
-		ShaderModuleRef mTessellationEvaluationShader;
-		ShaderModuleRef mGeometryShader;
-		ShaderModuleRef mFragmentShader;
 
 		std::map<std::string, VkPushConstantRange> mPushConstantRangesMapping;
 

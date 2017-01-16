@@ -2,11 +2,6 @@
 
 namespace vk
 {
-	/// Notes:
-	///
-	/// The Vulkan implementation will generally group all of the queues with the same capabilities into a single queue
-	/// family. However, this is not a strict requirement, and there may be multiple queue families with the same 
-	/// capabilities.
 
 	Device::Options::Options()
 	{
@@ -16,9 +11,7 @@ namespace vk
 
 	Device::Device(VkPhysicalDevice tPhysicalDevice, const Options &tOptions) :
 		mPhysicalDeviceHandle(tPhysicalDevice),
-		mRequiredQueueFlags(tOptions.mRequiredQueueFlags),
-		mRequiredDeviceExtensions(tOptions.mRequiredDeviceExtensions),
-		mUseSwapchain(tOptions.mUseSwapchain)
+		mRequiredDeviceExtensions(tOptions.mRequiredDeviceExtensions)
 	{		
 		// Ensure that at least one suitable GPU was found.
 		assert(mPhysicalDeviceHandle != VK_NULL_HANDLE);
@@ -52,7 +45,7 @@ namespace vk
 		const float defaultQueuePriority = 0.0f;
 		const uint32_t defaultQueueCount = 1;
 		std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
-		if (mRequiredQueueFlags & VK_QUEUE_GRAPHICS_BIT)
+		if (tOptions.mRequiredQueueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
 			mQueueFamilyIndices.mGraphicsIndex = findQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
 
@@ -65,12 +58,12 @@ namespace vk
 			deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
 
 			// For now, perform presentation with the same queue as graphics operations.
-			if (mUseSwapchain)
+			if (tOptions.mUseSwapchain)
 			{
 				mQueueFamilyIndices.mPresentationIndex = mQueueFamilyIndices.mGraphicsIndex;
 			}
 		}
-		if (mRequiredQueueFlags & VK_QUEUE_COMPUTE_BIT)
+		if (tOptions.mRequiredQueueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
 			mQueueFamilyIndices.mComputeIndex = findQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT);
 
@@ -91,7 +84,7 @@ namespace vk
 				mQueueFamilyIndices.mComputeIndex = mQueueFamilyIndices.mGraphicsIndex;
 			}
 		}
-		if (mRequiredQueueFlags & VK_QUEUE_TRANSFER_BIT)
+		if (tOptions.mRequiredQueueFlags & VK_QUEUE_TRANSFER_BIT)
 		{
 			mQueueFamilyIndices.mTransferIndex = findQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT);
 
@@ -113,7 +106,7 @@ namespace vk
 				mQueueFamilyIndices.mTransferIndex = mQueueFamilyIndices.mGraphicsIndex;
 			}
 		}
-		if (mRequiredQueueFlags & VK_QUEUE_SPARSE_BINDING_BIT)
+		if (tOptions.mRequiredQueueFlags & VK_QUEUE_SPARSE_BINDING_BIT)
 		{
 			mQueueFamilyIndices.mSparseBindingIndex = findQueueFamilyIndex(VK_QUEUE_SPARSE_BINDING_BIT);
 
@@ -127,7 +120,7 @@ namespace vk
 		std::cout << "Number of VkDeviceQueueCreateInfo structures: " << deviceQueueCreateInfos.size() << std::endl;
 
 		// Automatically add the swapchain extension if needed.
-		if (mUseSwapchain)
+		if (tOptions.mUseSwapchain)
 		{
 			mRequiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		}

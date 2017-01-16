@@ -95,9 +95,7 @@ namespace vk
 		std::vector<VkQueueFamilyProperties> mPhysicalDeviceQueueFamilyProperties;
 		std::vector<VkExtensionProperties> mPhysicalDeviceExtensionProperties;
 
-		VkQueueFlags mRequiredQueueFlags;
 		std::vector<const char*> mRequiredDeviceExtensions;
-		bool mUseSwapchain;
 
 	};
 

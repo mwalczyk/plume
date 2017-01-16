@@ -28,12 +28,12 @@ namespace vk
 		};
 
 		//! Factory method for returning a new CommandPoolRef.
-		static CommandPoolRef create(uint32_t tQueueFamilyIndex, const DeviceRef &tDevice, const Options &tOptions = Options())
+		static CommandPoolRef create(const DeviceRef &tDevice, uint32_t tQueueFamilyIndex, const Options &tOptions = Options())
 		{
-			return std::make_shared<CommandPool>(tQueueFamilyIndex, tDevice, tOptions);
+			return std::make_shared<CommandPool>(tDevice, tQueueFamilyIndex, tOptions);
 		}
 
-		CommandPool(uint32_t tQueueFamilyIndex, const DeviceRef &tDevice, const Options &tOptions = Options());
+		CommandPool(const DeviceRef &tDevice, uint32_t tQueueFamilyIndex, const Options &tOptions = Options());
 		~CommandPool();
 
 		inline VkCommandPool getHandle() const { return mCommandPoolHandle; };
@@ -43,9 +43,6 @@ namespace vk
 		VkCommandPool mCommandPoolHandle;
 
 		DeviceRef mDevice;
-
-		uint32_t mQueueFamilyIndex;
-		VkCommandPoolCreateFlags mCommandPoolCreateFlags;
 
 	};
 

@@ -5,6 +5,7 @@
 #include <cassert>
 #include <iostream>
 #include <algorithm>
+#include <functional>
 
 #include "Platform.h"
 
@@ -42,6 +43,7 @@ namespace vk
 		inline const std::vector<VkExtensionProperties>& getInstanceExtensionProperties() const { return mInstanceExtensionProperties; }
 		inline const std::vector<VkLayerProperties>& getInstanceLayerProperties() const { return mInstanceLayerProperties; }
 		inline const std::vector<VkPhysicalDevice>& getPhysicalDevices() const { return mPhysicalDevices; }
+		VkPhysicalDevice pickPhysicalDevice(const std::function<bool(VkPhysicalDevice)> &tCandidacyFunc);
 
 	private:
 

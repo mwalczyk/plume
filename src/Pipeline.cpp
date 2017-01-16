@@ -35,6 +35,46 @@ namespace vk
 		return fileContents;
 	}
 
+	static uint32_t getSizeFromType(spirv_cross::SPIRType tBaseType, uint32_t tRows, uint32_t tColumns)
+	{
+		uint32_t size = 0;
+		switch (tBaseType.basetype)
+		{
+		case spirv_cross::SPIRType::Float:
+			size = tRows * tColumns * sizeof(float);
+			break;
+		case spirv_cross::SPIRType::Double:
+			break;
+		case spirv_cross::SPIRType::Int:
+			size = tRows * tColumns * sizeof(int);
+			break;
+		case spirv_cross::SPIRType::Int64:
+			size = tRows * tColumns * sizeof(uint64_t);
+			break;
+		case spirv_cross::SPIRType::UInt:
+			break;
+		case spirv_cross::SPIRType::UInt64:
+			break;
+		case spirv_cross::SPIRType::Boolean:
+			break;
+		case spirv_cross::SPIRType::Char:
+			break;
+		case spirv_cross::SPIRType::AtomicCounter:
+			break;
+		case spirv_cross::SPIRType::Sampler:
+			break;
+		case spirv_cross::SPIRType::SampledImage:
+			break;
+		case spirv_cross::SPIRType::Struct:
+			break;
+		default:
+			// Unknown type
+			break;
+		}
+
+		return size;
+	}
+
 	ShaderModule::ShaderModule(const DeviceRef &tDevice, const std::string &tFilePath) :
 		mDevice(tDevice)
 	{
@@ -80,7 +120,7 @@ namespace vk
 		{
 			PushConstantsBlock pushConstantsBlock;
 			pushConstantsBlock.layoutLocation = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
-			pushConstantsBlock.totalSize = compilerGlsl.get_declared_struct_size(compilerGlsl.get_type(resource.base_type_id));
+			pushConstantsBlock.totalSize = static_cast<uint32_t>(compilerGlsl.get_declared_struct_size(compilerGlsl.get_type(resource.base_type_id)));
 			pushConstantsBlock.name = resource.name;
 
 			std::vector<PushConstantsMember> pushConstantsMembers;
@@ -95,40 +135,7 @@ namespace vk
 				auto type = compilerGlsl.get_type(compilerGlsl.get_type(resource.base_type_id).member_types[range.index]);
 				auto rows = type.vecsize;
 				auto columns = type.columns;
-				uint32_t size = 0;
-				switch (type.basetype)
-				{
-				case spirv_cross::SPIRType::Float:
-					size = rows * columns * sizeof(float);
-					break;
-				case spirv_cross::SPIRType::Double:
-					break;
-				case spirv_cross::SPIRType::Int:
-					size = rows * columns * sizeof(int);
-					break;
-				case spirv_cross::SPIRType::Int64:
-					size = rows * columns * sizeof(uint64_t);
-					break;
-				case spirv_cross::SPIRType::UInt:
-					break;
-				case spirv_cross::SPIRType::UInt64:
-					break;
-				case spirv_cross::SPIRType::Boolean:
-					break;
-				case spirv_cross::SPIRType::Char:
-					break;
-				case spirv_cross::SPIRType::AtomicCounter:
-					break;
-				case spirv_cross::SPIRType::Sampler:
-					break;
-				case spirv_cross::SPIRType::SampledImage:
-					break;
-				case spirv_cross::SPIRType::Struct:
-					break;	
-				default:
-					// Unknown type
-					break;
-				}				
+				auto size = getSizeFromType(type, rows, columns);
 
 				auto offset = static_cast<uint32_t>(range.offset);
 				auto name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
@@ -143,20 +150,18 @@ namespace vk
 		for (const auto &resource : shaderResources.stage_inputs)
 		{
 			auto type = compilerGlsl.get_type(resource.type_id);
-			std::cout << "Input resource ID: " << resource.id << std::endl;
-			std::cout << "\tName: " << resource.name << std::endl;
-			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
-			std::cout << "\tVecsize: " << type.vecsize << std::endl;
+
+			StageInput stageInput;
+			stageInput.layoutLocation = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
+			stageInput.name = resource.name;
+			stageInput.size = getSizeFromType(type, type.vecsize, 1);
+
+			mStageInputs.emplace_back(stageInput);
 		}
 
 		// Stage outputs
 		for (const auto &resource : shaderResources.stage_outputs)
 		{
-			auto type = compilerGlsl.get_type(resource.type_id);
-			std::cout << "Output resource ID: " << resource.id << std::endl;
-			std::cout << "\tName: " << resource.name << std::endl;
-			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
-			std::cout << "\tVecsize: " << type.vecsize << std::endl;
 		}
 
 		// Sampled images
@@ -203,108 +208,84 @@ namespace vk
 
 	Pipeline::Options::Options()
 	{
+		mViewport = {};
+		mViewport.x = 0;
+		mViewport.y = 0;
+		mViewport.width = 640;
+		mViewport.height = 480;
+		mViewport.minDepth = 0.0f;
+		mViewport.maxDepth = 1.0f;
 
+		mScissor = {};
+		mScissor.extent = { 640, 480 };
+		mScissor.offset = { 0, 0 };
+
+		mPrimitiveRestart = VK_FALSE;
+		mPrimitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	}
 
 	Pipeline::Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions) :
 		mDevice(tDevice),
-		mRenderPass(tRenderPass),
-		mVertexShader(tOptions.mVertexShader),
-		mTessellationControlShader(tOptions.mTessellationControlShader),
-		mTessellationEvaluationShader(tOptions.mTessellationEvaluationShader),
-		mGeometryShader(tOptions.mGeometryShader),
-		mFragmentShader(tOptions.mFragmentShader)
+		mRenderPass(tRenderPass)
 	{
-		if (!mVertexShader || !mFragmentShader)
+		if (!tOptions.mVertexShader || !tOptions.mFragmentShader)
 		{
 			throw std::runtime_error("The vertex and fragment shader stages are not optional");
 		}
-
-		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
-		std::cout << "Maximum size of push constants: " << maxPushConstantsSize << std::endl;
 		
 		// Group the create info structures together.
 		std::vector<VkPipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
-		
-		if (mVertexShader)
+
+		if (tOptions.mVertexShader)
 		{
-			auto vertexShaderStageInfo = buildPipelineShaderStageCreateInfo(mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
+			auto vertexShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
 			pipelineShaderStageCreateInfos.push_back(vertexShaderStageInfo);
+			addPushConstantRangesToGlobalMap(tOptions.mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
 		}
-		if (mTessellationControlShader)
+		if (tOptions.mTessellationControlShader)
 		{
-			auto tessellationControlShaderStageInfo = buildPipelineShaderStageCreateInfo(mTessellationControlShader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+			auto tessellationControlShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mTessellationControlShader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 			pipelineShaderStageCreateInfos.push_back(tessellationControlShaderStageInfo);
+			addPushConstantRangesToGlobalMap(tOptions.mTessellationControlShader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 		}
-		if (mTessellationEvaluationShader)
+		if (tOptions.mTessellationEvaluationShader)
 		{
-			auto tessellationEvaluationShaderStageInfo = buildPipelineShaderStageCreateInfo(mTessellationEvaluationShader, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+			auto tessellationEvaluationShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mTessellationEvaluationShader, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 			pipelineShaderStageCreateInfos.push_back(tessellationEvaluationShaderStageInfo);
+			addPushConstantRangesToGlobalMap(tOptions.mTessellationEvaluationShader, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 		}
-		if (mGeometryShader)
+		if (tOptions.mGeometryShader)
 		{
-			auto geometryShaderStageInfo = buildPipelineShaderStageCreateInfo(mGeometryShader, VK_SHADER_STAGE_GEOMETRY_BIT);
+			auto geometryShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mGeometryShader, VK_SHADER_STAGE_GEOMETRY_BIT);
 			pipelineShaderStageCreateInfos.push_back(geometryShaderStageInfo);
+			addPushConstantRangesToGlobalMap(tOptions.mGeometryShader, VK_SHADER_STAGE_GEOMETRY_BIT);
 		}
-		if (mFragmentShader)
+		if (tOptions.mFragmentShader)
 		{
-			auto fragmentShaderStageInfo = buildPipelineShaderStageCreateInfo(mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
+			auto fragmentShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 			pipelineShaderStageCreateInfos.push_back(fragmentShaderStageInfo);
+			addPushConstantRangesToGlobalMap(tOptions.mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 		}
 		std::cout << "Creating pipeline with " << pipelineShaderStageCreateInfos.size() << " shader stages\n";
 
-		// Describe the vertex inputs
-		VkVertexInputBindingDescription bindingDescription = {};
-		bindingDescription.binding = 0;
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		bindingDescription.stride = sizeof(float) * 5;
-
-		VkVertexInputAttributeDescription attributeDescriptionPosition = {};
-		attributeDescriptionPosition.binding = 0;
-		attributeDescriptionPosition.format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptionPosition.location = 0;
-		attributeDescriptionPosition.offset = 0;
-
-		VkVertexInputAttributeDescription attributeDescriptionColor = {};
-		attributeDescriptionColor.binding = 0;
-		attributeDescriptionColor.format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptionColor.location = 1;
-		attributeDescriptionColor.offset = sizeof(float) * 2;
-
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
-
 		// Describe the format of the vertex data that will be passed to the vertex shader.
 		VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
-		vertexInputStateCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-		vertexInputStateCreateInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputStateCreateInfo.pVertexAttributeDescriptions = tOptions.mVertexInputAttributeDescriptions.data();
+		vertexInputStateCreateInfo.pVertexBindingDescriptions = tOptions.mVertexInputBindingDescriptions.data();
 		vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputStateCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-		vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
+		vertexInputStateCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(tOptions.mVertexInputAttributeDescriptions.size());
+		vertexInputStateCreateInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(tOptions.mVertexInputBindingDescriptions.size());
 
 		// Describe the type of geometry that will be drawn and if primitive restart should be enabled.
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {};
-		inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
+		inputAssemblyStateCreateInfo.primitiveRestartEnable = tOptions.mPrimitiveRestart;
 		inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-		// Set up a viewport.
-		VkViewport viewport = {};
-		viewport.x = 0;
-		viewport.y = 0;
-		viewport.width = 640;
-		viewport.height = 480;
-		viewport.minDepth = 0.0f;	
-		viewport.maxDepth = 1.0f;
-
-		// Set up a fullscreen scissor rectangle.
-		VkRect2D scissor = {};
-		scissor.extent = { 640, 480 };
-		scissor.offset = { 0, 0 };
+		inputAssemblyStateCreateInfo.topology = tOptions.mPrimitiveTopology;
 
 		// Combine the viewport and scissor settings into a viewport state structure.
 		VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {};
-		viewportStateCreateInfo.pScissors = &scissor;
-		viewportStateCreateInfo.pViewports = &viewport;
+		viewportStateCreateInfo.pScissors = &tOptions.mScissor;
+		viewportStateCreateInfo.pViewports = &tOptions.mViewport;
 		viewportStateCreateInfo.scissorCount = 1;
 		viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportStateCreateInfo.viewportCount = 1;
@@ -363,7 +344,6 @@ namespace vk
 
 		// Get all of the values in the push constant ranges map. These correspond to all of the VkPushConstantRange structures 
 		// found through the SPIR-V reflection process.
-		buildPushConstantRanges();
 		std::vector<VkPushConstantRange> pushConstantRanges;
 		std::transform(mPushConstantRangesMapping.begin(), mPushConstantRangesMapping.end(), std::back_inserter(pushConstantRanges), [](const auto& val) {return val.second; });
 
@@ -435,35 +415,18 @@ namespace vk
 		return pipelineShaderStageCreateInfo;
 	}
 
-	void Pipeline::buildPushConstantRanges()
-	{
-		if (mVertexShader)
-		{
-			addPushConstantRangesToGlobalMap(mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
-		}
-		if (mTessellationControlShader)
-		{
-			addPushConstantRangesToGlobalMap(mTessellationControlShader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-		}
-		if (mTessellationEvaluationShader)
-		{
-			addPushConstantRangesToGlobalMap(mTessellationEvaluationShader, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-		}
-		if (mGeometryShader)
-		{
-			addPushConstantRangesToGlobalMap(mGeometryShader, VK_SHADER_STAGE_GEOMETRY_BIT);
-		}
-		if (mFragmentShader)
-		{
-			addPushConstantRangesToGlobalMap(mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
-		}
-	}
-
 	void Pipeline::addPushConstantRangesToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits)
 	{
+		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
+
 		for (const auto &mapping : tShaderModule->getPushConstantsBlocksMapping())
 		{
 			// For now, we ignore information about the block.
+
+			if (mapping.first.totalSize > maxPushConstantsSize)
+			{
+				throw std::runtime_error("Push constants block exceeds the maximum size that is supported by the current physical device");
+			}
 
 			for (const auto &member : mapping.second)
 			{

@@ -22,8 +22,12 @@ namespace vk
 			Options();
 
 			Options& queueFamilyIndices(const std::vector<uint32_t> tQueueFamilyIndices) { mQueueFamilyIndices = tQueueFamilyIndices; return *this; }
+			Options& bufferUsageFlags(VkBufferUsageFlags tBufferUsageFlags) { mBufferUsageFlags = tBufferUsageFlags; return *this; }
+			Options& useStagingBuffer(bool tUseStagingBuffer) { mUseStagingBuffer = tUseStagingBuffer; return *this; }
 
 			std::vector<uint32_t> mQueueFamilyIndices;
+			VkBufferUsageFlags mBufferUsageFlags;
+			bool mUseStagingBuffer;
 		};
 
 		//! Factory method for returning a new BufferRef.
@@ -47,17 +51,17 @@ namespace vk
 
 	private:
 
+		uint32_t findMemoryTypeIndex(uint32_t tMemoryTypeBits, VkMemoryPropertyFlags tMemoryPropertyFlags);
+
 		//! Based on the memory requirements of this buffer, find the index of the memory heap that should be used to back this buffer.
-		void allocateMemory();
+		void allocateMemory(const VkMemoryRequirements &tMemoryRequirements);
 
 		VkBuffer mBufferHandle;
 		VkDeviceMemory mDeviceMemoryHandle;
-		VkMemoryRequirements mMemoryRequirements;
 
 		DeviceRef mDevice;
 
 		size_t mSize;
-		std::vector<uint32_t> mQueueFamilyIndices;
 
 	};
 

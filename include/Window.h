@@ -9,6 +9,8 @@
 #include "Instance.h"
 #include "Surface.h"
 #include "glfw3.h"
+#include "glm/glm/glm.hpp"
+#include "glm/glm/gtc/type_ptr.hpp"
 
 namespace vk
 {
@@ -71,6 +73,12 @@ namespace vk
 
 		inline int shouldWindowClose() const { return glfwWindowShouldClose(mWindowHandle); }
 		inline void pollEvents() const { glfwPollEvents(); }
+		inline glm::vec2 getMousePosition() const 
+		{ 
+			double x, y; 
+			glfwGetCursorPos(mWindowHandle, &x, &y); 
+			return { x, y }; 
+		}
 
 	private:
 

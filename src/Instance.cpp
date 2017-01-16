@@ -105,6 +105,19 @@ namespace vk
 		vkDestroyInstance(mInstanceHandle, nullptr);
 	}
 
+	VkPhysicalDevice Instance::pickPhysicalDevice(const std::function<bool(VkPhysicalDevice)> &tCandidacyFunc)
+	{
+		for (const auto &physicalDevice : mPhysicalDevices)
+		{
+			if (tCandidacyFunc(physicalDevice))
+			{
+				return physicalDevice;
+			}
+		}
+		
+		return VK_NULL_HANDLE;
+	}
+
 	bool Instance::checkInstanceLayerSupport()
 	{
 		for (const auto& requiredLayerName: mRequiredLayers)
