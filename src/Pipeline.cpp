@@ -142,17 +142,21 @@ namespace vk
 		// Stage inputs
 		for (const auto &resource : shaderResources.stage_inputs)
 		{
+			auto type = compilerGlsl.get_type(resource.type_id);
 			std::cout << "Input resource ID: " << resource.id << std::endl;
 			std::cout << "\tName: " << resource.name << std::endl;
 			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
+			std::cout << "\tVecsize: " << type.vecsize << std::endl;
 		}
 
 		// Stage outputs
 		for (const auto &resource : shaderResources.stage_outputs)
 		{
+			auto type = compilerGlsl.get_type(resource.type_id);
 			std::cout << "Output resource ID: " << resource.id << std::endl;
 			std::cout << "\tName: " << resource.name << std::endl;
 			std::cout << "\tLayout: " << compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation) << std::endl;
+			std::cout << "\tVecsize: " << type.vecsize << std::endl;
 		}
 
 		// Sampled images
@@ -247,6 +251,7 @@ namespace vk
 			auto fragmentShaderStageInfo = buildPipelineShaderStageCreateInfo(mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 			pipelineShaderStageCreateInfos.push_back(fragmentShaderStageInfo);
 		}
+		std::cout << "Creating pipeline with " << pipelineShaderStageCreateInfos.size() << " shader stages\n";
 
 		// Describe the vertex inputs
 		VkVertexInputBindingDescription bindingDescription = {};
@@ -261,10 +266,10 @@ namespace vk
 		attributeDescriptionPosition.offset = 0;
 
 		VkVertexInputAttributeDescription attributeDescriptionColor = {};
-		attributeDescriptionPosition.binding = 0;
-		attributeDescriptionPosition.format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptionPosition.location = 1;
-		attributeDescriptionPosition.offset = sizeof(float) * 2;
+		attributeDescriptionColor.binding = 0;
+		attributeDescriptionColor.format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptionColor.location = 1;
+		attributeDescriptionColor.offset = sizeof(float) * 2;
 
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 

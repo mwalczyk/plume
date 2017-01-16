@@ -51,7 +51,12 @@ int main()
 	auto renderPass = vk::RenderPass::create(device);
 
 	/// vk::Buffer
-	auto vertexBuffer = vk::Buffer::create(device);
+	static const std::vector<float> vertices = {
+		0.0f, -0.5f, 1.0f, 1.0f, 1.0f,
+		0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+		-0.5f, 0.5f, 0.0f, 0.0f, 1.0f
+	};
+	auto vertexBuffer = vk::Buffer::create(device, vertices);
 	std::vector<vk::BufferRef> vertexBuffers = { vertexBuffer };
 
 	/// vk::Pipeline
@@ -104,7 +109,7 @@ int main()
 		commandBuffers[imageIndex]->begin();
 		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex]);
 		commandBuffers[imageIndex]->bindPipeline(pipeline);
-	//	commandBuffers[imageIndex]->bindVertexBuffers(vertexBuffers);
+		commandBuffers[imageIndex]->bindVertexBuffers(vertexBuffers);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "time", &elapsed);
 		commandBuffers[imageIndex]->draw(3, 1, 0, 0);
 		commandBuffers[imageIndex]->endRenderPass();

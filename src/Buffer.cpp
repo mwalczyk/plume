@@ -3,20 +3,28 @@
 namespace vk
 {
 	
-	static const float vertices[] = {
-	  0.0f, -0.5f, 1.0f, 0.0f, 0.0f,
-	  0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-	 -0.5f, 0.5f, 0.0f, 0.0f, 1.0f
-	};
-
-	Buffer::Buffer(const DeviceRef &tDevice, const Options &tOptions) :
-		mDevice(tDevice)
+	Buffer::Options::Options()
 	{
+
+	}
+
+	Buffer::Buffer(const DeviceRef &tDevice, size_t tSize, const void *tData, const Options &tOptions) :
+		mDevice(tDevice),
+		mSize(tSize),
+		mQueueFamilyIndices(tOptions.mQueueFamilyIndices)
+	{
+		VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		if (mQueueFamilyIndices.size())
+		{
+			std::cout << "This buffer is used by multiple queue families: setting its share mode to VK_SHARING_MODE_CONCURRENT\n";
+			sharingMode = VK_SHARING_MODE_CONCURRENT;
+		}
+
 		VkBufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.pQueueFamilyIndices = nullptr; // Ignored if the sharing mode is exclusive.
-		bufferCreateInfo.queueFamilyIndexCount = 0;
-		bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		bufferCreateInfo.size = sizeof(vertices);
+		bufferCreateInfo.pQueueFamilyIndices = mQueueFamilyIndices.data();	// Ignored if the sharing mode is exclusive.
+		bufferCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(mQueueFamilyIndices.size());
+		bufferCreateInfo.sharingMode = sharingMode;
+		bufferCreateInfo.size = mSize;
 		bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 
@@ -27,28 +35,35 @@ namespace vk
 
 		// Store the memory requirements for this buffer object.
 		vkGetBufferMemoryRequirements(mDevice->getHandle(), mBufferHandle, &mMemoryRequirements);
-		std::cout << "Buffer memory requirements:\n";
-		std::cout << "\tRequired alignment: " << mMemoryRequirements.alignment << "\n";
-		std::cout << "\tRequired size: " << mMemoryRequirements.size << "\n";
 
 		allocateMemory();
 
+		// Fill the buffer with the data that was passed into the constructor.
+		void* mappedPtr = map(0, mSize);
+		memcpy(mappedPtr, tData, static_cast<size_t>(mSize));
+		unmap();
+
 		// Associate the device memory with this buffer object.
 		vkBindBufferMemory(mDevice->getHandle(), mBufferHandle, mDeviceMemoryHandle, 0);
-
-		// Fill the buffer.
-		void* data;
-		vkMapMemory(mDevice->getHandle(), mDeviceMemoryHandle, 0, bufferCreateInfo.size, 0, &data);
-		memcpy(data, vertices, static_cast<size_t>(bufferCreateInfo.size));
-		vkUnmapMemory(mDevice->getHandle(), mDeviceMemoryHandle);
-
-		std::cout << "Buffer size: " << sizeof(vertices) << std::endl;
 	}
 
 	Buffer::~Buffer()
 	{
 		vkDestroyBuffer(mDevice->getHandle(), mBufferHandle, nullptr);
 		vkFreeMemory(mDevice->getHandle(), mDeviceMemoryHandle, nullptr);
+	}
+
+	void* Buffer::map(size_t tOffset, size_t tSize)
+	{
+		assert(tOffset < mSize && tSize <= mSize);
+		void* mappedPtr;
+		vkMapMemory(mDevice->getHandle(), mDeviceMemoryHandle, tOffset, tSize, 0, &mappedPtr); // Consider using VK_WHOLE_SIZE here.
+		return mappedPtr;
+	}
+
+	void Buffer::unmap()
+	{
+		vkUnmapMemory(mDevice->getHandle(), mDeviceMemoryHandle);
 	}
 
 	void Buffer::allocateMemory()

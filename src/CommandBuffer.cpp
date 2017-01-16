@@ -68,11 +68,6 @@ namespace vk
 		std::vector<VkBuffer> bufferHandles(tBuffers.size());
 		std::transform(tBuffers.begin(), tBuffers.end(), bufferHandles.begin(), [](const BufferRef &tBuffer) { return tBuffer->getHandle(); } );
 		VkDeviceSize offsets[] = { 0 };
-		
-		for (const auto& handle : bufferHandles)
-		{
-			std::cout << "Buffer handle: " << handle << std::endl;
-		}
 
 		vkCmdBindVertexBuffers(mCommandBufferHandle, 0, 1, bufferHandles.data(), offsets);
 	}

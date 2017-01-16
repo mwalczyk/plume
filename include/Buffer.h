@@ -17,47 +17,33 @@ namespace vk
 
 	public:
 
-		struct VertexAttribute
-		{
-			uint32_t mBinding;
-			uint32_t mLocation;
-			VkFormat mFormat;
-		};
-
-		struct VertexData
-		{
-			VertexData(uint32_t tBinding, VkVertexInputRate tVertexInputRate, uint32_t tStride) :
-				mBinding(tBinding),
-				mVertexInputRate(tVertexInputRate),
-				mStride(tStride)
-			{
-			}
-
-			uint32_t mBinding;
-			VkVertexInputRate mVertexInputRate;
-			uint32_t mStride;
-			std::pair<uint32_t, VertexAttribute> mVertexAttributes;
-
-			VkVertexInputBindingDescription mVertexInputBindingDescription;
-			std::vector<VkVertexInputAttributeDescription> mVertexInputAttributeDescriptions;
-		};
-
 		struct Options
 		{
-		
+			Options();
+
+			Options& queueFamilyIndices(const std::vector<uint32_t> tQueueFamilyIndices) { mQueueFamilyIndices = tQueueFamilyIndices; return *this; }
+
+			std::vector<uint32_t> mQueueFamilyIndices;
 		};
 
 		//! Factory method for returning a new BufferRef.
-		static BufferRef create(const DeviceRef &tDevice, const Options &tOptions = Options())
+		template<class T>
+		static BufferRef create(const DeviceRef &tDevice, const std::vector<T> &tData, const Options &tOptions = Options())
 		{
-			return std::make_shared<Buffer>(tDevice, tOptions);
+			return std::make_shared<Buffer>(tDevice, sizeof(T) * tData.size(), tData.data());
 		}
 
-		Buffer(const DeviceRef &tDevice, const Options &tOptions = Options());
+		Buffer(const DeviceRef &tDevice, size_t tSize, const void *tData, const Options &tOptions = Options());
 		~Buffer();
 
 		inline VkBuffer getHandle() const { return mBufferHandle; }
 		inline VkDeviceMemory getDeviceMemoryHandle() const { return mDeviceMemoryHandle; }
+
+		//! Retrieve the size of the memory region that is attached to this buffer.
+		inline size_t getSize() const { return mSize; }
+
+		void* map(size_t tOffset, size_t tSize);
+		void unmap();
 
 	private:
 
@@ -69,6 +55,9 @@ namespace vk
 		VkMemoryRequirements mMemoryRequirements;
 
 		DeviceRef mDevice;
+
+		size_t mSize;
+		std::vector<uint32_t> mQueueFamilyIndices;
 
 	};
 

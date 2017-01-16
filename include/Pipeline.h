@@ -50,6 +50,15 @@ namespace vk
 			std::string name;
 		};
 
+		//! A struct representing an input to a shader stage. For example:
+		//! layout (location = 0) in vec3 inPosition;
+		struct StageInput
+		{
+			uint32_t layoutLocation;
+			uint32_t size;
+			std::string name;
+		};
+
 		//! A functor class that is used for constructing a mapping between PushConstantsBlock structures and PushConstantsMember structures.
 		struct PushConstantsBlockOrdering
 		{
