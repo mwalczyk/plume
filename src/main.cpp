@@ -57,11 +57,18 @@ int main()
 
 	/// vk::Buffer
 	static const std::vector<float> vertices = {
-		0.0f, -0.5f, 1.0f, 1.0f, 1.0f,
-		0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-		-0.5f, 0.5f, 0.0f, 0.0f, 1.0f
+		-0.5f, -0.5f,	1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f,	0.0f, 1.0f, 0.0f,
+		 0.5f, 0.5f,	0.0f, 0.0f, 1.0f,
+		-0.5f, 0.5f,	1.0f, 1.0f, 1.0f
 	};
-	auto vertexBuffer = vk::Buffer::create(device, vertices);
+
+	static const std::vector<uint16_t> indices = {
+		0, 1, 2, 2, 3, 0
+	};
+
+	auto vertexBuffer = vk::Buffer::create(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertices);
+	auto indexBuffer = vk::Buffer::create(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices);
 	std::vector<vk::BufferRef> vertexBuffers = { vertexBuffer };
 
 	/// vk::Pipeline
@@ -85,8 +92,8 @@ int main()
 	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription };
 	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 
-	auto vertexShader = vk::ShaderModule::create(device, "assets/shaders/vert.spv");
-	auto fragmentShader = vk::ShaderModule::create(device, "assets/shaders/frag.spv");
+	auto vertexShader = vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
+	auto fragmentShader = vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
 	auto pipelineOptions = vk::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
 		.vertexInputAttributeDescriptions(vertexInputAttributeDescriptions)
@@ -138,9 +145,10 @@ int main()
 		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex]);
 		commandBuffers[imageIndex]->bindPipeline(pipeline);
 		commandBuffers[imageIndex]->bindVertexBuffers(vertexBuffers);
+		commandBuffers[imageIndex]->bindIndexBuffer(indexBuffer);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "time", &elapsed);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "mouse", &mousePosition);
-		commandBuffers[imageIndex]->draw(3, 1, 0, 0);
+		commandBuffers[imageIndex]->drawIndexed(indices.size(), 1, 0, 0, 0);
 		commandBuffers[imageIndex]->endRenderPass();
 		commandBuffers[imageIndex]->end();
 		

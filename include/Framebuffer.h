@@ -44,6 +44,7 @@ namespace vk
 
 		//! Retrieve the list of attachments associated with this framebuffer.
 		inline const std::vector<VkImageView>& getImageViews() const { return mImageViews; }
+		bool isCompatible(const RenderPassRef &tRenderPass);
 
 	private:
 

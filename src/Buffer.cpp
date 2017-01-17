@@ -5,12 +5,12 @@ namespace vk
 	
 	Buffer::Options::Options()
 	{
-		mBufferUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 		mUseStagingBuffer = false;
 	}
 
-	Buffer::Buffer(const DeviceRef &tDevice, size_t tSize, const void *tData, const Options &tOptions) :
+	Buffer::Buffer(const DeviceRef &tDevice, VkBufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions) :
 		mDevice(tDevice),
+		mBufferUsageFlags(tBufferUsageFlags),
 		mSize(tSize)
 	{
 		VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -26,7 +26,7 @@ namespace vk
 		bufferCreateInfo.sharingMode = sharingMode;
 		bufferCreateInfo.size = mSize;
 		bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferCreateInfo.usage = tOptions.mBufferUsageFlags;
+		bufferCreateInfo.usage = mBufferUsageFlags;
 
 		if (tOptions.mUseStagingBuffer)
 		{

@@ -22,26 +22,25 @@ namespace vk
 			Options();
 
 			Options& queueFamilyIndices(const std::vector<uint32_t> tQueueFamilyIndices) { mQueueFamilyIndices = tQueueFamilyIndices; return *this; }
-			Options& bufferUsageFlags(VkBufferUsageFlags tBufferUsageFlags) { mBufferUsageFlags = tBufferUsageFlags; return *this; }
 			Options& useStagingBuffer(bool tUseStagingBuffer) { mUseStagingBuffer = tUseStagingBuffer; return *this; }
 
 			std::vector<uint32_t> mQueueFamilyIndices;
-			VkBufferUsageFlags mBufferUsageFlags;
 			bool mUseStagingBuffer;
 		};
 
 		//! Factory method for returning a new BufferRef.
 		template<class T>
-		static BufferRef create(const DeviceRef &tDevice, const std::vector<T> &tData, const Options &tOptions = Options())
+		static BufferRef create(const DeviceRef &tDevice, VkBufferUsageFlags tBufferUsageFlags, const std::vector<T> &tData, const Options &tOptions = Options())
 		{
-			return std::make_shared<Buffer>(tDevice, sizeof(T) * tData.size(), tData.data());
+			return std::make_shared<Buffer>(tDevice, tBufferUsageFlags, sizeof(T) * tData.size(), tData.data());
 		}
 
-		Buffer(const DeviceRef &tDevice, size_t tSize, const void *tData, const Options &tOptions = Options());
+		Buffer(const DeviceRef &tDevice, VkBufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options());
 		~Buffer();
 
 		inline VkBuffer getHandle() const { return mBufferHandle; }
 		inline VkDeviceMemory getDeviceMemoryHandle() const { return mDeviceMemoryHandle; }
+		inline VkBufferUsageFlags getBufferUsageFlags() const { return mBufferUsageFlags; }
 
 		//! Retrieve the size of the memory region that is attached to this buffer.
 		inline size_t getSize() const { return mSize; }
@@ -61,6 +60,7 @@ namespace vk
 
 		DeviceRef mDevice;
 
+		VkBufferUsageFlags mBufferUsageFlags;
 		size_t mSize;
 
 	};

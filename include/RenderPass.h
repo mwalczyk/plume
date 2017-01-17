@@ -23,26 +23,38 @@ namespace vk
 
 	public:
 
-		struct AttachmentInfo
+		class Options
 		{
-			//! An attachment description describes the properties of an attachment including its format, sample count, and
-			//! how its contents ae treated at the beginning and end of each render pass instance.
-			VkAttachmentDescription mAttachmentDescription;
 
-			//! An attachment reference simply stores an index and a reference to an attachment description. It is used for
-			//! constructing a subpass description.
-			VkAttachmentReference mAttachmentReference;
-		};
+		public:
 
-		struct Options
-		{
 			Options();
 
+			//! An attachment description describes the properties of an attachment including its format, sample count, and
+			//! how its contents ae treated at the beginning and end of each render pass instance.
 			Options& attachmentDescriptions(const std::vector<VkAttachmentDescription> &tAttachmentDescriptions) { mAttachmentDescriptions = tAttachmentDescriptions; return *this; }
+			
+			//! An attachment reference simply stores an index and a reference to an attachment description. It is used for
+			//! constructing a subpass description.
+			Options& attachmentReferences(const std::vector<VkAttachmentReference> &tAttachmentReferences) { mAttachmentReferences = tAttachmentReferences; return *this; }
+			
+			//! A subpass description describes the subset of attachments that is involved in the execution of each subpass.
+			//! Each subpass can read from some attachments as input attachments, write to some as color attachments or 
+			//! depth / stencil attachments, and perform multisample resolve operations to resolve attachments.
+			Options& subpassDescriptions(const std::vector<VkSubpassDescription> &tSubpassDescriptions) { mSubpassDescriptions = tSubpassDescriptions; return *this; }
+
+			//! A subpass dependency describes the execution and memory dependencies between subpasses.
 			Options& subpassDependencies(const std::vector<VkSubpassDependency> &tSubpassDependencies) { mSubpassDependencies = tSubpassDependencies; return *this; }
 
+		private:
+
 			std::vector<VkAttachmentDescription> mAttachmentDescriptions;
+			std::vector<VkAttachmentReference> mAttachmentReferences;
+			std::vector<VkSubpassDescription> mSubpassDescriptions;
 			std::vector<VkSubpassDependency> mSubpassDependencies;
+
+			friend class RenderPass;
+
 		};
 
 		//! Factory method for returning a new RenderPassRef.
@@ -51,8 +63,10 @@ namespace vk
 			return std::make_shared<RenderPass>(tDevice, tOptions);
 		}
 
-		static AttachmentInfo createColorAttachmentDescription(const VkFormat &tFormat, uint32_t tAttachment);
-		static AttachmentInfo createDepthStencilAttachmentDescription(const VkFormat &tFormat, uint32_t tAttachment);
+		static std::pair<VkAttachmentDescription, VkAttachmentReference> createColorAttachment(const VkFormat &tFormat, uint32_t tAttachment);
+		static std::pair<VkAttachmentDescription, VkAttachmentReference> createDepthStencilAttachment(const VkFormat &tFormat, uint32_t tAttachment);
+		static VkSubpassDescription createSubpassDescription(const std::vector<VkAttachmentReference> &tAttachmentReferences, VkPipelineBindPoint tPipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
+		static VkSubpassDependency createDefaultSubpassDependency();
 
 		RenderPass(const DeviceRef &tDevice, const Options &tOptions = Options());
 		~RenderPass();
@@ -66,6 +80,8 @@ namespace vk
 		DeviceRef mDevice;
 
 		std::vector<VkAttachmentDescription> mAttachmentDescriptions;
+		std::vector<VkAttachmentReference> mAttachmentReferences;
+		std::vector<VkSubpassDescription> mSubpassDescriptions;
 		std::vector<VkSubpassDependency> mSubpassDependencies;
 
 	};

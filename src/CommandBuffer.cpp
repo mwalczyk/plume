@@ -72,6 +72,11 @@ namespace vk
 		vkCmdBindVertexBuffers(mCommandBufferHandle, 0, 1, bufferHandles.data(), offsets);
 	}
 
+	void CommandBuffer::bindIndexBuffer(const BufferRef &tBuffer)
+	{
+		vkCmdBindIndexBuffer(mCommandBufferHandle, tBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT16);
+	}
+
 	void CommandBuffer::updatePushConstantRanges(const PipelineRef &tPipeline, VkShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData)
 	{
 		vkCmdPushConstants(mCommandBufferHandle, tPipeline->getPipelineLayoutHandle(), tStageFlags, tOffset, tSize, tData);
@@ -86,6 +91,11 @@ namespace vk
 	void CommandBuffer::draw(uint32_t tVertexCount, uint32_t tInstanceCount, uint32_t tFirstVertex, uint32_t tFirstInstance)
 	{
 		vkCmdDraw(mCommandBufferHandle, tVertexCount, tInstanceCount, tFirstVertex, tFirstInstance);
+	}
+
+	void CommandBuffer::drawIndexed(uint32_t tIndexCount, uint32_t tInstanceCount, uint32_t tFirstIndex, uint32_t tVertexOffset, uint32_t tFirstInstance)
+	{
+		vkCmdDrawIndexed(mCommandBufferHandle, tIndexCount, tInstanceCount, tFirstIndex, tVertexOffset, tFirstInstance);
 	}
 
 	void CommandBuffer::endRenderPass()

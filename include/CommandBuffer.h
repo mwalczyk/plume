@@ -46,11 +46,13 @@ namespace vk
 		void beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer);
 		void bindPipeline(const PipelineRef &tPipeline);
 		void bindVertexBuffers(const std::vector<BufferRef> &tBuffers);
+		void bindIndexBuffer(const BufferRef &tBuffer);
 		void updatePushConstantRanges(const PipelineRef &tPipeline, VkShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData);
 		void updatePushConstantRanges(const PipelineRef &tPipeline, const std::string &tMemberName, const void* tData);
 		void draw(uint32_t tVertexCount, uint32_t tInstanceCount, uint32_t tFirstVertex, uint32_t tFirstInstance);
+		void drawIndexed(uint32_t tIndexCount, uint32_t tInstanceCount, uint32_t tFirstIndex, uint32_t tVertexOffset, uint32_t tFirstInstance);
 		void endRenderPass();
-
+		
 		//! Stop recording into the command buffer.
 		void end();
 
