@@ -92,8 +92,8 @@ int main()
 	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription };
 	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 
-	auto vertexShader = vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
-	auto fragmentShader = vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
+	auto vertexShader = vk::ShaderModule::create(device, "assets/shaders/vert.spv");
+	auto fragmentShader = vk::ShaderModule::create(device, "assets/shaders/frag.spv");
 	auto pipelineOptions = vk::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
 		.vertexInputAttributeDescriptions(vertexInputAttributeDescriptions)
@@ -103,6 +103,8 @@ int main()
 		.attachShaderStage(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 	auto pipeline = vk::Pipeline::create(device, renderPass, pipelineOptions);
 	std::cout << pipeline << std::endl;
+
+	VkDescriptorPool descriptorPool = pipeline->createCompatibleDescriptorPool(0);
 
 	/// vk::Framebuffer
 	auto swapchainImageViews = swapchain->getSwapchainImageViews();

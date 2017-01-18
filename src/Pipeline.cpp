@@ -2,197 +2,20 @@
 
 namespace vk
 {
-	static std::string spectraUniformNames[] =
+	static const std::string spectraUniformNames[] =
 	{
-		"u_time",
-		"u_resolution",
-		"u_mouse"
+		"spTime",
+		"spResolution",
+		"spMouse"
 	};
 
-	static std::vector<uint8_t> readFile(const std::string &tFileName)
+	static const std::string spectraInputNames[] =
 	{
-		// Start reading at the end of the file to determine file size.
-		std::ifstream file(tFileName, std::ios::ate | std::ios::binary);
-		
-		if (!file.is_open())
-		{
-			throw std::runtime_error("Failed to open file " + tFileName);
-		}
-
-		size_t fileSize = static_cast<size_t>(file.tellg());
-		std::vector<uint8_t> fileContents(fileSize);
-
-		// Go back to the beginning of the file.
-		file.seekg(0);
-
-		// Read and close the file.
-		auto data = reinterpret_cast<char*>(fileContents.data());
-		file.read(data, fileSize);
-		file.close();
-
-		return fileContents;
-	}
-
-	static uint32_t getSizeFromType(spirv_cross::SPIRType tBaseType, uint32_t tRows, uint32_t tColumns)
-	{
-		uint32_t size = 0;
-		switch (tBaseType.basetype)
-		{
-		case spirv_cross::SPIRType::Float:
-			size = tRows * tColumns * sizeof(float);
-			break;
-		case spirv_cross::SPIRType::Double:
-			break;
-		case spirv_cross::SPIRType::Int:
-			size = tRows * tColumns * sizeof(int);
-			break;
-		case spirv_cross::SPIRType::Int64:
-			size = tRows * tColumns * sizeof(uint64_t);
-			break;
-		case spirv_cross::SPIRType::UInt:
-			break;
-		case spirv_cross::SPIRType::UInt64:
-			break;
-		case spirv_cross::SPIRType::Boolean:
-			break;
-		case spirv_cross::SPIRType::Char:
-			break;
-		case spirv_cross::SPIRType::AtomicCounter:
-			break;
-		case spirv_cross::SPIRType::Sampler:
-			break;
-		case spirv_cross::SPIRType::SampledImage:
-			break;
-		case spirv_cross::SPIRType::Struct:
-			break;
-		default:
-			// Unknown type
-			break;
-		}
-
-		return size;
-	}
-
-	ShaderModule::ShaderModule(const DeviceRef &tDevice, const std::string &tFilePath) :
-		mDevice(tDevice)
-	{
-		auto shaderSrc = readFile(tFilePath);
-		if (shaderSrc.size() % 4)
-		{
-			throw std::runtime_error("Shader source code is an invalid size");
-		}
-
-		// Store the SPIR-V code for reflection.
-		auto pCode = reinterpret_cast<const uint32_t*>(shaderSrc.data());
-		mShaderCode = std::vector<uint32_t>(pCode, pCode + shaderSrc.size() / sizeof(uint32_t));
-
-		// Create the actual shader module.
-		VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
-		shaderModuleCreateInfo.codeSize = shaderSrc.size();
-		shaderModuleCreateInfo.pCode = pCode;
-		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-
-		auto result = vkCreateShaderModule(mDevice->getHandle(), &shaderModuleCreateInfo, nullptr, &mShaderModuleHandle);
-		assert(result == VK_SUCCESS);
-
-		performReflection();
-	}
-
-	ShaderModule::~ShaderModule()
-	{
-		vkDestroyShaderModule(mDevice->getHandle(), mShaderModuleHandle, nullptr);
-	}
-
-	void ShaderModule::performReflection()
-	{
-		// Parse the shader resources.
-		spirv_cross::CompilerGLSL compilerGlsl = spirv_cross::CompilerGLSL(mShaderCode);
-		spirv_cross::ShaderResources shaderResources = compilerGlsl.get_shader_resources();
-
-		mEntryPoints = compilerGlsl.get_entry_points();
-
-		// Get all of the push constants (currently, Vulkan only supports one block).
-		for (const auto &resource : shaderResources.push_constant_buffers)
-		{
-			auto ranges = compilerGlsl.get_active_buffer_ranges(resource.id);
-			for (auto &range : ranges)
-			{
-				PushConstant pushConstant;
-				pushConstant.index = range.index;
-				pushConstant.name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
-				pushConstant.offset = range.offset;
-				pushConstant.size = range.range;
-
-				mPushConstants.emplace_back(pushConstant);
-			}
-		}
-
-		// Stage inputs
-		for (const auto &resource : shaderResources.stage_inputs)
-		{
-			auto type = compilerGlsl.get_type(resource.type_id);
-
-			StageInput stageInput;
-			stageInput.layoutLocation = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
-			stageInput.name = resource.name;
-			stageInput.size = getSizeFromType(type, type.vecsize, 1);
-
-			mStageInputs.emplace_back(stageInput);
-		}
-
-		// Stage outputs
-		for (const auto &resource : shaderResources.stage_outputs)
-		{
-		}
-
-		// Sampled images
-		for (const auto &resource : shaderResources.sampled_images)
-		{
-		}
-		
-		// Seperate samplers
-		for (const auto &resource : shaderResources.separate_samplers)
-		{
-		}
-
-		// Separate images
-		for (const auto &resource : shaderResources.separate_images)
-		{
-		}
-
-		// Atomic counters
-		for (const auto &resource : shaderResources.atomic_counters)
-		{
-		}
-
-		// Subpass inputs
-		for (const auto &resource : shaderResources.subpass_inputs)
-		{
-		}
-
-		// Storage buffers (SSBOs)
-		for (const auto &resource : shaderResources.storage_buffers)
-		{
-		}
-
-		// Storage images
-		for (const auto &resource : shaderResources.storage_images)
-		{
-		}
-
-		// Uniform buffers (UBOs)
-		for (const auto &resource : shaderResources.uniform_buffers)
-		{
-			Descriptor descriptor;
-			descriptor.layoutSet = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
-			descriptor.layoutBinding = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationBinding);
-			descriptor.descriptorCount = 1;
-			descriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptor.name = resource.name;
-			
-			mDescriptors.push_back(descriptor);
-		}
-	}
+		"spPosition",
+		"spColor",
+		"spNormal",
+		"spTexcoord"
+	};
 
 	static std::string descriptorTypeAsString(VkDescriptorType tDescriptorType)
 	{
@@ -254,6 +77,7 @@ namespace vk
 
 	Pipeline::Options::Options()
 	{
+		// Set up the default viewport.
 		mViewport = {};
 		mViewport.x = 0;
 		mViewport.y = 0;
@@ -262,10 +86,12 @@ namespace vk
 		mViewport.minDepth = 0.0f;
 		mViewport.maxDepth = 1.0f;
 
+		// Set up the default scissor region.
 		mScissor = {};
-		mScissor.extent = { 640, 480 };
+		mScissor.extent = { static_cast<uint32_t>(mViewport.width), static_cast<uint32_t>(mViewport.height) };
 		mScissor.offset = { 0, 0 };
 
+		// Set up the default input assembly.
 		mPrimitiveRestart = VK_FALSE;
 		mPrimitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	}
@@ -290,7 +116,7 @@ namespace vk
 		}
 		if (!foundVertexShader|| !foundFragmentShader)
 		{
-			throw std::runtime_error("The vertex and fragment shader stages are not optional");
+			throw std::runtime_error("At least one vertex and one fragment shader stage are required to build a graphics pipeline");
 		}
 
 		// Describe the format of the vertex data that will be passed to the vertex shader.
@@ -396,8 +222,6 @@ namespace vk
 		auto result = vkCreatePipelineLayout(mDevice->getHandle(), &pipelineLayoutCreateInfo, nullptr, &mPipelineLayoutHandle);
 		assert(result == VK_SUCCESS);
 
-		std::cout << "Successfully created pipeline layout\n";
-
 		// Aggregate all of the structures above to create a graphics pipeline.
 		VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 		graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;	
@@ -420,8 +244,6 @@ namespace vk
 
 		result = vkCreateGraphicsPipelines(mDevice->getHandle(), VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &mPipelineHandle);
 		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully created pipeline\n";
 	}
 
 	Pipeline::~Pipeline()
@@ -439,6 +261,40 @@ namespace vk
 		}
 
 		return it->second;
+	}
+
+	VkDescriptorPool Pipeline::createCompatibleDescriptorPool(uint32_t tSet, uint32_t tMaxSets)
+	{
+		// First, make sure that a descriptor set with this index has been recorded.
+		if (mDescriptorsMapping.find(tSet) == mDescriptorsMapping.end())
+		{
+			return VK_NULL_HANDLE;
+		}
+
+		// Create a descriptor pool size structure for each of the descriptors in this set.
+		std::vector<VkDescriptorPoolSize> descriptorPoolSizes;
+		for (const auto &descriptorSetLayoutBinding : mDescriptorsMapping[tSet])
+		{
+			VkDescriptorPoolSize descriptorPoolSize = {};
+			descriptorPoolSize.descriptorCount = descriptorSetLayoutBinding.descriptorCount;
+			descriptorPoolSize.type = descriptorSetLayoutBinding.descriptorType;
+
+			descriptorPoolSizes.push_back(descriptorPoolSize);
+		}
+
+		// Finally, create the descriptor pool from the list of descriptor pool size structures above.
+		VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
+		descriptorPoolCreateInfo.maxSets = tMaxSets;
+		descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
+		descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
+		descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+
+		VkDescriptorPool descriptorPoolHandle;
+
+		auto result = vkCreateDescriptorPool(mDevice->getHandle(), &descriptorPoolCreateInfo, nullptr, &descriptorPoolHandle);
+		assert(result == VK_SUCCESS);
+
+		return descriptorPoolHandle;
 	}
 
 	VkPipelineShaderStageCreateInfo Pipeline::buildPipelineShaderStageCreateInfo(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits)

@@ -205,6 +205,7 @@
     <ClCompile Include="..\src\Pipeline.cpp" />
     <ClCompile Include="..\src\RenderPass.cpp" />
     <ClCompile Include="..\src\Semaphore.cpp" />
+    <ClCompile Include="..\src\ShaderModule.cpp" />
     <ClCompile Include="..\src\Surface.cpp" />
     <ClCompile Include="..\src\Swapchain.cpp" />
     <ClCompile Include="..\src\Window.cpp" />
@@ -220,6 +221,7 @@
     <ClInclude Include="..\include\Platform.h" />
     <ClInclude Include="..\include\RenderPass.h" />
     <ClInclude Include="..\include\Semaphore.h" />
+    <ClInclude Include="..\include\ShaderModule.h" />
     <ClInclude Include="..\include\spirv-cross\GLSL.std.450.h" />
     <ClInclude Include="..\include\spirv-cross\spirv.hpp" />
     <ClInclude Include="..\include\spirv-cross\spirv_cfg.hpp" />

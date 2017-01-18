@@ -20,6 +20,8 @@
 - [ ] Fix `glm` include paths
 - [ ] Finish the `bindVertexBuffers` method inside of the command buffer class
 - [ ] Figure out how to implement staging buffers
+- [ ] Remove hardcoded `VK_SHADER_STAGE_ALL` from descriptor set reflection process
+- [ ] Fix the `shaderStageAsString` helper method inside of the pipeline class
 
 ### Long term:
 

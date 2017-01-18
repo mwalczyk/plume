@@ -42,6 +42,7 @@
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "Semaphore.h"
+#include "ShaderModule.h"
 #include "Surface.h"
 #include "Swapchain.h"
 #include "Window.h"
