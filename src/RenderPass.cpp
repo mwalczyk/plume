@@ -21,7 +21,7 @@ namespace vk
 		attachmentReference.attachment = tAttachment;
 		attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		return{ attachmentDescription, attachmentReference };
+		return { attachmentDescription, attachmentReference };
 	}
 
 	VkSubpassDescription RenderPass::createSubpassDescription(const std::vector<VkAttachmentReference> &tAttachmentReferences, VkPipelineBindPoint tPipelineBindPoint)

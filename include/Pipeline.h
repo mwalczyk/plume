@@ -50,15 +50,6 @@ namespace vk
 			std::string name;
 		};
 
-		//! A struct representing an input to a shader stage. For example:
-		//! layout (location = 0) in vec3 inPosition;
-		struct StageInput
-		{
-			uint32_t layoutLocation;
-			uint32_t size;
-			std::string name;
-		};
-
 		//! A functor class that is used for constructing a mapping between PushConstantsBlock structures and PushConstantsMember structures.
 		struct PushConstantsBlockOrdering
 		{
@@ -70,6 +61,57 @@ namespace vk
 
 		//! A mapping between PushConstantsBlock structures and PushConstantsMember structures.
 		using PushConstantsBlocksMapping = std::map<PushConstantsBlock, std::vector<PushConstantsMember>, PushConstantsBlockOrdering>;
+
+		//! A struct representing an input to a shader stage. For example:
+		//! layout (location = 0) in vec3 inPosition;
+		struct StageInput
+		{
+			uint32_t layoutLocation;
+			uint32_t size;
+			std::string name;
+		};
+
+		//! A struct representing a uniform block inside of a GLSL shader. For example:
+		//! layout (binding = 0) uniform UniformBlock				<--- this
+		//! {
+		//!		mat4 model;
+		//!		mat4 view;
+		//!		mat4 projection
+		//! } ubo;
+		struct UniformBlock
+		{
+			uint32_t layoutBinding;
+			uint32_t layoutSet;
+			uint32_t totalSize;
+			std::string name;
+		};
+
+		//! A struct representing a member within a uniform block inside of a GLSL shader. For example:
+		//! layout (binding = 0) uniform UniformBlock				
+		//! {
+		//!		mat4 model;		<--- this
+		//!		mat4 view;
+		//!		mat4 projection;
+		//! } ubo;
+		struct UniformMember
+		{
+			uint32_t index;
+			uint32_t size;
+			uint32_t offset;
+			std::string name;
+		};
+
+		//! A functor class that is used for constructing a mapping between UniformBlock structures and UniformMember structures.
+		struct UniformBlockOrdering
+		{
+			bool operator() (const UniformBlock& lhs, const UniformBlock& rhs) const
+			{
+				return lhs.layoutBinding < rhs.layoutBinding;
+			}
+		};
+
+		//! A mapping between UniformBlock structures and UniformMember structures.
+		using UniformBlocksMapping = std::map<UniformBlock, std::vector<UniformMember>, UniformBlockOrdering>;
 
 		//! Factory method for returning a new ShaderModuleRef.
 		static ShaderModuleRef create(const DeviceRef &tDevice, const std::string &tFilePath)
@@ -102,6 +144,7 @@ namespace vk
 		std::vector<uint32_t> mShaderCode;
 		std::vector<std::string> mEntryPoints;
 		PushConstantsBlocksMapping mPushConstantsBlocksMapping;
+		UniformBlocksMapping mUniformBlocksMapping;
 		std::vector<StageInput> mStageInputs;
 	};
 

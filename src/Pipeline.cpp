@@ -125,22 +125,16 @@ namespace vk
 
 			std::vector<PushConstantsMember> pushConstantsMembers;
 
-			// Store some information about each member of the push constants block.
 			auto ranges = compilerGlsl.get_active_buffer_ranges(resource.id);
 			for (auto &range : ranges)
 			{
-				auto index = range.index;
-				
-				// Determine the total size of this block member. 
-				auto type = compilerGlsl.get_type(compilerGlsl.get_type(resource.base_type_id).member_types[range.index]);
-				auto rows = type.vecsize;
-				auto columns = type.columns;
-				auto size = getSizeFromType(type, rows, columns);
+				PushConstantsMember pushConstantsMember;
+				pushConstantsMember.index = range.index;
+				pushConstantsMember.name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
+				pushConstantsMember.offset = range.offset;
+				pushConstantsMember.size = range.range;
 
-				auto offset = static_cast<uint32_t>(range.offset);
-				auto name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
-			
-				pushConstantsMembers.emplace_back(PushConstantsMember{ index, size, offset, name });
+				pushConstantsMembers.emplace_back(pushConstantsMember);
 			}
 
 			mPushConstantsBlocksMapping.emplace(pushConstantsBlock, pushConstantsMembers);
@@ -202,8 +196,46 @@ namespace vk
 		// Uniform buffers (UBOs)
 		for (const auto &resource : shaderResources.uniform_buffers)
 		{
+			UniformBlock uniformBlock;
+			uniformBlock.layoutBinding = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationBinding);
+			uniformBlock.layoutSet = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
+			uniformBlock.totalSize = static_cast<uint32_t>(compilerGlsl.get_declared_struct_size(compilerGlsl.get_type(resource.base_type_id)));
+			uniformBlock.name = resource.name;
+
+			std::vector<UniformMember> uniformMembers;
+			
+			// Store some information about each member of the push constants block.
+			auto ranges = compilerGlsl.get_active_buffer_ranges(resource.id);
+			for (auto &range : ranges)
+			{
+				UniformMember uniformMember;
+				uniformMember.index = range.index;
+				uniformMember.name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
+				uniformMember.offset = range.offset;
+				uniformMember.size = range.range;
+			
+				uniformMembers.emplace_back(uniformMember);
+			}
+			
+			mUniformBlocksMapping.emplace(uniformBlock, uniformMembers);
 		}
 
+		for (const auto &mapping : mUniformBlocksMapping)
+		{
+			std::cout << "Uniform block:\n";
+			std::cout << "\tLayout binding: " << mapping.first.layoutBinding << std::endl;
+			std::cout << "\tLayout set: " << mapping.first.layoutSet << std::endl;
+			std::cout << "\tName: " << mapping.first.name << std::endl;
+			std::cout << "\tTotal size: " << mapping.first.totalSize << std::endl;
+
+			for (const auto &member : mapping.second)
+			{
+				std::cout << "Uniform member at index: " << member.index << std::endl;
+				std::cout << "\tName: " << member.name << std::endl;
+				std::cout << "\tOffset: " << member.offset << std::endl;
+				std::cout << "\tSize: " << member.size << std::endl;
+			}
+		}
 	}
 
 	Pipeline::Options::Options()

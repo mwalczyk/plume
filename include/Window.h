@@ -75,14 +75,15 @@ namespace vk
 		inline void pollEvents() const { glfwPollEvents(); }
 		inline glm::vec2 getMousePosition() const 
 		{ 
-			double x, y; 
+			double x;
+			double y;
 			glfwGetCursorPos(mWindowHandle, &x, &y); 
 			return { x, y }; 
 		}
 
 	private:
 
-		static void onMouseMoved(GLFWwindow* tWindow, double tX, double tY);
+		static void onMouseMoved(GLFWwindow *tWindow, double tX, double tY);
 
 		GLFWwindow *mWindowHandle;
 
