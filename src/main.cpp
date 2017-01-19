@@ -99,9 +99,10 @@ int main()
 		.vertexInputAttributeDescriptions(vertexInputAttributeDescriptions)
 		.viewport(window->getFullscreenViewport())
 		.scissor(window->getFullscreenScissorRect2D())
-		.vertexShader(vertexShader)
-		.fragmentShader(fragmentShader);
+		.attachShaderStage(vertexShader, VK_SHADER_STAGE_VERTEX_BIT)
+		.attachShaderStage(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 	auto pipeline = vk::Pipeline::create(device, renderPass, pipelineOptions);
+	std::cout << pipeline << std::endl;
 
 	/// vk::Framebuffer
 	auto swapchainImageViews = swapchain->getSwapchainImageViews();

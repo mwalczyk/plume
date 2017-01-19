@@ -30,8 +30,6 @@ namespace vk
 		file.read(data, fileSize);
 		file.close();
 
-		std::cout << "Successfully read " << fileSize << " bytes from file: " << tFileName << "\n";
-
 		return fileContents;
 	}
 
@@ -97,8 +95,6 @@ namespace vk
 		auto result = vkCreateShaderModule(mDevice->getHandle(), &shaderModuleCreateInfo, nullptr, &mShaderModuleHandle);
 		assert(result == VK_SUCCESS);
 
-		std::cout << "Successfully created shader module\n";
-
 		performReflection();
 	}
 
@@ -115,29 +111,20 @@ namespace vk
 
 		mEntryPoints = compilerGlsl.get_entry_points();
 
-		// Get all of the push constants blocks and their members (currently, Vulkan only supports one block).
+		// Get all of the push constants (currently, Vulkan only supports one block).
 		for (const auto &resource : shaderResources.push_constant_buffers)
 		{
-			PushConstantsBlock pushConstantsBlock;
-			pushConstantsBlock.layoutLocation = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
-			pushConstantsBlock.totalSize = static_cast<uint32_t>(compilerGlsl.get_declared_struct_size(compilerGlsl.get_type(resource.base_type_id)));
-			pushConstantsBlock.name = resource.name;
-
-			std::vector<PushConstantsMember> pushConstantsMembers;
-
 			auto ranges = compilerGlsl.get_active_buffer_ranges(resource.id);
 			for (auto &range : ranges)
 			{
-				PushConstantsMember pushConstantsMember;
-				pushConstantsMember.index = range.index;
-				pushConstantsMember.name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
-				pushConstantsMember.offset = range.offset;
-				pushConstantsMember.size = range.range;
+				PushConstant pushConstant;
+				pushConstant.index = range.index;
+				pushConstant.name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
+				pushConstant.offset = range.offset;
+				pushConstant.size = range.range;
 
-				pushConstantsMembers.emplace_back(pushConstantsMember);
+				mPushConstants.emplace_back(pushConstant);
 			}
-
-			mPushConstantsBlocksMapping.emplace(pushConstantsBlock, pushConstantsMembers);
 		}
 
 		// Stage inputs
@@ -196,46 +183,73 @@ namespace vk
 		// Uniform buffers (UBOs)
 		for (const auto &resource : shaderResources.uniform_buffers)
 		{
-			UniformBlock uniformBlock;
-			uniformBlock.layoutBinding = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationBinding);
-			uniformBlock.layoutSet = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
-			uniformBlock.totalSize = static_cast<uint32_t>(compilerGlsl.get_declared_struct_size(compilerGlsl.get_type(resource.base_type_id)));
-			uniformBlock.name = resource.name;
-
-			std::vector<UniformMember> uniformMembers;
+			Descriptor descriptor;
+			descriptor.layoutSet = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
+			descriptor.layoutBinding = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationBinding);
+			descriptor.descriptorCount = 1;
+			descriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptor.name = resource.name;
 			
-			// Store some information about each member of the push constants block.
-			auto ranges = compilerGlsl.get_active_buffer_ranges(resource.id);
-			for (auto &range : ranges)
-			{
-				UniformMember uniformMember;
-				uniformMember.index = range.index;
-				uniformMember.name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
-				uniformMember.offset = range.offset;
-				uniformMember.size = range.range;
-			
-				uniformMembers.emplace_back(uniformMember);
-			}
-			
-			mUniformBlocksMapping.emplace(uniformBlock, uniformMembers);
+			mDescriptors.push_back(descriptor);
 		}
+	}
 
-		for (const auto &mapping : mUniformBlocksMapping)
+	static std::string descriptorTypeAsString(VkDescriptorType tDescriptorType)
+	{
+		std::string output = "";
+		switch (tDescriptorType)
 		{
-			std::cout << "Uniform block:\n";
-			std::cout << "\tLayout binding: " << mapping.first.layoutBinding << std::endl;
-			std::cout << "\tLayout set: " << mapping.first.layoutSet << std::endl;
-			std::cout << "\tName: " << mapping.first.name << std::endl;
-			std::cout << "\tTotal size: " << mapping.first.totalSize << std::endl;
-
-			for (const auto &member : mapping.second)
-			{
-				std::cout << "Uniform member at index: " << member.index << std::endl;
-				std::cout << "\tName: " << member.name << std::endl;
-				std::cout << "\tOffset: " << member.offset << std::endl;
-				std::cout << "\tSize: " << member.size << std::endl;
-			}
+		case VK_DESCRIPTOR_TYPE_SAMPLER: output = "SAMPLER"; break;
+		case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: output = "COMBINED IMAGE SAMPLER"; break;
+		case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: output = "SAMPLED IMAGE"; break;
+		case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: output = "STORAGE IMAGE"; break;
+		case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: output = "UNIFORM TEXEL BUFFER"; break;
+		case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: output = "STORAGE TEXEL BUFFER"; break;
+		case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: output = "UNIFORM BUFFER"; break;
+		case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: output = "STORAGE BUFFER"; break;
+		case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: output = "UNIFORM BUFFER DYNAMIC"; break;
+		case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: output = "STORAGE BUFFER DYNAMIC"; break;
+		case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: output = "INPUT ATTACHMENT"; break;
+		default: output = "UNKNOWN DESCRIPTOR TYPE"; break;
 		}
+
+		return output;
+	}
+
+	static std::string shaderStageAsString(VkShaderStageFlags tShaderStageFlags)
+	{
+		if (tShaderStageFlags & VK_SHADER_STAGE_ALL || tShaderStageFlags & VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM)
+		{
+			return "ALL";
+		}
+		if (tShaderStageFlags & VK_SHADER_STAGE_ALL_GRAPHICS)
+		{
+			return "ALL GRAPHICS";
+		}
+		
+		std::string output = "";
+		if (tShaderStageFlags & VK_SHADER_STAGE_VERTEX_BIT)
+		{
+			output += "VERTEX | ";
+		}
+		if (tShaderStageFlags & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)
+		{
+			output += "TESSELLATION CONTROL | ";
+		}
+		if (tShaderStageFlags & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
+		{
+			output += "TESSELLATION EVALUATION | ";
+		}
+		if (tShaderStageFlags & VK_SHADER_STAGE_GEOMETRY_BIT)
+		{
+			output += "GEOMETRY | ";
+		}
+		if (tShaderStageFlags & VK_SHADER_STAGE_COMPUTE_BIT)
+		{
+			output += "COMPUTE | ";
+		}
+
+		return output;
 	}
 
 	Pipeline::Options::Options()
@@ -259,46 +273,25 @@ namespace vk
 	Pipeline::Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions) :
 		mDevice(tDevice),
 		mRenderPass(tRenderPass)
-	{
-		if (!tOptions.mVertexShader || !tOptions.mFragmentShader)
-		{
-			throw std::runtime_error("The vertex and fragment shader stages are not optional");
-		}
-		
+	{		
 		// Group the create info structures together.
 		std::vector<VkPipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
 
-		if (tOptions.mVertexShader)
+		bool foundVertexShader = false;
+		bool foundFragmentShader = false;
+		for (const auto &shaderStage : tOptions.mShaderStages)
 		{
-			auto vertexShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
-			pipelineShaderStageCreateInfos.push_back(vertexShaderStageInfo);
-			addPushConstantRangesToGlobalMap(tOptions.mVertexShader, VK_SHADER_STAGE_VERTEX_BIT);
+			if (shaderStage.second & VK_SHADER_STAGE_VERTEX_BIT) foundVertexShader = true;
+			if (shaderStage.second & VK_SHADER_STAGE_FRAGMENT_BIT) foundFragmentShader = true;
+			auto shaderStageInfo = buildPipelineShaderStageCreateInfo(shaderStage.first, shaderStage.second);
+			pipelineShaderStageCreateInfos.push_back(shaderStageInfo);
+			addPushConstantsToGlobalMap(shaderStage.first, shaderStage.second);
+			addDescriptorsToGlobalMap(shaderStage.first, shaderStage.second);
 		}
-		if (tOptions.mTessellationControlShader)
+		if (!foundVertexShader|| !foundFragmentShader)
 		{
-			auto tessellationControlShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mTessellationControlShader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-			pipelineShaderStageCreateInfos.push_back(tessellationControlShaderStageInfo);
-			addPushConstantRangesToGlobalMap(tOptions.mTessellationControlShader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+			throw std::runtime_error("The vertex and fragment shader stages are not optional");
 		}
-		if (tOptions.mTessellationEvaluationShader)
-		{
-			auto tessellationEvaluationShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mTessellationEvaluationShader, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-			pipelineShaderStageCreateInfos.push_back(tessellationEvaluationShaderStageInfo);
-			addPushConstantRangesToGlobalMap(tOptions.mTessellationEvaluationShader, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-		}
-		if (tOptions.mGeometryShader)
-		{
-			auto geometryShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mGeometryShader, VK_SHADER_STAGE_GEOMETRY_BIT);
-			pipelineShaderStageCreateInfos.push_back(geometryShaderStageInfo);
-			addPushConstantRangesToGlobalMap(tOptions.mGeometryShader, VK_SHADER_STAGE_GEOMETRY_BIT);
-		}
-		if (tOptions.mFragmentShader)
-		{
-			auto fragmentShaderStageInfo = buildPipelineShaderStageCreateInfo(tOptions.mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
-			pipelineShaderStageCreateInfos.push_back(fragmentShaderStageInfo);
-			addPushConstantRangesToGlobalMap(tOptions.mFragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
-		}
-		std::cout << "Creating pipeline with " << pipelineShaderStageCreateInfos.size() << " shader stages\n";
 
 		// Describe the format of the vertex data that will be passed to the vertex shader.
 		VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
@@ -374,17 +367,30 @@ namespace vk
 
 		// A limited amount of the pipeline state can be changed without recreating the entire pipeline - see VkPipelineDynamicStateCreateInfo.
 
-		// Get all of the values in the push constant ranges map. These correspond to all of the VkPushConstantRange structures 
-		// found through the SPIR-V reflection process.
+		// Get all of the values in the push constant ranges map. 
 		std::vector<VkPushConstantRange> pushConstantRanges;
-		std::transform(mPushConstantRangesMapping.begin(), mPushConstantRangesMapping.end(), std::back_inserter(pushConstantRanges), [](const auto& val) {return val.second; });
+		std::transform(mPushConstantsMapping.begin(), mPushConstantsMapping.end(), std::back_inserter(pushConstantRanges), [](const auto& val) {return val.second; });
+
+		// Generate all of the handles to the descriptor set layouts.
+		mDescriptorSetLayoutHandles.resize(mDescriptorsMapping.size());
+		
+		for (size_t i = 0; i < mDescriptorSetLayoutHandles.size(); ++i)
+		{
+			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
+			descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(mDescriptorsMapping[i].size());
+			descriptorSetLayoutCreateInfo.pBindings = mDescriptorsMapping[i].data();
+			descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+			auto result = vkCreateDescriptorSetLayout(mDevice->getHandle(), &descriptorSetLayoutCreateInfo, nullptr, &mDescriptorSetLayoutHandles[i]);
+			assert(result == VK_SUCCESS);
+		}	
 
 		// Encapsulate any descriptor sets and push constant ranges into a pipeline layout.
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 		pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
-		pipelineLayoutCreateInfo.pSetLayouts = nullptr;
+		pipelineLayoutCreateInfo.pSetLayouts = mDescriptorSetLayoutHandles.data();
 		pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
-		pipelineLayoutCreateInfo.setLayoutCount = 0;
+		pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(mDescriptorSetLayoutHandles.size());;
 		pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
 		auto result = vkCreatePipelineLayout(mDevice->getHandle(), &pipelineLayoutCreateInfo, nullptr, &mPipelineLayoutHandle);
@@ -425,9 +431,9 @@ namespace vk
 
 	VkPushConstantRange Pipeline::getPushConstantsMember(const std::string &tMemberName) const
 	{
-		auto it = mPushConstantRangesMapping.find(tMemberName);
+		auto it = mPushConstantsMapping.find(tMemberName);
 
-		if (it == mPushConstantRangesMapping.end())
+		if (it == mPushConstantsMapping.end())
 		{
 			throw std::runtime_error("Push constant with name " + tMemberName + " not found");
 		}
@@ -447,29 +453,85 @@ namespace vk
 		return pipelineShaderStageCreateInfo;
 	}
 
-	void Pipeline::addPushConstantRangesToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits)
+	void Pipeline::addPushConstantsToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits)
 	{
 		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
 
-		for (const auto &mapping : tShaderModule->getPushConstantsBlocksMapping())
+		for (const auto &pushConstant : tShaderModule->getPushConstants())
 		{
-			// For now, we ignore information about the block.
+			VkPushConstantRange pushConstantRange = {};
+			pushConstantRange.offset = pushConstant.offset;
+			pushConstantRange.size = pushConstant.size;
+			pushConstantRange.stageFlags = tShaderStageFlagBits;
 
-			if (mapping.first.totalSize > maxPushConstantsSize)
-			{
-				throw std::runtime_error("Push constants block exceeds the maximum size that is supported by the current physical device");
-			}
-
-			for (const auto &member : mapping.second)
-			{
-				VkPushConstantRange pushConstantRange = {};
-				pushConstantRange.offset = member.offset;
-				pushConstantRange.size = member.size;
-				pushConstantRange.stageFlags = tShaderStageFlagBits;
-
-				mPushConstantRangesMapping.insert({ member.name, pushConstantRange });
-			}
+			mPushConstantsMapping.insert({ pushConstant.name, pushConstantRange });
 		}
 	}
 
+	void Pipeline::addDescriptorsToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits)
+	{
+		for (const auto &descriptor : tShaderModule->getDescriptors())
+		{
+			// for every descriptor found in this shader stage
+			uint32_t set = descriptor.layoutSet;
+
+			VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {};
+			descriptorSetLayoutBinding.binding = descriptor.layoutBinding;
+			descriptorSetLayoutBinding.descriptorCount = descriptor.descriptorCount;
+			descriptorSetLayoutBinding.descriptorType = descriptor.descriptorType;
+			descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+			descriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+
+			auto it = mDescriptorsMapping.find(set);
+			if (it == mDescriptorsMapping.end())
+			{
+				std::vector<VkDescriptorSetLayoutBinding> freshDescriptorSetLayoutBindings = { descriptorSetLayoutBinding };
+				mDescriptorsMapping.insert(std::make_pair(set, freshDescriptorSetLayoutBindings));
+			}
+			else
+			{
+				// Only add this entry if it doesn't already exist in this set's list of descriptors.
+				auto &existingDescriptorSetLayoutBindings = (*it).second;
+				auto it = std::find_if(existingDescriptorSetLayoutBindings.begin(), existingDescriptorSetLayoutBindings.end(), 
+					[&](const VkDescriptorSetLayoutBinding &tDescriptorSetLayoutBinding) {
+						return tDescriptorSetLayoutBinding.binding == descriptorSetLayoutBinding.binding;
+					});
+
+				if (it == existingDescriptorSetLayoutBindings.end())
+				{
+					existingDescriptorSetLayoutBindings.push_back(descriptorSetLayoutBinding);
+				}
+			}
+		}			
+	}
+
+	std::ostream& operator<<(std::ostream &tStream, const PipelineRef &tPipeline)
+	{
+		tStream << "Pipeline object: " << tPipeline->mPipelineHandle << std::endl;
+
+		// Print push constants
+		for (const auto &mapping : tPipeline->mPushConstantsMapping)
+		{
+			tStream << "Push constant named: " << mapping.first << ":" << std::endl;
+			tStream << "\tOffset: " << mapping.second.offset << std::endl;
+			tStream << "\tSize: " << mapping.second.size << std::endl;
+			tStream << "\tShader stage flags: " << shaderStageAsString(mapping.second.stageFlags) << std::endl;
+		}
+
+		// Print descriptors
+		for (const auto &mapping : tPipeline->mDescriptorsMapping)
+		{
+			tStream << "Descriptor set #" << mapping.first << ":" << std::endl;
+			for (const auto &descriptorSetLayoutBinding : mapping.second)
+			{
+				tStream << "\tDescriptor at binding: " << descriptorSetLayoutBinding.binding << std::endl;
+				tStream << "\t\tDescriptor count: " << descriptorSetLayoutBinding.descriptorCount << std::endl;
+				tStream << "\t\tDescriptor type: " << descriptorTypeAsString(descriptorSetLayoutBinding.descriptorType) << std::endl;
+				tStream << "\t\tShader stage flags: " << shaderStageAsString(descriptorSetLayoutBinding.stageFlags) << std::endl;
+			}
+		}
+
+		return tStream;
+	}
+	
 } // namespace vk

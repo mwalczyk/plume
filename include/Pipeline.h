@@ -25,42 +25,18 @@ namespace vk
 		
 	public:
 
-		//! A struct representing a push constants block inside of a GLSL shader. For example:
-		//! layout (std430, push_constant) uniform PushConstants	<--- this
-		//! {
-		//!		float time;
-		//! } constants;
-		struct PushConstantsBlock
-		{
-			uint32_t layoutLocation;
-			uint32_t totalSize;
-			std::string name;
-		};
-
 		//! A struct representing a memmber within a push constants block inside of a GLSL shader. For example:
 		//! layout (std430, push_constant) uniform PushConstants
 		//! {
 		//!		float time;		<--- this
 		//! } constants;
-		struct PushConstantsMember
+		struct PushConstant
 		{
 			uint32_t index;
 			uint32_t size;
 			uint32_t offset;
 			std::string name;
 		};
-
-		//! A functor class that is used for constructing a mapping between PushConstantsBlock structures and PushConstantsMember structures.
-		struct PushConstantsBlockOrdering
-		{
-			bool operator() (const PushConstantsBlock& lhs, const PushConstantsBlock& rhs) const
-			{
-				return lhs.layoutLocation < rhs.layoutLocation;
-			}
-		};
-
-		//! A mapping between PushConstantsBlock structures and PushConstantsMember structures.
-		using PushConstantsBlocksMapping = std::map<PushConstantsBlock, std::vector<PushConstantsMember>, PushConstantsBlockOrdering>;
 
 		//! A struct representing an input to a shader stage. For example:
 		//! layout (location = 0) in vec3 inPosition;
@@ -71,48 +47,22 @@ namespace vk
 			std::string name;
 		};
 
-		//! A struct representing a uniform block inside of a GLSL shader. For example:
-		//! layout (binding = 0) uniform UniformBlock				<--- this
+		//! A struct representing a descriptor inside of a GLSL shader. For example:
+		//! layout (set = 0, binding = 1) uniform UniformBufferObject	<--- this
 		//! {
 		//!		mat4 model;
 		//!		mat4 view;
 		//!		mat4 projection
 		//! } ubo;
-		struct UniformBlock
+		struct Descriptor
 		{
-			uint32_t layoutBinding;
 			uint32_t layoutSet;
-			uint32_t totalSize;
+			uint32_t layoutBinding;
+			uint32_t descriptorCount;
+			VkDescriptorType descriptorType;
 			std::string name;
 		};
-
-		//! A struct representing a member within a uniform block inside of a GLSL shader. For example:
-		//! layout (binding = 0) uniform UniformBlock				
-		//! {
-		//!		mat4 model;		<--- this
-		//!		mat4 view;
-		//!		mat4 projection;
-		//! } ubo;
-		struct UniformMember
-		{
-			uint32_t index;
-			uint32_t size;
-			uint32_t offset;
-			std::string name;
-		};
-
-		//! A functor class that is used for constructing a mapping between UniformBlock structures and UniformMember structures.
-		struct UniformBlockOrdering
-		{
-			bool operator() (const UniformBlock& lhs, const UniformBlock& rhs) const
-			{
-				return lhs.layoutBinding < rhs.layoutBinding;
-			}
-		};
-
-		//! A mapping between UniformBlock structures and UniformMember structures.
-		using UniformBlocksMapping = std::map<UniformBlock, std::vector<UniformMember>, UniformBlockOrdering>;
-
+		
 		//! Factory method for returning a new ShaderModuleRef.
 		static ShaderModuleRef create(const DeviceRef &tDevice, const std::string &tFilePath)
 		{
@@ -130,8 +80,11 @@ namespace vk
 		//! Retrieve a list of available entry points within this GLSL shader (usually "main").
 		inline const std::vector<std::string>& getEntryPoints() const { return mEntryPoints; }
 
-		//! Retrieve a map of low-level details about the push constant blocks contained within this GLSL shader.
-		inline const PushConstantsBlocksMapping& getPushConstantsBlocksMapping() const { return mPushConstantsBlocksMapping; }
+		//! Retrieve a list of low-level details about the push constants contained within this GLSL shader.
+		inline const std::vector<PushConstant> getPushConstants() const { return mPushConstants; }
+
+		//! Retrieve a list of low-level details about the descriptors contained within this GLSL shader.
+		inline const std::vector<Descriptor>& getDescriptors() const { return mDescriptors; }
 
 	private:
 
@@ -143,9 +96,10 @@ namespace vk
 
 		std::vector<uint32_t> mShaderCode;
 		std::vector<std::string> mEntryPoints;
-		PushConstantsBlocksMapping mPushConstantsBlocksMapping;
-		UniformBlocksMapping mUniformBlocksMapping;
 		std::vector<StageInput> mStageInputs;
+		std::vector<PushConstant> mPushConstants;
+		std::vector<Descriptor> mDescriptors;
+
 	};
 
 	class Pipeline;
@@ -167,11 +121,7 @@ namespace vk
 			Options& vertexInputAttributeDescriptions(const std::vector<VkVertexInputAttributeDescription>& tVertexInputAttributeDescriptions) { mVertexInputAttributeDescriptions = tVertexInputAttributeDescriptions; return *this; }
 			Options& viewport(const VkViewport &tViewport) { mViewport = tViewport; return *this; }
 			Options& scissor(const VkRect2D &tScissor) { mScissor = tScissor; return *this; }
-			Options& vertexShader(const ShaderModuleRef &tShaderModule) { mVertexShader = tShaderModule; return *this; }
-			Options& tessellationControlShader(const ShaderModuleRef &tShaderModule) { mTessellationControlShader = tShaderModule; return *this; }
-			Options& tessellationEvaluationShader(const ShaderModuleRef &tShaderModule) { mTessellationEvaluationShader = tShaderModule; return *this; }
-			Options& geometryShader(const ShaderModuleRef &tShaderModule) { mGeometryShader = tShaderModule; return *this; }
-			Options& fragmentShader(const ShaderModuleRef &tShaderModule) { mFragmentShader = tShaderModule; return *this; }
+			Options& attachShaderStage(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits) { mShaderStages.push_back({ tShaderModule, tShaderStageFlagBits }); return *this; }
 			Options& primitiveRestart(bool tPrimitiveRestart) { mPrimitiveRestart = tPrimitiveRestart; return *this; }
 			Options& primitiveTopology(VkPrimitiveTopology tPrimitiveTopology) { mPrimitiveTopology = tPrimitiveTopology; return *this; }
 
@@ -181,11 +131,7 @@ namespace vk
 			std::vector<VkVertexInputAttributeDescription> mVertexInputAttributeDescriptions;
 			VkViewport mViewport;
 			VkRect2D mScissor;
-			ShaderModuleRef mVertexShader;
-			ShaderModuleRef mTessellationControlShader;
-			ShaderModuleRef mTessellationEvaluationShader;
-			ShaderModuleRef mGeometryShader;
-			ShaderModuleRef mFragmentShader;
+			std::vector<std::pair<ShaderModuleRef, VkShaderStageFlagBits>> mShaderStages;
 			bool mPrimitiveRestart;
 			VkPrimitiveTopology mPrimitiveTopology;
 
@@ -206,20 +152,27 @@ namespace vk
 		inline VkPipelineLayout getPipelineLayoutHandle() const { return mPipelineLayoutHandle; }
 		VkPushConstantRange getPushConstantsMember(const std::string &tMemberName) const;
 
+		friend std::ostream& operator<<(std::ostream &tStream, const PipelineRef &tPipeline);
+
 	private:
 
 		VkPipelineShaderStageCreateInfo buildPipelineShaderStageCreateInfo(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
 
-		//! Given a shader module and shader stage, add all of the module's push constant ranges to the pipeline object's global map.
-		void addPushConstantRangesToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
+		//! Given a shader module and shader stage, add all of the module's push constants to the pipeline object's global map.
+		void addPushConstantsToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
+
+		//! Given a shader module and shader stage, add all of the module's descriptors to the pipeline object's global map.
+		void addDescriptorsToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
 
 		VkPipeline mPipelineHandle;
 		VkPipelineLayout mPipelineLayoutHandle;
+		std::vector<VkDescriptorSetLayout> mDescriptorSetLayoutHandles;
 
 		DeviceRef mDevice;
 		RenderPassRef mRenderPass;
 
-		std::map<std::string, VkPushConstantRange> mPushConstantRangesMapping;
+		std::map<std::string, VkPushConstantRange> mPushConstantsMapping;
+		std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> mDescriptorsMapping;
 
 	};
 
