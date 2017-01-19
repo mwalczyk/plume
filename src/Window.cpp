@@ -5,7 +5,6 @@ namespace vk
 
 	void Window::onMouseMoved(GLFWwindow* tWindow, double tX, double tY)
 	{
-		
 	}
 
 	Window::Options::Options()
@@ -24,9 +23,16 @@ namespace vk
 	{
 		glfwInit();
 
-		// Disable context creation (only needed for OpenGL / ES not Vulkan)
+		// Disable context creation (only needed for OpenGL / ES not Vulkan).
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
+		// Disable borders if requested.
+		if (tOptions.mMode == Mode::WINDOW_MODE_BORDERLESS)
+		{
+			glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+		}
+
+		// Enable resizing if requested.
 		if (tOptions.mResizeable)
 		{
 			glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);

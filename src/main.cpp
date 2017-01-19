@@ -41,6 +41,7 @@ int main()
 	/// vk::Window
 	auto windowOptions = vk::Window::Options().title("Vulkan Application");
 	auto window = vk::Window::create(instance, width, height, windowOptions);
+	window->connectToMouseMoved([](double x, double y) { std::cout << x << ", " << y << std::endl; });
 
 	/// vk::Surface
 	auto surface = window->createSurface();
@@ -81,8 +82,8 @@ int main()
 	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription };
 	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 
-	auto vertexShader = vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
-	auto fragmentShader = vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
+	auto vertexShader = vk::ShaderModule::create(device, "assets/shaders/vert.spv");
+	auto fragmentShader = vk::ShaderModule::create(device, "assets/shaders/frag.spv");
 	auto pipelineOptions = vk::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
 		.vertexInputAttributeDescriptions(vertexInputAttributeDescriptions)

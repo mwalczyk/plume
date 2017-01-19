@@ -28,6 +28,7 @@ namespace vk
 		{
 			WINDOW_MODE_HEADLESS,
 			WINDOW_MODE_BORDERS,
+			WINDOW_MODE_BORDERLESS,
 			WINDOW_MODE_FULLSCREEN
 		};
 
@@ -57,6 +58,7 @@ namespace vk
 		inline GLFWwindow* getWindowHandle() const { return mWindowHandle; }
 		inline uint32_t getWidth() const { return mWidth; }
 		inline uint32_t getHeight() const { return mHeight; }
+		inline void setWindowTitle(const std::string &tTitle) { glfwSetWindowTitle(mWindowHandle, tTitle.c_str()); }
 
 		//! Returns the instance extensions required by the windowing system
 		std::vector<const char*> getRequiredInstanceExtensions() const;
@@ -69,13 +71,10 @@ namespace vk
 
 		inline int shouldWindowClose() const { return glfwWindowShouldClose(mWindowHandle); }
 		inline void pollEvents() const { glfwPollEvents(); }
-		inline glm::vec2 getMousePosition() const 
-		{ 
-			double x;
-			double y;
-			glfwGetCursorPos(mWindowHandle, &x, &y); 
-			return { x, y }; 
-		}
+		inline glm::vec2 getMousePosition() const { double x, y; glfwGetCursorPos(mWindowHandle, &x, &y); return { x, y }; }
+
+		//! Add a callback function to this window's mouse moved event.
+		inline void connectToMouseMoved(const std::function<void(double, double)> &tConnection) { mMouseMovedConnections.push_back(tConnection); }
 
 	private:
 
@@ -89,6 +88,7 @@ namespace vk
 		uint32_t mHeight;
 		std::string mTitle;
 		Mode mMode;
+		std::vector<std::function<void(double, double)>> mMouseMovedConnections;
 
 	};
 
