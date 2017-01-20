@@ -3,15 +3,11 @@
 namespace vk
 {
 
-	void Window::onMouseMoved(GLFWwindow* tWindow, double tX, double tY)
-	{
-	}
-
 	Window::Options::Options()
 	{
 		mTitle = "Spectra Application";
 		mResizeable = false;
-		mMode = Mode::WINDOW_MODE_BORDERS;
+		mWindowMode = WindowMode::WINDOW_MODE_BORDERS;
 	}
 
 	Window::Window(const InstanceRef &tInstance, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
@@ -19,7 +15,7 @@ namespace vk
 		mWidth(tWidth),
 		mHeight(tHeight),
 		mTitle(tOptions.mTitle),
-		mMode(tOptions.mMode)
+		mWindowMode(tOptions.mWindowMode)
 	{
 		glfwInit();
 
@@ -27,7 +23,7 @@ namespace vk
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 		// Disable borders if requested.
-		if (tOptions.mMode == Mode::WINDOW_MODE_BORDERLESS)
+		if (tOptions.mWindowMode == WindowMode::WINDOW_MODE_BORDERLESS)
 		{
 			glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 		}
@@ -44,7 +40,11 @@ namespace vk
 
 		mWindowHandle = glfwCreateWindow(mWidth, mHeight, mTitle.c_str(), nullptr, nullptr);
 
-		glfwSetCursorPosCallback(mWindowHandle, (GLFWcursorposfun) onMouseMoved);
+		// Set the GLFW window user pointer to 'this' so that a member function can be used for mouse callbacks. 
+		// See: http://stackoverflow.com/questions/7676971/pointing-to-a-function-that-is-a-class-member-glfw-setkeycallback
+		glfwSetWindowUserPointer(mWindowHandle, this);
+		
+		initializeCallbacks();
 	}
 
 	Window::~Window()
@@ -57,12 +57,8 @@ namespace vk
 		auto surface = Surface::create(mInstance);
 
 		// This class is a friend of the Surface class, so we can directly access the VkSurfaceKHR handle.
-		if (glfwCreateWindowSurface(mInstance->getHandle(), mWindowHandle, nullptr, &surface->mSurfaceHandle) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create surface");
-		}
-
-		std::cout << "Successfully created surface\n";
+		auto result = glfwCreateWindowSurface(mInstance->getHandle(), mWindowHandle, nullptr, &surface->mSurfaceHandle);
+		assert(result == VK_SUCCESS);
 
 		return surface;
 	}
@@ -87,8 +83,8 @@ namespace vk
 		VkViewport viewport = {};
 		viewport.x = 0;
 		viewport.y = 0;
-		viewport.width = mWidth;
-		viewport.height = mHeight;
+		viewport.width = static_cast<float>(mWidth);
+		viewport.height = static_cast<float>(mHeight);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
@@ -102,6 +98,79 @@ namespace vk
 		scissor.offset = { 0, 0 };
 
 		return scissor;
+	}
+
+	void Window::onMouseMoved(double tX, double tY)
+	{
+		for (const auto &connection : mMouseMovedConnections)
+		{
+			connection(tX, tY);
+		}
+	}
+
+	void Window::onMousePressed(int tButton, int tAction, int tMods)
+	{
+		if (tAction == GLFW_REPEAT)
+		{
+			return;
+		}
+
+		bool pressed = (tAction == GLFW_PRESS) ? true : false;
+
+		for (const auto &connection : mMousePressedConnections)
+		{
+			connection(tButton, pressed, tMods);
+		}
+	}
+
+	void Window::onKeyPressed(int tKey, int tScancode, int tAction, int tMods)
+	{
+		if (tAction == GLFW_REPEAT)
+		{
+			return;
+		}
+
+		bool pressed = (tAction == GLFW_PRESS) ? true : false;
+
+		for (const auto &connection : mKeyPressedConnections)
+		{
+			connection(tKey, tScancode, pressed, tMods);
+		}
+	}
+
+	void Window::onScroll(double tXOffset, double tYOffset)
+	{
+		for (const auto &connection : mScrollConnections)
+		{
+			connection(tXOffset, tYOffset);
+		}
+	}
+
+	void Window::initializeCallbacks()
+	{
+		auto mouseMovedProxy = [](GLFWwindow* tWindowHandle, double tX, double tY)
+		{
+			static_cast<Window*>(glfwGetWindowUserPointer(tWindowHandle))->onMouseMoved(tX, tY);
+		};
+		glfwSetCursorPosCallback(mWindowHandle, mouseMovedProxy);
+
+		auto mousePressedProxy = [](GLFWwindow* tWindowHandle, int tButton, int tAction, int tMods)
+		{
+			static_cast<Window*>(glfwGetWindowUserPointer(tWindowHandle))->onMousePressed(tButton, tAction, tMods);
+		};
+		glfwSetMouseButtonCallback(mWindowHandle, mousePressedProxy);
+
+		auto keyPressedProxy = [](GLFWwindow* tWindowHandle, int tKey, int tScancode, int tAction, int tMods)
+		{
+			static_cast<Window*>(glfwGetWindowUserPointer(tWindowHandle))->onKeyPressed(tKey, tScancode, tAction, tMods);
+		};
+		glfwSetKeyCallback(mWindowHandle, keyPressedProxy);
+
+		auto scrollProxy = [](GLFWwindow* tWindowHandle, double tXOffset, double tYOffset)
+		{
+			static_cast<Window*>(glfwGetWindowUserPointer(tWindowHandle))->onScroll(tXOffset, tYOffset);
+		};
+		glfwSetScrollCallback(mWindowHandle, scrollProxy);
 	}
 
 } // namespace vk

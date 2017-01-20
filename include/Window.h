@@ -4,10 +4,12 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include <map>
 
 #include "Platform.h"
 #include "Instance.h"
 #include "Surface.h"
+
 #include "glfw3.h"
 #include "glm/glm/glm.hpp"
 #include "glm/glm/gtc/type_ptr.hpp"
@@ -24,7 +26,12 @@ namespace vk
 		
 	public:
 
-		enum class Mode
+		using MouseMovedFuncType = std::function<void(double, double)>;
+		using MousePressedFuncType = std::function<void(int, bool, int)>;
+		using KeyPressedFuncType = std::function<void(int, int, bool, int)>;
+		using ScrollFuncType = std::function<void(double, double)>;
+
+		enum class WindowMode
 		{
 			WINDOW_MODE_HEADLESS,
 			WINDOW_MODE_BORDERS,
@@ -38,11 +45,11 @@ namespace vk
 
 			Options& title(const std::string &tTitle) { mTitle = tTitle; return *this; }
 			Options& resizeable(bool tResizeable) { mResizeable = tResizeable; return *this; }
-			Options& mode(Mode tMode) { mMode = tMode; return *this; }
+			Options& mode(WindowMode tWindowMode) { mWindowMode = tWindowMode; return *this; }
 
 			std::string mTitle;
 			bool mResizeable;
-			Mode mMode;
+			WindowMode mWindowMode;
 		};
 
 		//! Factory method for returning a new WindowRef
@@ -58,7 +65,8 @@ namespace vk
 		inline GLFWwindow* getWindowHandle() const { return mWindowHandle; }
 		inline uint32_t getWidth() const { return mWidth; }
 		inline uint32_t getHeight() const { return mHeight; }
-		inline void setWindowTitle(const std::string &tTitle) { glfwSetWindowTitle(mWindowHandle, tTitle.c_str()); }
+		inline const std::string& getTitle() const { return mTitle; }
+		inline void setTitle(const std::string &tTitle) { glfwSetWindowTitle(mWindowHandle, tTitle.c_str()); }
 
 		//! Returns the instance extensions required by the windowing system
 		std::vector<const char*> getRequiredInstanceExtensions() const;
@@ -74,11 +82,21 @@ namespace vk
 		inline glm::vec2 getMousePosition() const { double x, y; glfwGetCursorPos(mWindowHandle, &x, &y); return { x, y }; }
 
 		//! Add a callback function to this window's mouse moved event.
-		inline void connectToMouseMoved(const std::function<void(double, double)> &tConnection) { mMouseMovedConnections.push_back(tConnection); }
+		inline void connectToMouseMoved(const MouseMovedFuncType &tConnection) { mMouseMovedConnections.push_back(tConnection); }
+		
+		//! Add a callback function to this window's mouse pressed event.
+		inline void connectToMousePressed(const MousePressedFuncType &tConnection) { mMousePressedConnections.push_back(tConnection); }
+		
+		//! Add a callback function to this window's key pressed event.
+		inline void connectToKeyPressed(const KeyPressedFuncType &tConnection) { mKeyPressedConnections.push_back(tConnection); }
 
 	private:
 
-		static void onMouseMoved(GLFWwindow *tWindow, double tX, double tY);
+		void initializeCallbacks();
+		void onMouseMoved(double tX, double tY);
+		void onMousePressed(int tButton, int tAction, int tMods);
+		void onKeyPressed(int tKey, int tScancode, int tAction, int tMods);
+		void onScroll(double tXOffset, double tYOffset);
 
 		GLFWwindow *mWindowHandle;
 
@@ -87,9 +105,12 @@ namespace vk
 		uint32_t mWidth;
 		uint32_t mHeight;
 		std::string mTitle;
-		Mode mMode;
-		std::vector<std::function<void(double, double)>> mMouseMovedConnections;
-
+		WindowMode mWindowMode;
+		
+		std::vector<MouseMovedFuncType> mMouseMovedConnections;
+		std::vector<MousePressedFuncType> mMousePressedConnections;
+		std::vector<KeyPressedFuncType> mKeyPressedConnections;
+		std::vector<ScrollFuncType> mScrollConnections;
 	};
 
 } // namespace vk

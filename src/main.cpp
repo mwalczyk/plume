@@ -42,6 +42,7 @@ int main()
 	auto windowOptions = vk::Window::Options().title("Vulkan Application");
 	auto window = vk::Window::create(instance, width, height, windowOptions);
 	window->connectToMouseMoved([](double x, double y) { std::cout << x << ", " << y << std::endl; });
+	window->connectToKeyPressed([](int key, int scancode, bool pressed, int mods) { std::cout << key << " " << (pressed ? "pressed" : "released") << std::endl; });
 
 	/// vk::Surface
 	auto surface = window->createSurface();
@@ -82,8 +83,8 @@ int main()
 	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription };
 	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 
-	auto vertexShader = vk::ShaderModule::create(device, "assets/shaders/vert.spv");
-	auto fragmentShader = vk::ShaderModule::create(device, "assets/shaders/frag.spv");
+	auto vertexShader = vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
+	auto fragmentShader = vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
 	auto pipelineOptions = vk::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
 		.vertexInputAttributeDescriptions(vertexInputAttributeDescriptions)
@@ -173,7 +174,7 @@ int main()
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "time", &elapsed);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "mouse", &mousePosition);
 		vkCmdBindDescriptorSets(commandBuffers[imageIndex]->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipelineLayoutHandle(), 0, 1, &descriptorSet, 0, nullptr);
-		commandBuffers[imageIndex]->drawIndexed(indices.size(), 1, 0, 0, 0);
+		commandBuffers[imageIndex]->drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 		commandBuffers[imageIndex]->endRenderPass();
 		commandBuffers[imageIndex]->end();
 		
