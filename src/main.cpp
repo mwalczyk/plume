@@ -1,7 +1,7 @@
 #include <chrono>
 
 #include "Vk.h"
-
+#include "Geometry.h"
 #include "glm/glm/gtc/matrix_transform.hpp"
 
 static const std::vector<float> vertices = {
@@ -18,6 +18,8 @@ static const std::vector<uint16_t> indices = {
 struct UniformBufferData
 {
 	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 projection;
 };
 
 float getElapsedSeconds()
@@ -69,29 +71,34 @@ int main()
 	auto renderPass = vk::RenderPass::create(device);
 
 	/// vk::Buffer
-	auto vertexBuffer = vk::Buffer::create(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertices);
-	auto indexBuffer = vk::Buffer::create(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices);
-	auto uniformBuffer = vk::Buffer::create(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(UniformBufferData), nullptr);
-	std::vector<vk::BufferRef> vertexBuffers = { vertexBuffer };
+	auto icosphere = geo::IcoSphere();
+
+	auto positionBuffer =	vk::Buffer::create(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, icosphere.getPositions());
+	auto colorBuffer =		vk::Buffer::create(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, icosphere.getColors());
+	auto indexBuffer =		vk::Buffer::create(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, icosphere.getIndices());
+	auto uniformBuffer =	vk::Buffer::create(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(UniformBufferData), nullptr);
+	std::vector<vk::BufferRef> vertexBuffers = { positionBuffer, colorBuffer };
 
 	/// vk::Pipeline
-	auto bindingDescription = vk::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 7);
-	auto attributeDescriptionPosition = vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32_SFLOAT, 0, 0);
-	auto attributeDescriptionColor =	vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 2);
-	auto attributeDescriptionTexcoord = vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 5);
+	auto bindingDescriptionPosition =	vk::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 3);
+	auto bindingDescriptionColor =		vk::Pipeline::createVertexInputBindingDescription(1, sizeof(float) * 3);
+	auto attributeDescriptionPosition = vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32B32_SFLOAT, 0, 0);
+	auto attributeDescriptionColor =	vk::Pipeline::createVertexInputAttributeDescription(1, VK_FORMAT_R32G32B32_SFLOAT, 1, 0);
 
-	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription };
-	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor, attributeDescriptionTexcoord };
+	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescriptionPosition, bindingDescriptionColor };
+	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 
-	auto vertexShader = vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
-	auto fragmentShader = vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
+	auto vertexShader =		vk::ShaderModule::create(device, "assets/shaders/vert.spv");
+	auto fragmentShader =	vk::ShaderModule::create(device, "assets/shaders/frag.spv");
+
 	auto pipelineOptions = vk::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
 		.vertexInputAttributeDescriptions(vertexInputAttributeDescriptions)
 		.viewport(window->getFullscreenViewport())
 		.scissor(window->getFullscreenScissorRect2D())
 		.attachShaderStage(vertexShader, VK_SHADER_STAGE_VERTEX_BIT)
-		.attachShaderStage(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
+		.attachShaderStage(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.polygonMode(VK_POLYGON_MODE_LINE);
 	auto pipeline = vk::Pipeline::create(device, renderPass, pipelineOptions);
 	std::cout << pipeline << std::endl;
 
@@ -158,7 +165,12 @@ int main()
 
 		// Update the uniform buffer object.
 		UniformBufferData ubo = {};
-		ubo.model = glm::mat4(); //glm::rotate(glm::mat4(), elapsed * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		auto translation = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, -2.0f));
+		auto rotation = glm::rotate(glm::mat4(), elapsed * 0.2f * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		ubo.model = translation * rotation;
+		ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		ubo.projection = glm::perspective(glm::radians(45.0f), width / (float)height, 0.1f, 1000.0f);
+
 		void *data = uniformBuffer->map(0, uniformBuffer->getSize());
 		memcpy(data, &ubo, sizeof(ubo));
 		uniformBuffer->unmap();
@@ -174,7 +186,7 @@ int main()
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "time", &elapsed);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "mouse", &mousePosition);
 		vkCmdBindDescriptorSets(commandBuffers[imageIndex]->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipelineLayoutHandle(), 0, 1, &descriptorSet, 0, nullptr);
-		commandBuffers[imageIndex]->drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		commandBuffers[imageIndex]->drawIndexed(static_cast<uint32_t>(icosphere.getIndices().size()), 1, 0, 0, 0);
 		commandBuffers[imageIndex]->endRenderPass();
 		commandBuffers[imageIndex]->end();
 		

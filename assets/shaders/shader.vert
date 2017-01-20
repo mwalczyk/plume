@@ -4,12 +4,13 @@
 layout (set = 0, binding = 0) uniform UniformBufferObject
 {
 	mat4 model;
+	mat4 view;
+	mat4 projection;
 } ubo;
 
 // Vertex shader inputs
-layout (location = 0) in vec2 inPosition;
+layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec3 inColor;
-layout (location = 2) in vec2 inTexcoord;
 
 // Vertex shader outputs
 out gl_PerVertex
@@ -18,11 +19,9 @@ out gl_PerVertex
 };
 
 layout (location = 0) out vec3 vsColor;
-layout (location = 1) out vec2 vsTexcoord;
 
 void main()
 {
 	vsColor = inColor;
-	vsTexcoord = inTexcoord;
-  gl_Position = ubo.model * vec4(inPosition, 0.0, 1.0);
+  gl_Position = ubo.projection * ubo.view * ubo.model * vec4(inPosition, 1.0);
 }

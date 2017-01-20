@@ -200,6 +200,7 @@
     <ClCompile Include="..\src\CommandPool.cpp" />
     <ClCompile Include="..\src\Device.cpp" />
     <ClCompile Include="..\src\Framebuffer.cpp" />
+    <ClCompile Include="..\src\Geometry.cpp" />
     <ClCompile Include="..\src\Instance.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Pipeline.cpp" />
@@ -216,6 +217,7 @@
     <ClInclude Include="..\include\CommandPool.h" />
     <ClInclude Include="..\include\Device.h" />
     <ClInclude Include="..\include\Framebuffer.h" />
+    <ClInclude Include="..\include\Geometry.h" />
     <ClInclude Include="..\include\Instance.h" />
     <ClInclude Include="..\include\Pipeline.h" />
     <ClInclude Include="..\include\Platform.h" />

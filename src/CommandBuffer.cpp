@@ -63,14 +63,17 @@ namespace vk
 	{
 		std::vector<VkBuffer> bufferHandles(tBuffers.size());
 		std::transform(tBuffers.begin(), tBuffers.end(), bufferHandles.begin(), [](const BufferRef &tBuffer) { return tBuffer->getHandle(); } );
-		VkDeviceSize offsets[] = { 0 };
+		std::vector<VkDeviceSize> offsets(tBuffers.size(), 0);
 
-		vkCmdBindVertexBuffers(mCommandBufferHandle, 0, 1, bufferHandles.data(), offsets);
+		uint32_t firstBinding = 0;
+		uint32_t bindingCount = static_cast<uint32_t>(tBuffers.size());
+
+		vkCmdBindVertexBuffers(mCommandBufferHandle, firstBinding, bindingCount, bufferHandles.data(), offsets.data());
 	}
 
 	void CommandBuffer::bindIndexBuffer(const BufferRef &tBuffer)
 	{
-		vkCmdBindIndexBuffer(mCommandBufferHandle, tBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(mCommandBufferHandle, tBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT32);
 	}
 
 	void CommandBuffer::updatePushConstantRanges(const PipelineRef &tPipeline, VkShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData)
