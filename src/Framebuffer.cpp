@@ -5,16 +5,14 @@ namespace vk
 
 	Framebuffer::Options::Options()
 	{
-		mWidth = 640;
-		mHeight = 480;
 	}
 
-	Framebuffer::Framebuffer(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<VkImageView> &tImageViews, const Options &tOptions) :
+	Framebuffer::Framebuffer(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<VkImageView> &tImageViews, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
 		mDevice(tDevice),
 		mRenderPass(tRenderPass),
 		mImageViews(tImageViews),
-		mWidth(tOptions.mWidth),
-		mHeight(tOptions.mHeight)
+		mWidth(tWidth),
+		mHeight(tHeight)
 	{
 		VkFramebufferCreateInfo framebufferCreateInfo = {};
 		framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(mImageViews.size());

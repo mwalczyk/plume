@@ -61,9 +61,12 @@ namespace vk
 		allocateMemory(memoryRequirements);
 
 		// Fill the buffer with the data that was passed into the constructor.
-		void* mappedPtr = map(0, mSize);
-		memcpy(mappedPtr, tData, static_cast<size_t>(mSize));
-		unmap();
+		if (tData)
+		{
+			void* mappedPtr = map(0, mSize);
+			memcpy(mappedPtr, tData, static_cast<size_t>(mSize));
+			unmap();
+		}
 
 		// Associate the device memory with this buffer object.
 		vkBindBufferMemory(mDevice->getHandle(), mBufferHandle, mDeviceMemoryHandle, 0);

@@ -4,8 +4,6 @@
 layout (set = 0, binding = 0) uniform UniformBufferObject
 {
 	mat4 model;
-	mat4 view;
-	mat4 projection;
 } ubo;
 
 // Vertex shader inputs
@@ -23,5 +21,5 @@ layout(location = 0) out vec3 vsColor;
 void main()
 {
 	vsColor = inColor;
-  gl_Position = vec4(inPosition, 0.0, 1.0);
+  gl_Position = ubo.model * vec4(inPosition, 0.0, 1.0);
 }

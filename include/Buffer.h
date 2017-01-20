@@ -35,6 +35,11 @@ namespace vk
 			return std::make_shared<Buffer>(tDevice, tBufferUsageFlags, sizeof(T) * tData.size(), tData.data());
 		}
 
+		static BufferRef create(const DeviceRef &tDevice, VkBufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options())
+		{
+			return std::make_shared<Buffer>(tDevice, tBufferUsageFlags, tSize, tData, tOptions);
+		}
+
 		Buffer(const DeviceRef &tDevice, VkBufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options());
 		~Buffer();
 

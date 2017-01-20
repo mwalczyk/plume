@@ -22,25 +22,24 @@ namespace vk
 		{
 			Options();
 
-			Options& width(uint32_t tWidth) { mWidth = tWidth; return *this; }
-			Options& height(uint32_t tHeight) { mHeight = tHeight; return *this; }
+			//! Set the preferred presentation mode (defaults is VK_PRESENT_MODE_MAILBOX_KHR).
+			Options& presentMode(VkPresentModeKHR tPresentMode) { mPresentMode = tPresentMode; return *this; }
 
-			uint32_t mWidth;
-			uint32_t mHeight;
+			VkPresentModeKHR mPresentMode;
 		};
 
 		//! Factory method for returning a new SwapchainRef.
-		static SwapchainRef create(const DeviceRef &tDevice, const SurfaceRef &tSurface, const Options &tOptions = Options())
+		static SwapchainRef create(const DeviceRef &tDevice, const SurfaceRef &tSurface, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options())
 		{
-			return std::make_shared<Swapchain>(tDevice, tSurface, tOptions);
+			return std::make_shared<Swapchain>(tDevice, tSurface, tWidth, tHeight, tOptions);
 		}
 
-		Swapchain(const DeviceRef &tDevice, const SurfaceRef &tSurface, const Options &tOptions = Options());
+		Swapchain(const DeviceRef &tDevice, const SurfaceRef &tSurface, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options());
 		~Swapchain();
 
 		inline VkSwapchainKHR getHandle() const { return mSwapchainHandle; };
-		inline const std::vector<VkImage>& getSwapchainImages() const { return mSwapchainImages; }
-		inline const std::vector<VkImageView>& getSwapchainImageViews() const { return mSwapchainImageViews; }
+		inline const std::vector<VkImage>& getImageHandles() const { return mImageHandles; }
+		inline const std::vector<VkImageView>& getImageViewHandles() const { return mImageViewHandles; }
 		uint32_t acquireNextSwapchainImage(const SemaphoreRef &tSemaphore, uint32_t tNanosecondsTimeout = std::numeric_limits<uint64_t>::max());
 
 	private:
@@ -56,8 +55,8 @@ namespace vk
 		VkSwapchainKHR mSwapchainHandle;
 		VkFormat mSwapchainImageFormat;
 		VkExtent2D mSwapchainImageExtent;
-		std::vector<VkImage> mSwapchainImages;
-		std::vector<VkImageView> mSwapchainImageViews;
+		std::vector<VkImage> mImageHandles;
+		std::vector<VkImageView> mImageViewHandles;
 
 		uint32_t mWidth;
 		uint32_t mHeight;

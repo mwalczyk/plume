@@ -4,15 +4,14 @@ namespace vk
 {
 	Swapchain::Options::Options()
 	{
-		mWidth = 640;
-		mHeight = 480;
+		mPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 	}
 
-	Swapchain::Swapchain(const DeviceRef &tDevice, const SurfaceRef &tSurface, const Options &tOptions) :
+	Swapchain::Swapchain(const DeviceRef &tDevice, const SurfaceRef &tSurface, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
 		mDevice(tDevice),
 		mSurface(tSurface),
-		mWidth(tOptions.mWidth),
-		mHeight(tOptions.mHeight)
+		mWidth(tWidth),
+		mHeight(tHeight)
 	{
 		auto swapchainSupportDetails = mDevice->getSwapchainSupportDetails(tSurface);
 
@@ -27,7 +26,6 @@ namespace vk
 		{
 			imageCount = swapchainSupportDetails.mCapabilities.maxImageCount;
 		}
-		std::cout << "Creating a swapchain with " << imageCount << " images\n";
 
 		// For now, we assume that the graphics and presentation queues are the same - this is indicated by the VK_SHARING_MODE_EXCLUSIVE flag.
 		// In the future, we will need to account for the fact that these two operations may be a part of different queue families.
@@ -52,15 +50,11 @@ namespace vk
 		auto result = vkCreateSwapchainKHR(mDevice->getHandle(), &swapchainCreateInfo, nullptr, &mSwapchainHandle);
 		assert(result == VK_SUCCESS);
 
-		std::cout << "Successfully created swapchain\n";
-
 		// Note that the Vulkan implementation may create more swapchain images than requested above - this is why we query the number of images again.
 		vkGetSwapchainImagesKHR(mDevice->getHandle(), mSwapchainHandle, &imageCount, nullptr);
 
-		mSwapchainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(mDevice->getHandle(), mSwapchainHandle, &imageCount, mSwapchainImages.data());
-
-		std::cout << "Retrieved " << imageCount << " images from the swapchain\n";
+		mImageHandles.resize(imageCount);
+		vkGetSwapchainImagesKHR(mDevice->getHandle(), mSwapchainHandle, &imageCount, mImageHandles.data());
 
 		// Store the image format and extent for later use.
 		mSwapchainImageFormat = selectedSurfaceFormat.format;
@@ -116,17 +110,15 @@ namespace vk
 		// VK_PRESENT_MODE_FIFO_KHR (the only mode guaranteed to be available)
 		// VK_PRESENT_MODE_FIFO_RELAXED_KHR
 		// VK_PRESENT_MODE_MAILBOX_KHR
-
 		for (const auto& presentMode : tPresentModes)
 		{
 			if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
 			{
-				std::cout << "Found VK_PRESENT_MODE_MAILBOX_KHR presentation mode\n";
 				return presentMode;
 			}
 		}
 
-		std::cout << "Presentation mode VK_PRESENT_MODE_MAILBOX_KHR is not available - defaulting to VK_PRESENT_MODE_FIFO_KHR\n";
+		// This present mode is always available - use it if the preferred mode is not found.
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
@@ -151,9 +143,9 @@ namespace vk
 
 	void Swapchain::createImageViews()
 	{
-		mSwapchainImageViews.resize(mSwapchainImages.size());
+		mImageViewHandles.resize(mImageHandles.size());
 
-		for (size_t i = 0; i < mSwapchainImageViews.size(); ++i)
+		for (size_t i = 0; i < mImageViewHandles.size(); ++i)
 		{
 			VkImageViewCreateInfo imageViewCreateInfo;
 			imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;				// For now, do not swizzle any of the color channels.
@@ -162,7 +154,7 @@ namespace vk
 			imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 			imageViewCreateInfo.flags = 0;
 			imageViewCreateInfo.format = mSwapchainImageFormat;
-			imageViewCreateInfo.image = mSwapchainImages[i];
+			imageViewCreateInfo.image = mImageHandles[i];
 			imageViewCreateInfo.pNext = nullptr;
 			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;	// This describes the image's purpose - we will be using these images as color targets.
@@ -170,13 +162,13 @@ namespace vk
 			imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 			imageViewCreateInfo.subresourceRange.layerCount = 1;
 			imageViewCreateInfo.subresourceRange.levelCount = 1;
-			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;							// We want to treat the image as a standard 2D texture.
+			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;							// Treat the image as a standard 2D texture.
 
-			auto result = vkCreateImageView(mDevice->getHandle(), &imageViewCreateInfo, nullptr, &mSwapchainImageViews[i]);
+			auto result = vkCreateImageView(mDevice->getHandle(), &imageViewCreateInfo, nullptr, &mImageViewHandles[i]);
 			assert(result == VK_SUCCESS);
 		}
 
-		std::cout << "Successfully created " << mSwapchainImageViews.size() << " image views for the swapchain\n";
+		std::cout << "Successfully created " << mImageViewHandles.size() << " image views for the swapchain\n";
 	}
 
 } // namespace vk

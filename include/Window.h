@@ -35,26 +35,22 @@ namespace vk
 		{
 			Options();
 
-			Options& width(uint32_t tWidth) { mWidth = tWidth; return *this; }
-			Options& height(uint32_t tHeight) { mHeight = tHeight; return *this; }
 			Options& title(const std::string &tTitle) { mTitle = tTitle; return *this; }
 			Options& resizeable(bool tResizeable) { mResizeable = tResizeable; return *this; }
 			Options& mode(Mode tMode) { mMode = tMode; return *this; }
 
-			uint32_t mWidth;
-			uint32_t mHeight;
 			std::string mTitle;
 			bool mResizeable;
 			Mode mMode;
 		};
 
 		//! Factory method for returning a new WindowRef
-		static WindowRef create(const InstanceRef &tInstance, const Options &tOptions = Options())
+		static WindowRef create(const InstanceRef &tInstance, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options())
 		{
-			return std::make_shared<Window>(tInstance, tOptions);
+			return std::make_shared<Window>(tInstance, tWidth, tHeight, tOptions);
 		}
 
-		Window(const InstanceRef &tInstance, const Options &tOptions = Options());
+		Window(const InstanceRef &tInstance, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options());
 		~Window();
 
 		SurfaceRef createSurface();

@@ -10,17 +10,15 @@ namespace vk
 
 	Window::Options::Options()
 	{
-		mWidth = 640;
-		mHeight = 480;
-		mTitle = "Window";
+		mTitle = "Spectra Application";
 		mResizeable = false;
 		mMode = Mode::WINDOW_MODE_BORDERS;
 	}
 
-	Window::Window(const InstanceRef &tInstance, const Options &tOptions) :
+	Window::Window(const InstanceRef &tInstance, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
 		mInstance(tInstance),
-		mWidth(tOptions.mWidth),
-		mHeight(tOptions.mHeight),
+		mWidth(tWidth),
+		mHeight(tHeight),
 		mTitle(tOptions.mTitle),
 		mMode(tOptions.mMode)
 	{

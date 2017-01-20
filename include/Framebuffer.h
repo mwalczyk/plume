@@ -21,21 +21,15 @@ namespace vk
 		struct Options
 		{
 			Options();
-
-			Options& width(uint32_t tWidth) { mWidth = tWidth; return *this; }
-			Options& height(uint32_t tHeight) { mHeight = tHeight; return *this; }
-
-			uint32_t mWidth;
-			uint32_t mHeight;
 		};
 
 		//! Factory method for returning a new FramebufferRef.
-		static FramebufferRef create(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<VkImageView> &tImageViews, const Options &tOptions = Options())
+		static FramebufferRef create(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<VkImageView> &tImageViews, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options())
 		{
-			return std::make_shared<Framebuffer>(tDevice, tRenderPass, tImageViews, tOptions);
+			return std::make_shared<Framebuffer>(tDevice, tRenderPass, tImageViews, tWidth, tHeight, tOptions);
 		}
 
-		Framebuffer(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<VkImageView> &tImageViews, const Options &tOptions = Options());
+		Framebuffer(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<VkImageView> &tImageViews, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options());
 		~Framebuffer();
 
 		inline VkFramebuffer getHandle() const { return mFramebufferHandle; };

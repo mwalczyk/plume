@@ -95,6 +95,27 @@ namespace vk
 		mPrimitiveRestart = VK_FALSE;
 		mPrimitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	}
+   
+	VkVertexInputBindingDescription Pipeline::createVertexInputBindingDescription(uint32_t tBinding, uint32_t tStride, VkVertexInputRate tVertexInputRate)
+	{
+		VkVertexInputBindingDescription vertexInputBindingDescription = {};
+		vertexInputBindingDescription.binding = tBinding;
+		vertexInputBindingDescription.inputRate = tVertexInputRate;
+		vertexInputBindingDescription.stride = tStride;
+
+		return vertexInputBindingDescription;
+	}
+
+	VkVertexInputAttributeDescription Pipeline::createVertexInputAttributeDescription(uint32_t tBinding, VkFormat tFormat, uint32_t tLocation, uint32_t tOffset)
+	{
+		VkVertexInputAttributeDescription vertexInputAttributeDescription = {};
+		vertexInputAttributeDescription.binding = tBinding;
+		vertexInputAttributeDescription.format = tFormat;
+		vertexInputAttributeDescription.location = tLocation;
+		vertexInputAttributeDescription.offset = tOffset;
+
+		return vertexInputAttributeDescription;
+	}
 
 	Pipeline::Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions) :
 		mDevice(tDevice),
@@ -193,30 +214,22 @@ namespace vk
 
 		// A limited amount of the pipeline state can be changed without recreating the entire pipeline - see VkPipelineDynamicStateCreateInfo.
 
+		buildDescriptorSetLayouts();
+
 		// Get all of the values in the push constant ranges map. 
 		std::vector<VkPushConstantRange> pushConstantRanges;
 		std::transform(mPushConstantsMapping.begin(), mPushConstantsMapping.end(), std::back_inserter(pushConstantRanges), [](const auto& val) {return val.second; });
 
-		// Generate all of the handles to the descriptor set layouts.
-		mDescriptorSetLayoutHandles.resize(mDescriptorsMapping.size());
-		
-		for (size_t i = 0; i < mDescriptorSetLayoutHandles.size(); ++i)
-		{
-			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
-			descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(mDescriptorsMapping[i].size());
-			descriptorSetLayoutCreateInfo.pBindings = mDescriptorsMapping[i].data();
-			descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-
-			auto result = vkCreateDescriptorSetLayout(mDevice->getHandle(), &descriptorSetLayoutCreateInfo, nullptr, &mDescriptorSetLayoutHandles[i]);
-			assert(result == VK_SUCCESS);
-		}	
+		// Get all of the values in the descriptor set layouts map.
+		std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+		std::transform(mDescriptorSetLayoutsMapping.begin(), mDescriptorSetLayoutsMapping.end(), std::back_inserter(descriptorSetLayouts), [](const auto& val) {return val.second; });
 
 		// Encapsulate any descriptor sets and push constant ranges into a pipeline layout.
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 		pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
-		pipelineLayoutCreateInfo.pSetLayouts = mDescriptorSetLayoutHandles.data();
+		pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts.data();
 		pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
-		pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(mDescriptorSetLayoutHandles.size());;
+		pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());;
 		pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
 		auto result = vkCreatePipelineLayout(mDevice->getHandle(), &pipelineLayoutCreateInfo, nullptr, &mPipelineLayoutHandle);
@@ -258,6 +271,20 @@ namespace vk
 		if (it == mPushConstantsMapping.end())
 		{
 			throw std::runtime_error("Push constant with name " + tMemberName + " not found");
+		}
+
+		return it->second;
+	}
+
+	VkDescriptorSetLayout Pipeline::getDescriptorSetLayout(uint32_t tSet) const
+	{
+		auto it = mDescriptorSetLayoutsMapping.find(tSet);
+
+		if (it == mDescriptorSetLayoutsMapping.end())
+		{
+			std::ostringstream os;
+			os << "Descriptor set layout at set " << tSet << " not found";
+			throw std::runtime_error(os.str());
 		}
 
 		return it->second;
@@ -359,6 +386,24 @@ namespace vk
 				}
 			}
 		}			
+	}
+
+	void Pipeline::buildDescriptorSetLayouts()
+	{
+		for (const auto &mapping : mDescriptorsMapping)
+		{
+			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
+			descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(mDescriptorsMapping[mapping.first].size());
+			descriptorSetLayoutCreateInfo.pBindings = mDescriptorsMapping[mapping.first].data();
+			descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+			VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+
+			auto result = vkCreateDescriptorSetLayout(mDevice->getHandle(), &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
+			assert(result == VK_SUCCESS);
+
+			mDescriptorSetLayoutsMapping.insert(std::make_pair(mapping.first, descriptorSetLayout));
+		}
 	}
 
 	std::ostream& operator<<(std::ostream &tStream, const PipelineRef &tPipeline)

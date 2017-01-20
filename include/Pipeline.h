@@ -5,6 +5,7 @@
 #include <map>
 #include <iterator>
 #include <string>
+#include <ostream>
 
 #include "Platform.h"
 #include "Device.h"
@@ -56,6 +57,12 @@ namespace vk
 		{ 
 			return std::make_shared<Pipeline>(tDevice, tRenderPass, tOptions);
 		}
+		
+		//! Helper function for constructing a vertex input binding description.
+		static VkVertexInputBindingDescription createVertexInputBindingDescription(uint32_t tBinding, uint32_t tStride, VkVertexInputRate tVertexInputRate = VK_VERTEX_INPUT_RATE_VERTEX);
+
+		//! Helper function for constructing a vertex input attribute description.
+		static VkVertexInputAttributeDescription createVertexInputAttributeDescription(uint32_t tBinding, VkFormat tFormat, uint32_t tLocation, uint32_t tOffset);
 
 		Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions = Options());
 		~Pipeline();
@@ -65,6 +72,9 @@ namespace vk
 
 		//! Returns a push constant range structure that holds information about the push constant with the given name.
 		VkPushConstantRange getPushConstantsMember(const std::string &tMemberName) const;
+
+		//! Returns a descriptor set layout that holds information about the descriptor set with the given index.
+		VkDescriptorSetLayout getDescriptorSetLayout(uint32_t tSet) const;
 
 		//! Given a descriptor set index, create and return a handle to a new descriptor pool whose size matches the combined 
 		//! size of all of the descriptors in that set. If there is no descriptor set with the given index, return a null handle.
@@ -82,11 +92,14 @@ namespace vk
 		//! Given a shader module and shader stage, add all of the module's descriptors to the pipeline object's global map.
 		void addDescriptorsToGlobalMap(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits);
 
+		//! Generate all of the descriptor set layout handles.		
+		void buildDescriptorSetLayouts();
+
 		VkPipeline mPipelineHandle;
 		VkPipelineLayout mPipelineLayoutHandle;
-		std::vector<VkDescriptorSetLayout> mDescriptorSetLayoutHandles;
 		std::map<std::string, VkPushConstantRange> mPushConstantsMapping;
 		std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> mDescriptorsMapping;
+		std::map<uint32_t, VkDescriptorSetLayout> mDescriptorSetLayoutsMapping;
 
 		DeviceRef mDevice;
 		RenderPassRef mRenderPass;
