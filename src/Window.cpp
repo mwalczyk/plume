@@ -31,11 +31,11 @@ namespace vk
 		// Enable resizing if requested.
 		if (tOptions.mResizeable)
 		{
-			glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+			glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		}
 		else
 		{
-			glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+			glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		}
 
 		mWindowHandle = glfwCreateWindow(mWidth, mHeight, mTitle.c_str(), nullptr, nullptr);

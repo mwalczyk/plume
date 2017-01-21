@@ -20,12 +20,10 @@ namespace vk
 	//! with respect to a specific render pass that the framebuffer is compatible with.
 	class RenderPass
 	{
-
 	public:
 
 		class Options
 		{
-
 		public:
 
 			Options();
@@ -54,7 +52,6 @@ namespace vk
 			std::vector<VkSubpassDependency> mSubpassDependencies;
 
 			friend class RenderPass;
-
 		};
 
 		//! Factory method for returning a new RenderPassRef.
@@ -83,7 +80,6 @@ namespace vk
 		std::vector<VkAttachmentReference> mAttachmentReferences;
 		std::vector<VkSubpassDescription> mSubpassDescriptions;
 		std::vector<VkSubpassDependency> mSubpassDependencies;
-
 	};
 
 } // namespace vk

@@ -17,20 +17,38 @@ namespace vk
 
 	class Instance
 	{
-
 	public:
 
-		struct Options
+		class Options
 		{
+		public:
+			
 			Options();
 
+			//! Specify the names of all instance layers that should be enabled. By default,
+			//! only the VK_LAYER_LUNARG_standard_validation layer is enabled.
 			Options& requiredLayers(const std::vector<const char*> tRequiredLayers) { mRequiredLayers = tRequiredLayers; return *this; }
+
+			//! Add a single name to the list of instance layers that should be enabled.
+			Options& appendRequiredLayer(const char* tLayerName) { mRequiredLayers.push_back(tLayerName); return *this; }
+
+			//! Specify the names of all instance extensions that should be enabled.
 			Options& requiredExtensions(const std::vector<const char*> tRequiredExtensions) { mRequiredExtensions = tRequiredExtensions; return *this; }
+			
+			//! Add a single name to the list of instance extensions that should be enabled. By default,
+			//! only the VK_EXT_debug_report instance extension is enabled.
+			Options& appendRequiredExtensions(const char* tExtensionName) { mRequiredExtensions.push_back(tExtensionName); return *this; }
+			
+			//! Specify a complete VkApplicationInfo structure that will be used to create this instance.
 			Options& applicationInfo(const VkApplicationInfo &tApplicationInfo) { mApplicationInfo = tApplicationInfo; return *this; }
 			
+		private:
+
 			std::vector<const char*> mRequiredLayers;
 			std::vector<const char*> mRequiredExtensions;
 			VkApplicationInfo mApplicationInfo;
+
+			friend class Instance;
 		};
 
 		//! Factory method for returning a new InstanceRef.
@@ -59,7 +77,6 @@ namespace vk
 
 		std::vector<const char*> mRequiredLayers;
 		std::vector<const char*> mRequiredExtensions;
-		VkApplicationInfo mApplicationInfo;
 
 		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags,
 															VkDebugReportObjectTypeEXT objType,
@@ -73,7 +90,6 @@ namespace vk
 			std::cerr << "VALIDATION LAYER: " << msg << std::endl;
 			return VK_FALSE;
 		}
-
 	};
 
 } // namespace vk

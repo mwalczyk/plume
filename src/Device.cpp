@@ -34,12 +34,6 @@ namespace vk
 
 		mPhysicalDeviceExtensionProperties.resize(deviceExtensionPropertiesCount);
 		vkEnumerateDeviceExtensionProperties(mPhysicalDeviceHandle, nullptr, &deviceExtensionPropertiesCount, mPhysicalDeviceExtensionProperties.data());
-
-		// Print some useful information about the chosen physical device.
-		std::cout << "Found suitable physical device:\n";
-		std::cout << "\tdevice ID: " << mPhysicalDeviceProperties.deviceID << "\n";
-		std::cout << "\tdevice name: " << mPhysicalDeviceProperties.deviceName << "\n";
-		std::cout << "\tvendor ID: " << mPhysicalDeviceProperties.vendorID << "\n";
 		
 		// Find the indicies of all of the requested queue families (inspired by Sascha Willems' codebase).
 		const float defaultQueuePriority = 0.0f;
@@ -113,12 +107,6 @@ namespace vk
 			// TODO
 		}
 
-		std::cout << "Queue family - graphics index: " << mQueueFamilyIndices.mGraphicsIndex << std::endl;
-		std::cout << "Queue family - compute index: " << mQueueFamilyIndices.mComputeIndex << std::endl;
-		std::cout << "Queue family - transfer index: " << mQueueFamilyIndices.mTransferIndex << std::endl;
-		std::cout << "Queue family - sparse binding index: " << mQueueFamilyIndices.mSparseBindingIndex << std::endl;
-		std::cout << "Number of VkDeviceQueueCreateInfo structures: " << deviceQueueCreateInfos.size() << std::endl;
-
 		// Automatically add the swapchain extension if needed.
 		if (tOptions.mUseSwapchain)
 		{
@@ -144,8 +132,6 @@ namespace vk
 		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mTransferIndex, 0, &mQueuesHandles.mTransferQueue);
 		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mSparseBindingIndex, 0, &mQueuesHandles.mSparseBindingQueue);
 		vkGetDeviceQueue(mDeviceHandle, mQueueFamilyIndices.mPresentationIndex, 0, &mQueuesHandles.mPresentationQueue);
-
-		std::cout << "Sucessfully created logical and physical devices\n";
 	}
 
 	Device::~Device()
@@ -231,6 +217,25 @@ namespace vk
 		}
 
 		return swapchainSupportDetails;
+	}
+
+	std::ostream& operator<<(std::ostream &tStream, const DeviceRef &tDevice)
+	{
+		tStream << "Device object: " << tDevice->mDeviceHandle << std::endl;
+		
+		tStream << "Chosen physical device object: " << tDevice->mPhysicalDeviceHandle << std::endl;
+		std::cout << "\Device ID: " << tDevice->mPhysicalDeviceProperties.deviceID << std::endl;
+		std::cout << "\tDevice name: " << tDevice->mPhysicalDeviceProperties.deviceName << std::endl;
+		std::cout << "\tVendor ID: " << tDevice->mPhysicalDeviceProperties.vendorID << std::endl;
+		
+		tStream << "Queue family details:" << std::endl;
+		tStream << "\tQueue family - graphics index: " << tDevice->mQueueFamilyIndices.mGraphicsIndex << std::endl;
+		tStream << "\tQueue family - compute index: " << tDevice->mQueueFamilyIndices.mComputeIndex << std::endl;
+		tStream << "\tQueue family - transfer index: " << tDevice->mQueueFamilyIndices.mTransferIndex << std::endl;
+		tStream << "\tQueue family - sparse binding index: " << tDevice->mQueueFamilyIndices.mSparseBindingIndex << std::endl;
+		tStream << "\tQueue family - present index: " << tDevice->mQueueFamilyIndices.mPresentationIndex << std::endl;
+
+		return tStream;
 	}
 
 } // namespace vk

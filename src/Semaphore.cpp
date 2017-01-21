@@ -11,8 +11,6 @@ namespace vk
 
 		auto result = vkCreateSemaphore(mDevice->getHandle(), &semaphoreCreateInfo, nullptr, &mSemaphoreHandle);
 		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully created semaphore\n";
 	}
 
 	Semaphore::~Semaphore()

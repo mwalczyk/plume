@@ -12,8 +12,8 @@ namespace vk
 		mApplicationInfo.apiVersion = VK_API_VERSION_1_0;
 		mApplicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		mApplicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		mApplicationInfo.pApplicationName = "Application Name";
-		mApplicationInfo.pEngineName = "Engine Name";
+		mApplicationInfo.pApplicationName = "Spectra Application";
+		mApplicationInfo.pEngineName = "Spectra Engine";
 		mApplicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	}
 
@@ -45,8 +45,7 @@ namespace vk
 
 	Instance::Instance(const Options &tOptions) :
 		mRequiredLayers(tOptions.mRequiredLayers),
-		mRequiredExtensions(tOptions.mRequiredExtensions),
-		mApplicationInfo(tOptions.mApplicationInfo)
+		mRequiredExtensions(tOptions.mRequiredExtensions)
 	{
 		// Store the instance extension properties.
 		uint32_t instanceExtensionPropertiesCount = 0;
@@ -75,10 +74,11 @@ namespace vk
 #endif
 		mRequiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
+		// Create the instance.
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(mRequiredExtensions.size());
 		instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mRequiredLayers.size());
-		instanceCreateInfo.pApplicationInfo = &mApplicationInfo;
+		instanceCreateInfo.pApplicationInfo = &tOptions.mApplicationInfo;
 		instanceCreateInfo.ppEnabledExtensionNames = mRequiredExtensions.data();
 		instanceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
 		instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -86,7 +86,11 @@ namespace vk
 		auto result = vkCreateInstance(&instanceCreateInfo, nullptr, &mInstanceHandle);
 		assert(result == VK_SUCCESS);
 
-		setupDebugReportCallback();
+		// Only set up the debug callback object if the VK_EXT_debug_report extension is present.
+		if (std::find(mRequiredExtensions.begin(), mRequiredExtensions.end(), "VK_EXT_debug_report") != mRequiredExtensions.end())
+		{
+			setupDebugReportCallback();
+		}
 
 		// Store the handles to each of the present physical devices (note that this needs to happen after initialization).
 		uint32_t physicalDeviceCount = 0;
@@ -94,8 +98,6 @@ namespace vk
 
 		mPhysicalDevices.resize(physicalDeviceCount);
 		vkEnumeratePhysicalDevices(mInstanceHandle, &physicalDeviceCount, mPhysicalDevices.data());
-
-		std::cout << "Successfully created instance\n";
 	}
 
 	Instance::~Instance()
@@ -125,7 +127,7 @@ namespace vk
 			auto predicate = [&](const VkLayerProperties &layerProperty) { return strcmp(requiredLayerName, layerProperty.layerName) == 0; };
 			if (std::find_if(mInstanceLayerProperties.begin(), mInstanceLayerProperties.end(), predicate) == mInstanceLayerProperties.end())
 			{
-				std::cout << "Required layer " << requiredLayerName << " is not supported\n";
+				std::cerr << "Required layer " << requiredLayerName << " is not supported\n";
 				return false;
 			}
 		}

@@ -52,8 +52,6 @@ namespace vk
 			assert(result == VK_SUCCESS);
 		}
 
-		std::cout << "Successfully created buffer\n";
-
 		// Store the memory requirements for this buffer object.
 		VkMemoryRequirements memoryRequirements;
 		vkGetBufferMemoryRequirements(mDevice->getHandle(), mBufferHandle, &memoryRequirements);
@@ -121,8 +119,6 @@ namespace vk
 
 		auto result = vkAllocateMemory(mDevice->getHandle(), &memoryAllocateInfo, nullptr, &mDeviceMemoryHandle);
 		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully allocated device memory for the buffer object\n";
 	}
 
 } // namespace vk

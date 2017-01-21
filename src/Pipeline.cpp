@@ -91,9 +91,17 @@ namespace vk
 		mScissor.extent = { static_cast<uint32_t>(mViewport.width), static_cast<uint32_t>(mViewport.height) };
 		mScissor.offset = { 0, 0 };
 
+		// Set up parameters for the default rasterization state.
+		mPolygonMode = VK_POLYGON_MODE_FILL;
+
 		// Set up the default input assembly.
 		mPrimitiveRestart = VK_FALSE;
 		mPrimitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+		// Set up the default pipeline color blend attachment state (no blending).
+		mPipelineColorBlendAttachmentState = {};
+		mPipelineColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		mPipelineColorBlendAttachmentState.blendEnable = VK_FALSE;	
 	}
    
 	VkVertexInputBindingDescription Pipeline::createVertexInputBindingDescription(uint32_t tBinding, uint32_t tStride, VkVertexInputRate tVertexInputRate)
@@ -115,6 +123,20 @@ namespace vk
 		vertexInputAttributeDescription.offset = tOffset;
 
 		return vertexInputAttributeDescription;
+	}
+
+	VkPipelineColorBlendAttachmentState Pipeline::createAlphaBlendingAttachmentState()
+	{
+		VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState = {};
+		pipelineColorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+		pipelineColorBlendAttachmentState.blendEnable = VK_TRUE;
+		pipelineColorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
+		pipelineColorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		pipelineColorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		pipelineColorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		pipelineColorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	
+		return pipelineColorBlendAttachmentState;
 	}
 
 	Pipeline::Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions) :
@@ -172,7 +194,7 @@ namespace vk
 		rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
 		rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		rasterizationStateCreateInfo.lineWidth = 1.0f;
-		rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizationStateCreateInfo.polygonMode = tOptions.mPolygonMode;
 		rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 		rasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 
@@ -187,20 +209,7 @@ namespace vk
 		multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 
 		// For now, we are not using depth and stencil tests.
-
-		// Configure color blending, which determines how new fragments are composited with colors that are already in the framebuffer.
-		// Note that there are two structures necessary for setting up color blending because each attached framebuffer has a VkPipelineColorBlendAttachmentState, 
-		// while a single VkPipelineColorBlendStateCreateInfo structure contains the global color blending settings.
-		VkPipelineColorBlendAttachmentState colorBlendAttachmentState = {};
-		colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-		colorBlendAttachmentState.blendEnable = VK_FALSE;		// Blending is currently disabled, so the rest of these parameters are optional.
-		colorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-		colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-
+	
 		VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo = {};
 		colorBlendStateCreateInfo.attachmentCount = 1;
 		colorBlendStateCreateInfo.blendConstants[0] = 0.0f;
@@ -209,7 +218,7 @@ namespace vk
 		colorBlendStateCreateInfo.blendConstants[3] = 0.0f;
 		colorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_COPY;
 		colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;		// If true, the logic op described here will override the blend modes for every attached framebuffer.
-		colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
+		colorBlendStateCreateInfo.pAttachments = &tOptions.mPipelineColorBlendAttachmentState;
 		colorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
 		// A limited amount of the pipeline state can be changed without recreating the entire pipeline - see VkPipelineDynamicStateCreateInfo.
@@ -410,25 +419,25 @@ namespace vk
 	{
 		tStream << "Pipeline object: " << tPipeline->mPipelineHandle << std::endl;
 
-		// Print push constants
+		tStream << "Push constants details:" << std::endl;
 		for (const auto &mapping : tPipeline->mPushConstantsMapping)
 		{
-			tStream << "Push constant named: " << mapping.first << ":" << std::endl;
-			tStream << "\tOffset: " << mapping.second.offset << std::endl;
-			tStream << "\tSize: " << mapping.second.size << std::endl;
-			tStream << "\tShader stage flags: " << shaderStageAsString(mapping.second.stageFlags) << std::endl;
+			tStream << "\tPush constant named: " << mapping.first << ":" << std::endl;
+			tStream << "\t\tOffset: " << mapping.second.offset << std::endl;
+			tStream << "\t\tSize: " << mapping.second.size << std::endl;
+			tStream << "\t\tShader stage flags: " << shaderStageAsString(mapping.second.stageFlags) << std::endl;
 		}
 
-		// Print descriptors
+		tStream << "Descriptor set details:" << std::endl;
 		for (const auto &mapping : tPipeline->mDescriptorsMapping)
 		{
-			tStream << "Descriptor set #" << mapping.first << ":" << std::endl;
+			tStream << "\tDescriptor set #" << mapping.first << ":" << std::endl;
 			for (const auto &descriptorSetLayoutBinding : mapping.second)
 			{
-				tStream << "\tDescriptor at binding: " << descriptorSetLayoutBinding.binding << std::endl;
-				tStream << "\t\tDescriptor count: " << descriptorSetLayoutBinding.descriptorCount << std::endl;
-				tStream << "\t\tDescriptor type: " << descriptorTypeAsString(descriptorSetLayoutBinding.descriptorType) << std::endl;
-				tStream << "\t\tShader stage flags: " << shaderStageAsString(descriptorSetLayoutBinding.stageFlags) << std::endl;
+				tStream << "\t\tDescriptor at binding: " << descriptorSetLayoutBinding.binding << std::endl;
+				tStream << "\t\t\tDescriptor count: " << descriptorSetLayoutBinding.descriptorCount << std::endl;
+				tStream << "\t\t\tDescriptor type: " << descriptorTypeAsString(descriptorSetLayoutBinding.descriptorType) << std::endl;
+				tStream << "\t\t\tShader stage flags: " << shaderStageAsString(descriptorSetLayoutBinding.stageFlags) << std::endl;
 			}
 		}
 

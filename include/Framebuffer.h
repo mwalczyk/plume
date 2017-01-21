@@ -15,12 +15,17 @@ namespace vk
 
 	class Framebuffer
 	{
-
 	public:
 
-		struct Options
+		class Options
 		{
+		public:
+
 			Options();
+
+		private:
+
+			friend class Framebuffer;
 		};
 
 		//! Factory method for returning a new FramebufferRef.

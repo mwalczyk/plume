@@ -21,13 +21,19 @@ namespace vk
 
 	public:
 
-		struct Options
+		class Options
 		{
-			Options();
+		public:
 
+			Options();
+			
 			Options& commandBufferLevel(VkCommandBufferLevel tCommandBufferLevel) { mCommandBufferLevel = tCommandBufferLevel; return *this; }
+		
+		private:
 
 			VkCommandBufferLevel mCommandBufferLevel;
+
+			friend class CommandBuffer;
 		};
 
 		//! Factory method for returning a new CommandBufferRef.
@@ -40,10 +46,11 @@ namespace vk
 		~CommandBuffer();
 
 		inline VkCommandBuffer getHandle() const { return mCommandBufferHandle; };
-		
+		inline bool isPrimary() const { return mCommandBufferLevel == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
+
 		//! Start recording into the command buffer.
 		void begin();
-		void beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer);
+		void beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const VkClearValue &tClearValue = { 0.0f, 0.0f, 0.0f, 0.0f });
 		void bindPipeline(const PipelineRef &tPipeline);
 		void bindVertexBuffers(const std::vector<BufferRef> &tBuffers);
 		void bindIndexBuffer(const BufferRef &tBuffer);

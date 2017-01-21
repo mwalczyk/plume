@@ -78,12 +78,12 @@ namespace vk
 
 	VkSurfaceFormatKHR Swapchain::selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &tSurfaceFormats) const
 	{
-		// If there is only one VkSurfaceFormatKHR entry with format VK_FORMAT_UNDEFINED, this means that the surface has no preferred format.
+		// If there is only one VkSurfaceFormatKHR entry with format VK_FORMAT_UNDEFINED, this means that the surface has no preferred format,
+		// in which case we default to VK_FORMAT_B8G8R8A8_UNORM and VK_COLOR_SPACE_SRGB_NONLINEAR_KHR.
 		if (tSurfaceFormats.size() == 1 &&
 			tSurfaceFormats[0].format == VK_FORMAT_UNDEFINED)
 		{
-			std::cout << "No preferred surface format - defaulting to VK_FORMAT_B8G8R8A8_UNORM and VK_COLOR_SPACE_SRGB_NONLINEAR_KHR\n";
-			return{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+			return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 		}
 
 		// Otherwise, there is a preferred format - iterate through and see if the above combination is available.
@@ -92,14 +92,12 @@ namespace vk
 			if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
 				surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
 			{
-				std::cout << "Found the preferrd surface format - VK_FORMAT_B8G8R8A8_UNORM and VK_COLOR_SPACE_SRGB_NONLINEAR_KHR\n";
 				return surfaceFormat;
 			}
 		}
 
 		// At this point, we could start ranking the available formats and determine which one is "best."
 		// For now, return the first available format, since our preferred format was not available.
-		std::cout << "Could not find the preferred surface format - defaulting to the first available format\n";
 		return tSurfaceFormats[0];
 	}
 
@@ -126,8 +124,6 @@ namespace vk
 	{
 		if (tSurfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 		{
-			std::cout << "VkSurfaceCapabilitiesKHR currentExtent member isn't set to the maximum value of uint32_t - defaulting to:\n";
-			std::cout << "\twidth: " << tSurfaceCapabilities.currentExtent.width << ", height: " << tSurfaceCapabilities.currentExtent.height << "\n";
 			return tSurfaceCapabilities.currentExtent;
 		}
 		else
@@ -135,8 +131,6 @@ namespace vk
 			VkExtent2D actualExtent = { mWidth, mHeight };
 			actualExtent.width = std::max(tSurfaceCapabilities.minImageExtent.width, std::min(tSurfaceCapabilities.maxImageExtent.width, actualExtent.width));
 			actualExtent.height = std::max(tSurfaceCapabilities.minImageExtent.height, std::min(tSurfaceCapabilities.maxImageExtent.height, actualExtent.height));
-			std::cout << "VkSurfaceCapabilitiesKHR currentExtent member is set to the maximum value of uint32_t - setting to:\n";
-			std::cout << "\twidth: " << actualExtent.width << ", height: " << actualExtent.height << "\n";
 			return actualExtent;
 		}
 	}
@@ -167,8 +161,6 @@ namespace vk
 			auto result = vkCreateImageView(mDevice->getHandle(), &imageViewCreateInfo, nullptr, &mImageViewHandles[i]);
 			assert(result == VK_SUCCESS);
 		}
-
-		std::cout << "Successfully created " << mImageViewHandles.size() << " image views for the swapchain\n";
 	}
 
 } // namespace vk

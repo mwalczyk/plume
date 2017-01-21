@@ -16,7 +16,6 @@ namespace vk
 
 	class Device
 	{
-
 	public:
 
 		struct SwapchainSupportDetails
@@ -44,17 +43,23 @@ namespace vk
 			VkQueue mPresentationQueue = VK_NULL_HANDLE;
 		};
 
-		struct Options
+		class Options
 		{
+		public:
+
 			Options();
 
 			Options& requiredQueueFlags(VkQueueFlags tRequiredQueueFlags) { mRequiredQueueFlags = tRequiredQueueFlags; return *this; }
 			Options& requiredDeviceExtensions(const std::vector<const char*> &tRequiredDeviceExtensions) { mRequiredDeviceExtensions = tRequiredDeviceExtensions; return *this; }
 			Options& useSwapchain(bool tUseSwapchain) { mUseSwapchain = tUseSwapchain; return *this; }
 
+		private:
+
 			VkQueueFlags mRequiredQueueFlags;
 			std::vector<const char*> mRequiredDeviceExtensions;
 			bool mUseSwapchain;
+
+			friend class Device;
 		};
 
 		//! Factory method for returning a new DeviceRef.
@@ -80,6 +85,8 @@ namespace vk
 		//! Returns a structure that contains information related to the chosen physical device's swapchain support.
 		SwapchainSupportDetails getSwapchainSupportDetails(const SurfaceRef &tSurface) const;
 
+		friend std::ostream& operator<<(std::ostream &tStream, const DeviceRef &tDevice);
+
 	private:
 
 		uint32_t findQueueFamilyIndex(VkQueueFlagBits tQueueFlagBits) const;
@@ -96,7 +103,6 @@ namespace vk
 		std::vector<VkExtensionProperties> mPhysicalDeviceExtensionProperties;
 
 		std::vector<const char*> mRequiredDeviceExtensions;
-
 	};
 
 } // namespace vk

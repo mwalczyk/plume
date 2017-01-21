@@ -18,8 +18,6 @@ namespace vk
 
 		auto result = vkCreateCommandPool(mDevice->getHandle(), &commandPoolCreateInfo, nullptr, &mCommandPoolHandle);
 		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully created command pool\n";
 	}
 
 	CommandPool::~CommandPool()

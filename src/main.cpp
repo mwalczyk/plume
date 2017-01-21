@@ -5,10 +5,10 @@
 #include "glm/glm/gtc/matrix_transform.hpp"
 
 static const std::vector<float> vertices = {
-	-0.5f, -0.5f,	1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f,	0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f,	0.0f, 0.0f, 1.0f,
-	-0.5f, 0.5f,	1.0f, 1.0f, 1.0f
+   -1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 1.0f,
+    1.0f, -1.0f,	0.0f, 1.0f, 0.0f,	1.0f, 1.0f,
+    1.0f, 1.0f,	    0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
+   -1.0f, 1.0f,		1.0f, 1.0f, 1.0f,	0.0f, 0.0f
 };
 
 static const std::vector<uint16_t> indices = {
@@ -29,9 +29,9 @@ float getElapsedSeconds()
 }
 
 int main()
-{	
+{
 	const uint32_t width = 800;
-	const uint32_t height = 600;
+	const uint32_t height = 800;
 
 	/// vk::Instance
 	auto instance = vk::Instance::create();
@@ -41,8 +41,6 @@ int main()
 	/// vk::Window
 	auto windowOptions = vk::Window::Options().title("Vulkan Application");
 	auto window = vk::Window::create(instance, width, height, windowOptions);
-	window->connectToMouseMoved([](double x, double y) { std::cout << x << ", " << y << std::endl; });
-	window->connectToKeyPressed([](int key, int scancode, bool pressed, int mods) { std::cout << key << " " << (pressed ? "pressed" : "released") << std::endl; });
 
 	/// vk::Surface
 	auto surface = window->createSurface();
@@ -58,9 +56,10 @@ int main()
 
 		if (presentSupport)
 		{
-			std::cout << "Queue Family at index " << i << " supports presentation\n";
+			// TODO: move this check into the device class
 		}
 	}
+	std::cout << device << std::endl;
 
 	/// vk::Swapchain
 	auto swapchain = vk::Swapchain::create(device, surface, width, height);
@@ -76,12 +75,13 @@ int main()
 	std::vector<vk::BufferRef> vertexBuffers = { vertexBuffer };
 
 	/// vk::Pipeline
-	auto bindingDescription = vk::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 5);
+	auto bindingDescription = vk::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 7);
 	auto attributeDescriptionPosition = vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32_SFLOAT, 0, 0);
-	auto attributeDescriptionColor = vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 2);
+	auto attributeDescriptionColor =	vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 2);
+	auto attributeDescriptionTexcoord = vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 5);
 
 	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription };
-	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
+	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor, attributeDescriptionTexcoord };
 
 	auto vertexShader = vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
 	auto fragmentShader = vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
@@ -158,7 +158,7 @@ int main()
 
 		// Update the uniform buffer object.
 		UniformBufferData ubo = {};
-		ubo.model = glm::rotate(glm::mat4(), elapsed * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.model = glm::mat4(); //glm::rotate(glm::mat4(), elapsed * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		void *data = uniformBuffer->map(0, uniformBuffer->getSize());
 		memcpy(data, &ubo, sizeof(ubo));
 		uniformBuffer->unmap();

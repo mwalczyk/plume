@@ -13,18 +13,23 @@ namespace vk
 
 	class CommandPool
 	{
-
 	public:
 
-		struct Options
+		class Options
 		{
+		public:
+
 			Options();
 
 			//! Determines how and when individual command buffers allocated from this pool can be re-recorded. 
 			//! Possible flags are VK_COMMAND_POOL_CREATE_TRANSIENT_BIT and VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT.
 			Options& commandPoolCreateFlags(VkCommandPoolCreateFlags tCommandPoolCreateFlags) { mCommandPoolCreateFlags = tCommandPoolCreateFlags; return *this; }
 
+		private:
+
 			VkCommandPoolCreateFlags mCommandPoolCreateFlags;
+
+			friend class CommandPool;
 		};
 
 		//! Factory method for returning a new CommandPoolRef.
@@ -43,7 +48,6 @@ namespace vk
 		VkCommandPool mCommandPoolHandle;
 
 		DeviceRef mDevice;
-
 	};
 
 } // namespace vk

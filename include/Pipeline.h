@@ -20,12 +20,10 @@ namespace vk
 
 	class Pipeline
 	{
-
 	public:
 
 		class Options
 		{
-
 		public:
 
 			Options();
@@ -35,9 +33,13 @@ namespace vk
 			Options& viewport(const VkViewport &tViewport) { mViewport = tViewport; return *this; }
 			Options& scissor(const VkRect2D &tScissor) { mScissor = tScissor; return *this; }
 			Options& attachShaderStage(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits) { mShaderStages.push_back({ tShaderModule, tShaderStageFlagBits }); return *this; }
+			Options& polygonMode(VkPolygonMode tPolygonMode) { mPolygonMode = tPolygonMode; return *this; }
 			Options& primitiveRestart(bool tPrimitiveRestart) { mPrimitiveRestart = tPrimitiveRestart; return *this; }
 			Options& primitiveTopology(VkPrimitiveTopology tPrimitiveTopology) { mPrimitiveTopology = tPrimitiveTopology; return *this; }
-
+			
+			//! Configure per-attached framebuffer color blending, which determines how new fragments are composited with colors that are already in the framebuffer.
+			Options& pipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState &tPipelineColorBlendAttachmentState) { mPipelineColorBlendAttachmentState = tPipelineColorBlendAttachmentState; return *this; }
+		
 		private:
 
 			std::vector<VkVertexInputBindingDescription> mVertexInputBindingDescriptions;
@@ -45,11 +47,12 @@ namespace vk
 			VkViewport mViewport;
 			VkRect2D mScissor;
 			std::vector<std::pair<ShaderModuleRef, VkShaderStageFlagBits>> mShaderStages;
+			VkPolygonMode mPolygonMode;
 			bool mPrimitiveRestart;
 			VkPrimitiveTopology mPrimitiveTopology;
+			VkPipelineColorBlendAttachmentState mPipelineColorBlendAttachmentState;
 
 			friend class Pipeline;
-
 		};
 
 		//! Factory method for returning a new PipelineRef.
@@ -63,6 +66,9 @@ namespace vk
 
 		//! Helper function for constructing a vertex input attribute description.
 		static VkVertexInputAttributeDescription createVertexInputAttributeDescription(uint32_t tBinding, VkFormat tFormat, uint32_t tLocation, uint32_t tOffset);
+
+		//! Helper function for constructing a pipeline color blend attachment state that corresponds to standard alpha blending.
+		static VkPipelineColorBlendAttachmentState createAlphaBlendingAttachmentState();
 
 		Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions = Options());
 		~Pipeline();
@@ -103,7 +109,6 @@ namespace vk
 
 		DeviceRef mDevice;
 		RenderPassRef mRenderPass;
-
 	};
 
 } // namespace vk

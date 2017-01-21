@@ -19,14 +19,12 @@ namespace vk
 		framebufferCreateInfo.height = mHeight;
 		framebufferCreateInfo.layers = 1;
 		framebufferCreateInfo.pAttachments = mImageViews.data();
-		framebufferCreateInfo.renderPass = mRenderPass->getHandle();		// The render pass that this framebuffer needs to be compatible with.
+		framebufferCreateInfo.renderPass = mRenderPass->getHandle();		
 		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferCreateInfo.width = mWidth;
 
 		auto result = vkCreateFramebuffer(mDevice->getHandle(), &framebufferCreateInfo, nullptr, &mFramebufferHandle);
 		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully created framebuffer with " << mImageViews.size() << " attachments\n";
 	}
 
 	Framebuffer::~Framebuffer()

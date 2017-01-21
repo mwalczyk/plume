@@ -16,14 +16,12 @@
 
 namespace vk
 {
-	
 
 	class Window;
 	using WindowRef = std::shared_ptr<Window>;
 
 	class Window
 	{
-		
 	public:
 
 		using MouseMovedFuncType = std::function<void(double, double)>;
@@ -39,17 +37,23 @@ namespace vk
 			WINDOW_MODE_FULLSCREEN
 		};
 
-		struct Options
+		class Options
 		{
+		public:
+
 			Options();
 
 			Options& title(const std::string &tTitle) { mTitle = tTitle; return *this; }
 			Options& resizeable(bool tResizeable) { mResizeable = tResizeable; return *this; }
 			Options& mode(WindowMode tWindowMode) { mWindowMode = tWindowMode; return *this; }
 
+		private:
+
 			std::string mTitle;
 			bool mResizeable;
 			WindowMode mWindowMode;
+
+			friend class Window;
 		};
 
 		//! Factory method for returning a new WindowRef
@@ -89,6 +93,9 @@ namespace vk
 		
 		//! Add a callback function to this window's key pressed event.
 		inline void connectToKeyPressed(const KeyPressedFuncType &tConnection) { mKeyPressedConnections.push_back(tConnection); }
+
+		//! Add a callback function to this window's scroll event.
+		inline void connectToScroll(const ScrollFuncType &tConnection) { mScrollConnections.push_back(tConnection); }
 
 	private:
 

@@ -21,8 +21,6 @@ namespace vk
 
 		auto result = vkAllocateCommandBuffers(mDevice->getHandle(), &commandBufferAllocateInfo, &mCommandBufferHandle);
 		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully created command buffer\n";
 	}
 
 	CommandBuffer::~CommandBuffer()
@@ -41,14 +39,12 @@ namespace vk
 		vkBeginCommandBuffer(mCommandBufferHandle, &commandBufferBeginInfo);
 	}
 
-	void CommandBuffer::beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer)
+	void CommandBuffer::beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const VkClearValue &tClearValue)
 	{
-		VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
-
 		VkRenderPassBeginInfo renderPassBeginInfo = {};
 		renderPassBeginInfo.clearValueCount = 1;
 		renderPassBeginInfo.framebuffer = tFramebuffer->getHandle();
-		renderPassBeginInfo.pClearValues = &clearValue;
+		renderPassBeginInfo.pClearValues = &tClearValue;
 		renderPassBeginInfo.pNext = nullptr;
 		renderPassBeginInfo.renderArea.extent = { tFramebuffer->getWidth(), tFramebuffer->getHeight() };
 		renderPassBeginInfo.renderArea.offset = { 0, 0 };

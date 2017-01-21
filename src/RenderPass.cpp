@@ -76,8 +76,6 @@ namespace vk
 
 		auto result = vkCreateRenderPass(mDevice->getHandle(), &renderPassCreateInfo, nullptr, &mRenderPassHandle);
 		assert(result == VK_SUCCESS);
-
-		std::cout << "Successfully created render pass\n";
 	}
 
 	RenderPass::~RenderPass()

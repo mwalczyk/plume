@@ -13,7 +13,6 @@ namespace vk
 
 	class Semaphore
 	{
-
 	public:
 
 		//! Factory method for returning a new SemaphoreRef.
@@ -32,7 +31,6 @@ namespace vk
 		VkSemaphore mSemaphoreHandle;
 
 		DeviceRef mDevice;
-
 	};
 
 } // namespace vk

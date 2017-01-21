@@ -13,7 +13,6 @@ namespace vk
 
 	class Surface
 	{
-
 	public:
 
 		//! Factory method for returning a new SurfaceRef. Called by the Window class to create a SurfaceRef.
@@ -34,7 +33,6 @@ namespace vk
 		InstanceRef mInstance;
 		
 		friend class Window;
-
 	};
 
 } // namespace vk

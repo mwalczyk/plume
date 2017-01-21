@@ -15,17 +15,22 @@ namespace vk
 
 	class Swapchain
 	{
-
 	public:
 
-		struct Options
+		class Options
 		{
+		public:
+
 			Options();
 
 			//! Set the preferred presentation mode (defaults is VK_PRESENT_MODE_MAILBOX_KHR).
 			Options& presentMode(VkPresentModeKHR tPresentMode) { mPresentMode = tPresentMode; return *this; }
 
+		private:
+
 			VkPresentModeKHR mPresentMode;
+
+			friend class Swapchain;
 		};
 
 		//! Factory method for returning a new SwapchainRef.
