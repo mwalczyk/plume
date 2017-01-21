@@ -88,8 +88,8 @@ int main()
 	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescriptionPosition, bindingDescriptionColor };
 	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 
-	auto vertexShader =		vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
-	auto fragmentShader =	vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
+	auto vertexShader =		vk::ShaderModule::create(device, "assets/shaders/vert.spv");
+	auto fragmentShader =	vk::ShaderModule::create(device, "assets/shaders/frag.spv");
 
 	auto pipelineOptions = vk::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)

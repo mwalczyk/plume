@@ -1,4 +1,6 @@
-## VulkanToolkit
+### VulkanToolkit
+
+![IcoSphere](icosphere.png)
 
 A WIP framework and abstraction layer around the Vulkan graphics API. Only tested with version 1.0.30.0.
 
