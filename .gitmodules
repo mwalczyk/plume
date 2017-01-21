@@ -4,3 +4,6 @@
 [submodule "include/spirv-cross"]
 	path = include/spirv-cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross
+[submodule "include/vulkan-hpp"]
+	path = include/vulkan-hpp
+	url = https://github.com/KhronosGroup/Vulkan-Hpp
