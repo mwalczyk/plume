@@ -34,6 +34,8 @@ namespace vk
 			Options& scissor(const VkRect2D &tScissor) { mScissor = tScissor; return *this; }
 			Options& attachShaderStage(const ShaderModuleRef &tShaderModule, VkShaderStageFlagBits tShaderStageFlagBits) { mShaderStages.push_back({ tShaderModule, tShaderStageFlagBits }); return *this; }
 			Options& polygonMode(VkPolygonMode tPolygonMode) { mPolygonMode = tPolygonMode; return *this; }
+			Options& lineWidth(float tLineWidth) { mLineWidth = tLineWidth; return *this; }
+			Options& cullMode(VkCullModeFlags tCullModeFlags) { mCullModeFlags = tCullModeFlags; return *this; }
 			Options& primitiveRestart(bool tPrimitiveRestart) { mPrimitiveRestart = tPrimitiveRestart; return *this; }
 			Options& primitiveTopology(VkPrimitiveTopology tPrimitiveTopology) { mPrimitiveTopology = tPrimitiveTopology; return *this; }
 			
@@ -47,7 +49,9 @@ namespace vk
 			VkViewport mViewport;
 			VkRect2D mScissor;
 			std::vector<std::pair<ShaderModuleRef, VkShaderStageFlagBits>> mShaderStages;
+			VkCullModeFlags mCullModeFlags;
 			VkPolygonMode mPolygonMode;
+			float mLineWidth;
 			bool mPrimitiveRestart;
 			VkPrimitiveTopology mPrimitiveTopology;
 			VkPipelineColorBlendAttachmentState mPipelineColorBlendAttachmentState;

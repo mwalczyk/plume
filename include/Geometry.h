@@ -1,6 +1,8 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
 #include <vector>
+#include <iostream>
 #include <algorithm>
 #include <functional>
 #include <random>
@@ -8,6 +10,8 @@
 
 #include "glm/glm/glm.hpp"
 #include "glm/glm/gtc/type_ptr.hpp"
+
+#include "Platform.h"
 
 namespace geo
 {
@@ -28,46 +32,26 @@ namespace geo
 
 		virtual ~Geometry() = default;
 
-		virtual VertexAttributeSet getActiveVertexAttributes() const = 0;
-		virtual size_t getVertexCount() const = 0;
+		virtual VkPrimitiveTopology getTopology() const = 0;
+		virtual size_t getVertexAttributeDimensions(VertexAttribute tAttribute) const;
 
-	protected:
+		inline size_t getVertexCount() const { return mPositions.size(); }
 
-		VertexAttributeSet mActiveAttributes;
-	};
-
-	class IcoSphere: public Geometry
-	{
-	public:
-
-		IcoSphere();
-		inline IcoSphere& setColors(const std::vector<glm::vec3> &tColors) { mColors = tColors; return *this; }
-		inline IcoSphere& setSolidColor(const glm::vec3 &tColor) { mColors = std::vector<glm::vec3>(getVertexCount(), tColor); return *this; }
-		IcoSphere& setRandomColors();
-		IcoSphere& setColorFrom(VertexAttribute tAttribute, const std::function<glm::vec3(glm::vec3)> tFunc);
-		IcoSphere& setColorFrom(VertexAttribute tAttribute, const std::function<glm::vec3(glm::vec2)> tFunc);
-
-		inline VertexAttributeSet getActiveVertexAttributes() const override
-		{ 
-			return {VertexAttribute::ATTRIBUTE_POSITION, 
-					VertexAttribute::ATTRIBUTE_COLOR, 
-					VertexAttribute::ATTRIBUTE_NORMAL, 
-					VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES}; 
-		}
-
-		inline size_t getVertexCount() const override { return mPositions.size(); }
 		inline const std::vector<glm::vec3>& getPositions() const { return mPositions; }
 		inline const std::vector<glm::vec3>& getColors() const { return mColors; }
 		inline const std::vector<glm::vec3>& getNormals() const { return mNormals; }
 		inline const std::vector<glm::vec2>& getTextureCoordinates() const { return mTextureCoordinates; }
 		inline const std::vector<uint32_t>& getIndices() const { return mIndices; }
-
-	private:
+		inline VertexAttributeSet getActiveVertexAttributes() const { return mAttributeSet; }
 
 		float* getVertexAttribute(VertexAttribute tAttribute);
-		size_t getVertexAttributeDimensions(VertexAttribute tAttribute);
-		void fillColors(const glm::vec2 *tInputData, const std::function<glm::vec3(glm::vec2)> tFunc);
-		void fillColors(const glm::vec3 *tInputData, const std::function<glm::vec3(glm::vec3)> tFunc);
+
+
+		inline void setColors(const std::vector<glm::vec3> &tColors) { mColors = tColors; }
+		inline void setSolidColor(const glm::vec3 &tColor) { mColors = std::vector<glm::vec3>(getVertexCount(), tColor); }
+		void setRandomColors();
+
+	protected:
 
 		std::vector<glm::vec3> mPositions;
 		std::vector<glm::vec3> mColors;
@@ -75,10 +59,40 @@ namespace geo
 		std::vector<glm::vec2> mTextureCoordinates;
 		std::vector<uint32_t> mIndices;
 
-		bool mHasColors;
-		bool mHasNormals;
-		bool mHasTextureCoordinates;
-		bool mHasIndices;
+		VertexAttributeSet mAttributeSet;
+	};
+
+	class IcoSphere: public Geometry
+	{
+	public:
+
+		IcoSphere();
+
+		inline VkPrimitiveTopology getTopology() const override { return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; }
+
+	private:
+
+	};
+
+	class Grid : public Geometry
+	{
+	public:
+
+		Grid();
+
+		inline VkPrimitiveTopology getTopology() const override { return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP; }
+
+	};
+
+	class Circle : public Geometry
+	{
+	public:
+
+		Circle() : Circle(1.0f) {};
+		Circle(float tRadius, uint32_t tSubdivisions = 30);
+
+		inline VkPrimitiveTopology getTopology() const override { return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN; }
+
 	};
 
 } // namespace geo

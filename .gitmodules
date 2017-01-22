@@ -7,3 +7,6 @@
 [submodule "include/vulkan-hpp"]
 	path = include/vulkan-hpp
 	url = https://github.com/KhronosGroup/Vulkan-Hpp
+[submodule "include/stb"]
+	path = include/stb
+	url = https://github.com/nothings/stb
