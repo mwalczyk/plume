@@ -55,7 +55,7 @@ namespace vksp
 			uint32_t layoutSet;
 			uint32_t layoutBinding;
 			uint32_t descriptorCount;
-			VkDescriptorType descriptorType;
+			vk::DescriptorType descriptorType;
 			std::string name;
 		};
 
@@ -68,7 +68,7 @@ namespace vksp
 		ShaderModule(const DeviceRef &tDevice, const std::string &tFilePath);
 		~ShaderModule();
 
-		inline VkShaderModule getHandle() const { return mShaderModuleHandle; }
+		inline vk::ShaderModule getHandle() const { return mShaderModuleHandle; }
 
 		//! Retrieve the binary SPIR-V shader code that is held by this shader.
 		inline const std::vector<uint32_t>& getShaderCode() const { return mShaderCode; }
@@ -87,9 +87,7 @@ namespace vksp
 		void performReflection();
 
 		DeviceRef mDevice;
-
-		VkShaderModule mShaderModuleHandle;
-
+		vk::ShaderModule mShaderModuleHandle;
 		std::vector<uint32_t> mShaderCode;
 		std::vector<std::string> mEntryPoints;
 		std::vector<StageInput> mStageInputs;

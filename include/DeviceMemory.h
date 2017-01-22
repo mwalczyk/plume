@@ -15,29 +15,27 @@ namespace vksp
 	public:
 
 		//! Factory method for returning a new DeviceMemoryRef.
-		static DeviceMemoryRef create(const DeviceRef &tDevice, const VkMemoryRequirements &tMemoryRequirements, VkMemoryPropertyFlags tRequiredMemoryProperties)
+		static DeviceMemoryRef create(const DeviceRef &tDevice, const vk::MemoryRequirements &tMemoryRequirements, vk::MemoryPropertyFlags tRequiredMemoryProperties)
 		{
 			return std::make_shared<DeviceMemory>(tDevice, tMemoryRequirements, tRequiredMemoryProperties);
 		}
 
 		//! Construct a stack allocated, non-copyable container that manages a device memory allocation.
-		DeviceMemory(const DeviceRef &tDevice, const VkMemoryRequirements &tMemoryRequirements, VkMemoryPropertyFlags tRequiredMemoryProperties);
+		DeviceMemory(const DeviceRef &tDevice, const vk::MemoryRequirements &tMemoryRequirements, vk::MemoryPropertyFlags tRequiredMemoryProperties);
 		~DeviceMemory();
 
-		inline VkDeviceMemory getHandle() const { return mDeviceMemoryHandle; }
+		inline vk::DeviceMemory getHandle() const { return mDeviceMemoryHandle; }
+		inline vk::DeviceSize getAllocationSize() const { return mAllocationSize; }
 		inline uint32_t getSelectedMemoryIndex() const { return mSelectedMemoryIndex; }
-		inline VkDeviceSize getAllocationSize() const { return mAllocationSize; }
 		void* map(size_t tOffset, size_t tSize);
 		void unmap();
 
 	private:
 
-		VkDeviceMemory mDeviceMemoryHandle;
-
 		DeviceRef mDevice;
-
+		vk::DeviceMemory mDeviceMemoryHandle;
+		vk::DeviceSize mAllocationSize;
 		uint32_t mSelectedMemoryIndex;
-		VkDeviceSize mAllocationSize;
 	};
 
 } // namespace vksp

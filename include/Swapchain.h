@@ -22,13 +22,13 @@ namespace vksp
 		public:
 
 			Options();
-
-			//! Set the preferred presentation mode (defaults is VK_PRESENT_MODE_MAILBOX_KHR).
-			Options& presentMode(VkPresentModeKHR tPresentMode) { mPresentMode = tPresentMode; return *this; }
+			
+			//! Set the preferred presentation mode (defaults is vk::PresentModeKHR::eMailbox).
+			Options& presentMode(vk::PresentModeKHR tPresentMode) { mPresentMode = tPresentMode; return *this; }
 
 		private:
 
-			VkPresentModeKHR mPresentMode;
+			vk::PresentModeKHR mPresentMode;
 
 			friend class Swapchain;
 		};
@@ -42,27 +42,25 @@ namespace vksp
 		Swapchain(const DeviceRef &tDevice, const SurfaceRef &tSurface, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options());
 		~Swapchain();
 
-		inline VkSwapchainKHR getHandle() const { return mSwapchainHandle; };
-		inline const std::vector<VkImage>& getImageHandles() const { return mImageHandles; }
-		inline const std::vector<VkImageView>& getImageViewHandles() const { return mImageViewHandles; }
+		inline vk::SwapchainKHR getHandle() const { return mSwapchainHandle; };
+		inline const std::vector<vk::Image>& getImageHandles() const { return mImageHandles; }
+		inline const std::vector<vk::ImageView>& getImageViewHandles() const { return mImageViewHandles; }
 		uint32_t acquireNextSwapchainImage(const SemaphoreRef &tSemaphore, uint32_t tNanosecondsTimeout = std::numeric_limits<uint64_t>::max());
 
 	private:
 
-		VkSurfaceFormatKHR selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &tSurfaceFormats) const;
-		VkPresentModeKHR selectSwapchainPresentMode(const std::vector<VkPresentModeKHR> &tPresentModes) const;
-		VkExtent2D selectSwapchainExtent(const VkSurfaceCapabilitiesKHR &tSurfaceCapabilities) const;
+		vk::SurfaceFormatKHR selectSwapchainSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &tSurfaceFormats) const;
+		vk::PresentModeKHR selectSwapchainPresentMode(const std::vector<vk::PresentModeKHR> &tPresentModes) const;
+		vk::Extent2D selectSwapchainExtent(const vk::SurfaceCapabilitiesKHR &tSurfaceCapabilities) const;
 		void createImageViews();
 
 		DeviceRef mDevice;
 		SurfaceRef mSurface;
-
-		VkSwapchainKHR mSwapchainHandle;
-		VkFormat mSwapchainImageFormat;
-		VkExtent2D mSwapchainImageExtent;
-		std::vector<VkImage> mImageHandles;
-		std::vector<VkImageView> mImageViewHandles;
-
+		vk::SwapchainKHR mSwapchainHandle;
+		vk::Format mSwapchainImageFormat;
+		vk::Extent2D mSwapchainImageExtent;
+		std::vector<vk::Image> mImageHandles;
+		std::vector<vk::ImageView> mImageViewHandles;
 		uint32_t mWidth;
 		uint32_t mHeight;
 	};

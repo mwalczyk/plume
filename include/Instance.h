@@ -40,13 +40,13 @@ namespace vksp
 			Options& appendRequiredExtensions(const char* tExtensionName) { mRequiredExtensions.push_back(tExtensionName); return *this; }
 			
 			//! Specify a complete VkApplicationInfo structure that will be used to create this instance.
-			Options& applicationInfo(const VkApplicationInfo &tApplicationInfo) { mApplicationInfo = tApplicationInfo; return *this; }
+			Options& applicationInfo(const vk::ApplicationInfo &tApplicationInfo) { mApplicationInfo = tApplicationInfo; return *this; }
 			
 		private:
 
 			std::vector<const char*> mRequiredLayers;
 			std::vector<const char*> mRequiredExtensions;
-			VkApplicationInfo mApplicationInfo;
+			vk::ApplicationInfo mApplicationInfo;
 
 			friend class Instance;
 		};
@@ -57,24 +57,22 @@ namespace vksp
 		Instance(const Options &tOptions = Options());
 		~Instance();
 
-		inline VkInstance getHandle() const { return mInstanceHandle; }
-		inline const std::vector<VkExtensionProperties>& getInstanceExtensionProperties() const { return mInstanceExtensionProperties; }
-		inline const std::vector<VkLayerProperties>& getInstanceLayerProperties() const { return mInstanceLayerProperties; }
-		inline const std::vector<VkPhysicalDevice>& getPhysicalDevices() const { return mPhysicalDevices; }
-		VkPhysicalDevice pickPhysicalDevice(const std::function<bool(VkPhysicalDevice)> &tCandidacyFunc);
+		inline vk::Instance getHandle() const { return mInstanceHandle; }
+		inline const std::vector<vk::ExtensionProperties>& getInstanceExtensionProperties() const { return mInstanceExtensionProperties; }
+		inline const std::vector<vk::LayerProperties>& getInstanceLayerProperties() const { return mInstanceLayerProperties; }
+		inline const std::vector<vk::PhysicalDevice>& getPhysicalDevices() const { return mPhysicalDevices; }
+		vk::PhysicalDevice pickPhysicalDevice(const std::function<bool(vk::PhysicalDevice)> &tCandidacyFunc);
 
 	private:
 
 		bool checkInstanceLayerSupport();
 		void setupDebugReportCallback();
 
-		VkInstance mInstanceHandle;
+		vk::Instance mInstanceHandle;
 		VkDebugReportCallbackEXT mDebugReportCallback;
-
-		std::vector<VkExtensionProperties> mInstanceExtensionProperties;
-		std::vector<VkLayerProperties> mInstanceLayerProperties;
-		std::vector<VkPhysicalDevice> mPhysicalDevices;
-
+		std::vector<vk::ExtensionProperties> mInstanceExtensionProperties;
+		std::vector<vk::LayerProperties> mInstanceLayerProperties;
+		std::vector<vk::PhysicalDevice> mPhysicalDevices;
 		std::vector<const char*> mRequiredLayers;
 		std::vector<const char*> mRequiredExtensions;
 

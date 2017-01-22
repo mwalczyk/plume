@@ -22,12 +22,12 @@ namespace vksp
 			Options();
 
 			//! Determines how and when individual command buffers allocated from this pool can be re-recorded. 
-			//! Possible flags are VK_COMMAND_POOL_CREATE_TRANSIENT_BIT and VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT.
-			Options& commandPoolCreateFlags(VkCommandPoolCreateFlags tCommandPoolCreateFlags) { mCommandPoolCreateFlags = tCommandPoolCreateFlags; return *this; }
-
+			//! Possible flags are vk::CommandPoolCreateFlagBits::eTransient and vk::CommandPoolCreateFlagBits::eResetCommandBuffer.
+			Options& commandPoolCreateFlags(vk::CommandPoolCreateFlags tCommandPoolCreateFlags) { mCommandPoolCreateFlags = tCommandPoolCreateFlags; return *this; }
+			
 		private:
 
-			VkCommandPoolCreateFlags mCommandPoolCreateFlags;
+			vk::CommandPoolCreateFlags mCommandPoolCreateFlags;
 
 			friend class CommandPool;
 		};
@@ -41,13 +41,12 @@ namespace vksp
 		CommandPool(const DeviceRef &tDevice, uint32_t tQueueFamilyIndex, const Options &tOptions = Options());
 		~CommandPool();
 
-		inline VkCommandPool getHandle() const { return mCommandPoolHandle; };
+		inline vk::CommandPool getHandle() const { return mCommandPoolHandle; };
 
 	private:
 
-		VkCommandPool mCommandPoolHandle;
-
 		DeviceRef mDevice;
+		vk::CommandPool mCommandPoolHandle;
 	};
 
 } // namespace vksp

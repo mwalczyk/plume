@@ -24,11 +24,11 @@ namespace vksp
 		{
 			Options();
 
-			Options& format(VkFormat tFormat) { mFormat = tFormat; return *this; }
-			Options& imageTiling(VkImageTiling tImageTiling) { mImageTiling = tImageTiling; return *this; }
+			Options& format(vk::Format tFormat) { mFormat = tFormat; return *this; }
+			Options& imageTiling(vk::ImageTiling tImageTiling) { mImageTiling = tImageTiling; return *this; }
 
-			VkFormat mFormat;
-			VkImageTiling mImageTiling;
+			vk::Format mFormat;
+			vk::ImageTiling mImageTiling;
 		};
 
 		//! Factory method for returning a new ImageRef.
@@ -41,16 +41,16 @@ namespace vksp
 		Image(const DeviceRef &tDevice, uint32_t tWidth, uint32_t tHeight, size_t tSize, const void *tData, const Options &tOptions = Options());
 		~Image();
 
-		inline VkImage getHandle() const { return mImageHandle; }
-		inline VkDeviceMemory getDeviceMemoryHandle() const { return mDeviceMemoryHandle; }
+		inline vk::Image getHandle() const { return mImageHandle; }
+		inline vk::DeviceMemory getDeviceMemoryHandle() const { return mDeviceMemoryHandle; }
 
 	private:
 	
-		VkImage mImageHandle;
-		VkDeviceMemory mDeviceMemoryHandle;
+
 
 		DeviceRef mDevice;	
-
+		vk::Image mImageHandle;
+		vk::DeviceMemory mDeviceMemoryHandle;
 		uint32_t mWidth;
 		uint32_t mHeight;
 	};

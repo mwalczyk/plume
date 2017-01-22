@@ -32,7 +32,7 @@ namespace geo
 
 		virtual ~Geometry() = default;
 
-		virtual VkPrimitiveTopology getTopology() const = 0;
+		virtual vk::PrimitiveTopology getTopology() const = 0;
 		virtual size_t getVertexAttributeDimensions(VertexAttribute tAttribute) const;
 
 		inline size_t getVertexCount() const { return mPositions.size(); }
@@ -68,7 +68,7 @@ namespace geo
 
 		IcoSphere();
 
-		inline VkPrimitiveTopology getTopology() const override { return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; }
+		inline vk::PrimitiveTopology getTopology() const override { return vk::PrimitiveTopology::eTriangleList; }
 
 	private:
 
@@ -80,7 +80,7 @@ namespace geo
 
 		Grid();
 
-		inline VkPrimitiveTopology getTopology() const override { return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP; }
+		inline vk::PrimitiveTopology getTopology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
 
 	};
 
@@ -91,7 +91,7 @@ namespace geo
 		Circle() : Circle(1.0f) {};
 		Circle(float tRadius, uint32_t tSubdivisions = 30);
 
-		inline VkPrimitiveTopology getTopology() const override { return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN; }
+		inline vk::PrimitiveTopology getTopology() const override { return vk::PrimitiveTopology::eTriangleFan; }
 
 	};
 

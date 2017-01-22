@@ -30,35 +30,35 @@ namespace vksp
 
 		//! Factory method for returning a new BufferRef.
 		template<class T>
-		static BufferRef create(const DeviceRef &tDevice, VkBufferUsageFlags tBufferUsageFlags, const std::vector<T> &tData, const Options &tOptions = Options())
+		static BufferRef create(const DeviceRef &tDevice, vk::BufferUsageFlags tBufferUsageFlags, const std::vector<T> &tData, const Options &tOptions = Options())
 		{
 			return std::make_shared<Buffer>(tDevice, tBufferUsageFlags, sizeof(T) * tData.size(), tData.data());
 		}
 
-		static BufferRef create(const DeviceRef &tDevice, VkBufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options())
+		static BufferRef create(const DeviceRef &tDevice, vk::BufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options())
 		{
 			return std::make_shared<Buffer>(tDevice, tBufferUsageFlags, tSize, tData, tOptions);
 		}
 
-		Buffer(const DeviceRef &tDevice, VkBufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options());
+		Buffer(const DeviceRef &tDevice, vk::BufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options());
 		~Buffer();
 
-		inline VkBuffer getHandle() const { return mBufferHandle; }
+		inline vk::Buffer getHandle() const { return mBufferHandle; }
 		inline DeviceMemoryRef getDeviceMemory() const { return mDeviceMemory; }
-		inline VkBufferUsageFlags getBufferUsageFlags() const { return mBufferUsageFlags; }
+		inline vk::BufferUsageFlags getBufferUsageFlags() const { return mBufferUsageFlags; }
 		
 		//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
 		//! allocation size, which can be queried from the buffer's device memory reference.
-		inline uint32_t getRequestedSize() const { return mRequestedSize; }
+		inline size_t getRequestedSize() const { return mRequestedSize; }
 
 	private:
 
-		VkBuffer mBufferHandle;
+		vk::Buffer mBufferHandle;
 
 		DeviceRef mDevice;
 		DeviceMemoryRef mDeviceMemory;
 
-		VkBufferUsageFlags mBufferUsageFlags;
+		vk::BufferUsageFlags mBufferUsageFlags;
 		size_t mRequestedSize;
 	};
 

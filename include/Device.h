@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 #include <cassert>
 
 #include "Platform.h"
@@ -20,27 +21,52 @@ namespace vksp
 
 		struct SwapchainSupportDetails
 		{
-			VkSurfaceCapabilitiesKHR mCapabilities;
-			std::vector<VkSurfaceFormatKHR> mFormats;
-			std::vector<VkPresentModeKHR> mPresentModes;
+			vk::SurfaceCapabilitiesKHR mCapabilities;
+			std::vector<vk::SurfaceFormatKHR> mFormats;
+			std::vector<vk::PresentModeKHR> mPresentModes;
 		};
 
-		struct QueueFamilyIndices
+		enum class QueueFamily
 		{
-			uint32_t mGraphicsIndex = 0;
-			uint32_t mComputeIndex = 0;
-			uint32_t mTransferIndex = 0;
-			uint32_t mSparseBindingIndex = 0;
-			uint32_t mPresentationIndex = 0;
+			FAMILY_GRAPHICS,
+			FAMILY_COMPUTE,
+			FAMILY_TRANSFER,
+			FAMILY_SPARSE_BINDING,
+			FAMILY_PRESENTATION
 		};
 
-		struct QueueFamilyHandles
+		class QueueFamiliesMapping
 		{
-			VkQueue mGraphicsQueue = VK_NULL_HANDLE;
-			VkQueue mComputeQueue = VK_NULL_HANDLE;
-			VkQueue mTransferQueue = VK_NULL_HANDLE;
-			VkQueue mSparseBindingQueue = VK_NULL_HANDLE;
-			VkQueue mPresentationQueue = VK_NULL_HANDLE;
+		public:
+			QueueFamiliesMapping() = default;
+			
+			std::pair<vk::Queue, uint32_t> getQueueFamily(QueueFamily tFamily)
+			{
+				switch (tFamily)	
+				{
+				case QueueFamily::FAMILY_GRAPHICS: graphics(); break;
+				case QueueFamily::FAMILY_COMPUTE: compute(); break;
+				case QueueFamily::FAMILY_TRANSFER: transfer(); break;
+				case QueueFamily::FAMILY_SPARSE_BINDING: sparseBinding(); break;
+				case QueueFamily::FAMILY_PRESENTATION: presentation(); break;
+				}
+			}
+
+			std::pair<vk::Queue, uint32_t> graphics() const { return mGraphicsQueue; }
+			std::pair<vk::Queue, uint32_t> compute() const { return mComputeQueue; }
+			std::pair<vk::Queue, uint32_t> transfer() const { return mTransferQueue; }
+			std::pair<vk::Queue, uint32_t> sparseBinding() const { return mSparseBindingQueue; }
+			std::pair<vk::Queue, uint32_t> presentation() const { return mPresentationQueue; }
+
+		private:
+
+			std::pair<vk::Queue, uint32_t> mGraphicsQueue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> mComputeQueue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> mTransferQueue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> mSparseBindingQueue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> mPresentationQueue = { VK_NULL_HANDLE, 0 };
+
+			friend class Device;
 		};
 
 		class Options
@@ -49,13 +75,13 @@ namespace vksp
 
 			Options();
 
-			Options& requiredQueueFlags(VkQueueFlags tRequiredQueueFlags) { mRequiredQueueFlags = tRequiredQueueFlags; return *this; }
+			Options& requiredQueueFlags(vk::QueueFlags tRequiredQueueFlags) { mRequiredQueueFlags = tRequiredQueueFlags; return *this; }
 			Options& requiredDeviceExtensions(const std::vector<const char*> &tRequiredDeviceExtensions) { mRequiredDeviceExtensions = tRequiredDeviceExtensions; return *this; }
 			Options& useSwapchain(bool tUseSwapchain) { mUseSwapchain = tUseSwapchain; return *this; }
 
 		private:
 
-			VkQueueFlags mRequiredQueueFlags;
+			vk::QueueFlags mRequiredQueueFlags;
 			std::vector<const char*> mRequiredDeviceExtensions;
 			bool mUseSwapchain;
 
@@ -63,24 +89,23 @@ namespace vksp
 		};
 
 		//! Factory method for returning a new DeviceRef.
-		static DeviceRef create(VkPhysicalDevice tPhysicalDevice, const Options &tOptions = Options())
+		static DeviceRef create(vk::PhysicalDevice tPhysicalDevice, const Options &tOptions = Options())
 		{
 			return std::make_shared<Device>(tPhysicalDevice, tOptions);
 		}
 
 		//! Construct a logical device around a physical device (GPU).
-		Device(VkPhysicalDevice tPhysicalDevice, const Options &tOptions = Options());
+		Device(vk::PhysicalDevice tPhysicalDevice, const Options &tOptions = Options());
 		~Device();
 
-		inline VkDevice getHandle() const { return mDeviceHandle; };
-		inline VkPhysicalDevice getPhysicalDeviceHandle() const { return mPhysicalDeviceHandle; }
-		inline QueueFamilyIndices getQueueFamilyIndices() const { return mQueueFamilyIndices; }
-		inline QueueFamilyHandles getQueueHandles() const { return mQueuesHandles; }
-		inline VkPhysicalDeviceProperties getPhysicalDeviceProperties() const { return mPhysicalDeviceProperties; }
-		inline VkPhysicalDeviceFeatures getPhysicalDeviceFeatures() const { return mPhysicalDeviceFeatures;  }
-		inline VkPhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties() const { return mPhysicalDeviceMemoryProperties; }
-		inline const std::vector<VkQueueFamilyProperties>& getPhysicalDeviceQueueFamilyProperties() const { return mPhysicalDeviceQueueFamilyProperties; }
-		inline const std::vector<VkExtensionProperties>& getPhysicalDeviceExtensionProperties() const { return mPhysicalDeviceExtensionProperties; }
+		inline vk::Device getHandle() const { return mDeviceHandle; };
+		inline vk::PhysicalDevice getPhysicalDeviceHandle() const { return mPhysicalDeviceHandle; }
+		inline vk::PhysicalDeviceProperties getPhysicalDeviceProperties() const { return mPhysicalDeviceProperties; }
+		inline vk::PhysicalDeviceFeatures getPhysicalDeviceFeatures() const { return mPhysicalDeviceFeatures;  }
+		inline vk::PhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties() const { return mPhysicalDeviceMemoryProperties; }
+		inline const QueueFamiliesMapping& getQueueFamiliesMapping() const { return mQueueFamiliesMapping; }
+		inline const std::vector<vk::QueueFamilyProperties>& getPhysicalDeviceQueueFamilyProperties() const { return mPhysicalDeviceQueueFamilyProperties; }
+		inline const std::vector<vk::ExtensionProperties>& getPhysicalDeviceExtensionProperties() const { return mPhysicalDeviceExtensionProperties; }
 		
 		//! Returns a structure that contains information related to the chosen physical device's swapchain support.
 		SwapchainSupportDetails getSwapchainSupportDetails(const SurfaceRef &tSurface) const;
@@ -89,19 +114,16 @@ namespace vksp
 
 	private:
 
-		uint32_t findQueueFamilyIndex(VkQueueFlagBits tQueueFlagBits) const;
+		uint32_t findQueueFamilyIndex(vk::QueueFlagBits tQueueFlagBits) const;
 
-		VkDevice mDeviceHandle;
-		VkPhysicalDevice mPhysicalDeviceHandle;
-		QueueFamilyIndices mQueueFamilyIndices;
-		QueueFamilyHandles mQueuesHandles;
-
-		VkPhysicalDeviceProperties mPhysicalDeviceProperties;
-		VkPhysicalDeviceFeatures mPhysicalDeviceFeatures;
-		VkPhysicalDeviceMemoryProperties mPhysicalDeviceMemoryProperties;
-		std::vector<VkQueueFamilyProperties> mPhysicalDeviceQueueFamilyProperties;
-		std::vector<VkExtensionProperties> mPhysicalDeviceExtensionProperties;
-
+		vk::Device mDeviceHandle;
+		vk::PhysicalDevice mPhysicalDeviceHandle;
+		vk::PhysicalDeviceProperties mPhysicalDeviceProperties;
+		vk::PhysicalDeviceFeatures mPhysicalDeviceFeatures;
+		vk::PhysicalDeviceMemoryProperties mPhysicalDeviceMemoryProperties;
+		std::vector<vk::QueueFamilyProperties> mPhysicalDeviceQueueFamilyProperties;
+		std::vector<vk::ExtensionProperties> mPhysicalDeviceExtensionProperties;
+		QueueFamiliesMapping mQueueFamiliesMapping;
 		std::vector<const char*> mRequiredDeviceExtensions;
 	};
 
