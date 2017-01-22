@@ -5,6 +5,7 @@
 
 #include "Platform.h"
 #include "Device.h"
+#include "DeviceMemory.h"
 
 namespace vk
 {
@@ -14,7 +15,6 @@ namespace vk
 
 	class Buffer
 	{
-
 	public:
 
 		struct Options
@@ -44,30 +44,22 @@ namespace vk
 		~Buffer();
 
 		inline VkBuffer getHandle() const { return mBufferHandle; }
-		inline VkDeviceMemory getDeviceMemoryHandle() const { return mDeviceMemoryHandle; }
+		inline DeviceMemoryRef getDeviceMemory() const { return mDeviceMemory; }
 		inline VkBufferUsageFlags getBufferUsageFlags() const { return mBufferUsageFlags; }
-
-		//! Retrieve the size of the memory region that is attached to this buffer.
-		inline size_t getSize() const { return mSize; }
-
-		void* map(size_t tOffset, size_t tSize);
-		void unmap();
+		
+		//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
+		//! allocation size, which can be queried from the buffer's device memory reference.
+		inline uint32_t getRequestedSize() const { return mSize; }
 
 	private:
 
-		uint32_t findMemoryTypeIndex(uint32_t tMemoryTypeBits, VkMemoryPropertyFlags tMemoryPropertyFlags);
-
-		//! Based on the memory requirements of this buffer, find the index of the memory heap that should be used to back this buffer.
-		void allocateMemory(const VkMemoryRequirements &tMemoryRequirements);
-
 		VkBuffer mBufferHandle;
-		VkDeviceMemory mDeviceMemoryHandle;
 
 		DeviceRef mDevice;
+		DeviceMemoryRef mDeviceMemory;
 
 		VkBufferUsageFlags mBufferUsageFlags;
 		size_t mSize;
-
 	};
 
 } // namespace vk
