@@ -80,16 +80,16 @@ namespace geo
 
 		if (inputAttributeDimensions == 3)
 		{
-			fillColors(reinterpret_cast<const glm::vec3*>(inputData), tFunc);
+			//fillColors(reinterpret_cast<const glm::vec3*>(inputData), tFunc);
 		}
 		else if (inputAttributeDimensions == 2)
 		{
-			fillColors(reinterpret_cast<const glm::vec2*>(inputData), tFunc);
+			//fillColors(reinterpret_cast<const glm::vec2*>(inputData), tFunc);
 		}
 
 		for (size_t i = 0; i < mColors.size(); i++)
 		{
-			mColors[i] = tFunc(inputData[i]);
+			//1111mColors[i] = tFunc(inputData[i]);
 		}
 
 		return *this;
