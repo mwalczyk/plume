@@ -10,7 +10,7 @@
 #include "Platform.h"
 #include "Device.h"
 
-namespace vk
+namespace vksp
 {
 
 	class ShaderModule;
@@ -98,4 +98,4 @@ namespace vk
 
 	};
 
-} // namespace vk
+} // namespace vksp

@@ -12,7 +12,7 @@
 #include "RenderPass.h"
 #include "ShaderModule.h"
 
-namespace vk
+namespace vksp
 {
 
 	class Pipeline;
@@ -115,4 +115,4 @@ namespace vk
 		RenderPassRef mRenderPass;
 	};
 
-} // namespace vk
+} // namespace vksp

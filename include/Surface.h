@@ -5,7 +5,7 @@
 #include "Platform.h"
 #include "Instance.h"
 
-namespace vk
+namespace vksp
 {
 
 	class Surface;
@@ -35,4 +35,4 @@ namespace vk
 		friend class Window;
 	};
 
-} // namespace vk
+} // namespace vksp

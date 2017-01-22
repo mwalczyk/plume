@@ -14,7 +14,7 @@
 #include "glm/glm/glm.hpp"
 #include "glm/glm/gtc/type_ptr.hpp"
 
-namespace vk
+namespace vksp
 {
 
 	class Window;
@@ -120,4 +120,4 @@ namespace vk
 		std::vector<ScrollFuncType> mScrollConnections;
 	};
 
-} // namespace vk
+} // namespace vksp

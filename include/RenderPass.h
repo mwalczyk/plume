@@ -6,7 +6,7 @@
 #include "Platform.h"
 #include "Device.h"
 
-namespace vk
+namespace vksp
 {
 
 	class RenderPass;
@@ -82,4 +82,4 @@ namespace vk
 		std::vector<VkSubpassDependency> mSubpassDependencies;
 	};
 
-} // namespace vk
+} // namespace vksp

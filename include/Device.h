@@ -8,7 +8,7 @@
 #include "Instance.h"
 #include "Surface.h"
 
-namespace vk
+namespace vksp
 {
 
 	class Device;
@@ -105,4 +105,4 @@ namespace vk
 		std::vector<const char*> mRequiredDeviceExtensions;
 	};
 
-} // namespace vk
+} // namespace vksp

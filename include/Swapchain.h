@@ -7,7 +7,7 @@
 #include "Device.h"
 #include "Semaphore.h"
 
-namespace vk
+namespace vksp
 {
 
 	class Swapchain;
@@ -67,4 +67,4 @@ namespace vk
 		uint32_t mHeight;
 	};
 
-} // namespace vk
+} // namespace vksp

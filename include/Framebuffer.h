@@ -7,7 +7,7 @@
 #include "Device.h"
 #include "RenderPass.h"
 
-namespace vk
+namespace vksp
 {
 
 	class Framebuffer;
@@ -57,4 +57,4 @@ namespace vk
 		uint32_t mHeight;
 	};
 
-} // namespace vk
+} // namespace vksp

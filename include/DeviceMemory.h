@@ -4,7 +4,7 @@
 #include "Noncopyable.h"
 #include "Device.h"
 
-namespace vk
+namespace vksp
 {
 
 	class DeviceMemory;
@@ -40,4 +40,4 @@ namespace vk
 		VkDeviceSize mAllocationSize;
 	};
 
-} // namespace vk
+} // namespace vksp

@@ -38,6 +38,7 @@
 #include "CommandPool.h"
 #include "Device.h"
 #include "Framebuffer.h"
+#include "Image.h"
 #include "Instance.h"
 #include "Pipeline.h"
 #include "RenderPass.h"

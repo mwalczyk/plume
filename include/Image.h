@@ -5,12 +5,12 @@
 #include <string>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+//#include "stb_image.h"
 
 #include "Platform.h"
 #include "Device.h"
 
-namespace vk
+namespace vksp
 {
 
 	class Image;
@@ -55,4 +55,4 @@ namespace vk
 		uint32_t mHeight;
 	};
 
-} // namespace vk
+} // namespace vksp

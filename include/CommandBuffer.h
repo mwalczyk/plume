@@ -10,7 +10,7 @@
 #include "RenderPass.h"
 #include "Buffer.h"
 
-namespace vk
+namespace vksp
 {
 
 	class CommandBuffer;
@@ -74,4 +74,4 @@ namespace vk
 
 	};
 
-} // namespace vk
+} // namespace vksp

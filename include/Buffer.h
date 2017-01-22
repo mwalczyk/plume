@@ -7,7 +7,7 @@
 #include "Device.h"
 #include "DeviceMemory.h"
 
-namespace vk
+namespace vksp
 {
 
 	class Buffer;
@@ -49,7 +49,7 @@ namespace vk
 		
 		//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
 		//! allocation size, which can be queried from the buffer's device memory reference.
-		inline uint32_t getRequestedSize() const { return mSize; }
+		inline uint32_t getRequestedSize() const { return mRequestedSize; }
 
 	private:
 
@@ -59,7 +59,7 @@ namespace vk
 		DeviceMemoryRef mDeviceMemory;
 
 		VkBufferUsageFlags mBufferUsageFlags;
-		size_t mSize;
+		size_t mRequestedSize;
 	};
 
-} // namespace vk
+} // namespace vksp
