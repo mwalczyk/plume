@@ -7,6 +7,7 @@ namespace geo
 	{
 		float t = (1.0f + sqrtf(5.0f)) / 2.0f;
 		
+		// Calculate positions.
 		mPositions = {
 			{-1.0f,  t,     0.0f},
 			{ 1.0f,  t,     0.0f},
@@ -22,21 +23,15 @@ namespace geo
 			{-t,     0.0f,  1.0f}
 		};
 
-		for (auto &p : mPositions)
+		for (auto &position : mPositions)
 		{
-			p = glm::normalize(p);
+			position = glm::normalize(position);
 		}
 
-		std::random_device rand;
-		std::mt19937 mersenne(rand());
-		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+		// Set the default color.
+		setSolidColor({ 1.0f, 1.0f, 1.0f });
 
-		mColors.resize(mPositions.size());
-		for (size_t i = 0; i < mColors.size(); ++i)	
-		{
-			mColors[i] = { distribution(mersenne), distribution(mersenne), distribution(mersenne) };
-		}
-
+		// Calculate indices.
 		mIndices = {
 			0, 11, 5,
 			0, 5, 1,
@@ -59,6 +54,85 @@ namespace geo
 			8, 6, 7,
 			9, 8, 1
 		};
+	}
+
+	IcoSphere& IcoSphere::setRandomColors()
+	{
+		std::random_device rand;
+		std::mt19937 mersenne(rand());
+		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+
+		mColors.clear();
+		mColors.resize(getVertexCount());
+
+		std::generate(mColors.begin(), mColors.end(), [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
+
+		return *this;
+	}
+
+	IcoSphere& IcoSphere::setColorFrom(VertexAttribute tAttribute, const std::function<glm::vec3(glm::vec3)> tFunc)
+	{
+		mColors.clear();
+		mColors.resize(getVertexCount());
+
+		const auto *inputData = getVertexAttribute(tAttribute);
+		size_t inputAttributeDimensions = getVertexAttributeDimensions(tAttribute);
+
+		if (inputAttributeDimensions == 3)
+		{
+			fillColors(reinterpret_cast<const glm::vec3*>(inputData), tFunc);
+		}
+		else if (inputAttributeDimensions == 2)
+		{
+			fillColors(reinterpret_cast<const glm::vec2*>(inputData), tFunc);
+		}
+
+		for (size_t i = 0; i < mColors.size(); i++)
+		{
+			mColors[i] = tFunc(inputData[i]);
+		}
+
+		return *this;
+	}
+
+	IcoSphere& IcoSphere::setColorFrom(VertexAttribute tAttribute, const std::function<glm::vec3(glm::vec2)> tFunc)
+	{
+		mColors.clear();
+		mColors.resize(getVertexCount());
+
+		return *this;
+	}
+
+	float* IcoSphere::getVertexAttribute(VertexAttribute tAttribute) 
+	{
+		switch (tAttribute)
+		{
+		case geo::VertexAttribute::ATTRIBUTE_POSITION: return reinterpret_cast<float*>(mPositions.data());
+		case geo::VertexAttribute::ATTRIBUTE_COLOR: return reinterpret_cast<float*>(mColors.data());
+		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return reinterpret_cast<float*>(mNormals.data());
+		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return reinterpret_cast<float*>(mTextureCoordinates.data());
+		}
+	}
+
+	size_t IcoSphere::getVertexAttributeDimensions(VertexAttribute tAttribute)
+	{
+		switch (tAttribute)
+		{
+		case geo::VertexAttribute::ATTRIBUTE_POSITION: 
+		case geo::VertexAttribute::ATTRIBUTE_COLOR: 
+		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return 3;
+		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return 2;
+		}
+	}
+
+	void IcoSphere::fillColors(const glm::vec2 *tInputData, const std::function<glm::vec3(glm::vec2)> tFunc)
+	{
+
+	}
+
+	void IcoSphere::fillColors(const glm::vec3 *tInputData, const std::function<glm::vec3(glm::vec3)> tFunc)
+	{
+
 	}
 
 } // namespace geo

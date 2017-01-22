@@ -23,5 +23,6 @@ layout (location = 0) out vec3 vsColor;
 void main()
 {
 	vsColor = inColor;
+
   gl_Position = ubo.projection * ubo.view * ubo.model * vec4(inPosition, 1.0);
 }

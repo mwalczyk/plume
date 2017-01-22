@@ -71,8 +71,8 @@ int main()
 	auto renderPass = vk::RenderPass::create(device);
 
 	/// vk::Buffer
-	auto icosphere = geo::IcoSphere();
-
+	auto icosphere = geo::IcoSphere().setRandomColors();
+	
 	auto positionBuffer =	vk::Buffer::create(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, icosphere.getPositions());
 	auto colorBuffer =		vk::Buffer::create(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, icosphere.getColors());
 	auto indexBuffer =		vk::Buffer::create(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, icosphere.getIndices());
@@ -88,8 +88,8 @@ int main()
 	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescriptionPosition, bindingDescriptionColor };
 	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
 
-	auto vertexShader =		vk::ShaderModule::create(device, "assets/shaders/vert.spv");
-	auto fragmentShader =	vk::ShaderModule::create(device, "assets/shaders/frag.spv");
+	auto vertexShader =		vk::ShaderModule::create(device, "../assets/shaders/vert.spv");
+	auto fragmentShader =	vk::ShaderModule::create(device, "../assets/shaders/frag.spv");
 
 	auto pipelineOptions = vk::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)

@@ -22,7 +22,6 @@
 - [ ] Figure out how to implement staging buffers
 - [ ] Remove hardcoded `VK_SHADER_STAGE_ALL` from descriptor set reflection process
 - [ ] Fix the `shaderStageAsString` helper method inside of the pipeline class
-- [ ] Fix the `GLFW_REPEAT` case in the mouse / key pressed callback functions inside of the window class
 
 ### Long term:
 
