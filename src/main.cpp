@@ -2,18 +2,8 @@
 
 #include "Vk.h"
 #include "Geometry.h"
+
 #include "glm/glm/gtc/matrix_transform.hpp"
-
-static const std::vector<float> vertices = {
-   -1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 1.0f,
-    1.0f, -1.0f,	0.0f, 1.0f, 0.0f,	1.0f, 1.0f,
-    1.0f, 1.0f,	    0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
-   -1.0f, 1.0f,		1.0f, 1.0f, 1.0f,	0.0f, 0.0f
-};
-
-static const std::vector<uint16_t> indices = {
-	0, 1, 2, 2, 3, 0
-};
 
 struct UniformBufferData
 {
@@ -36,121 +26,104 @@ int main()
 	const uint32_t height = 800;
 
 	/// vk::Instance
-	auto instance = vk::Instance::create();
+	auto instance = vksp::Instance::create();
 	auto physicalDevices = instance->getPhysicalDevices();
 	assert(physicalDevices.size() > 0);
 
 	/// vk::Window
-	auto windowOptions = vk::Window::Options().title("Vulkan Application");
-	auto window = vk::Window::create(instance, width, height, windowOptions);
+	auto windowOptions = vksp::Window::Options().title("Vulkan Application");
+	auto window = vksp::Window::create(instance, width, height, windowOptions);
 
 	/// vk::Surface
 	auto surface = window->createSurface();
 
 	/// vk::Device
-	auto deviceOptions = vk::Device::Options().requiredQueueFlags(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT);
-	auto device = vk::Device::create(physicalDevices[0], deviceOptions);
+	auto deviceOptions = vksp::Device::Options().requiredQueueFlags(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer);
+	auto device = vksp::Device::create(physicalDevices[0], deviceOptions);
 	auto queueFamilyProperties = device->getPhysicalDeviceQueueFamilyProperties();
 	for (size_t i = 0; i < queueFamilyProperties.size(); ++i)
 	{
-		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device->getPhysicalDeviceHandle(), static_cast<uint32_t>(i), surface->getHandle(), &presentSupport);
-
-		if (presentSupport)
-		{
-			// TODO: move this check into the device class
-		}
+		vk::Bool32 presentSupport = device->getPhysicalDeviceHandle().getSurfaceSupportKHR(static_cast<uint32_t>(i), surface->getHandle());		
+		if (presentSupport) { /* TODO: move this check into the device class */ }
 	}
 	std::cout << device << std::endl;
 
 	/// vk::Swapchain
-	auto swapchain = vk::Swapchain::create(device, surface, width, height);
+	auto swapchain = vksp::Swapchain::create(device, surface, width, height);
 	auto swapchainImageViews = swapchain->getImageViewHandles();
 
 	/// vk::RenderPass
-	auto renderPass = vk::RenderPass::create(device);
+	auto renderPass = vksp::RenderPass::create(device);
 
 	/// vk::Buffer
-	auto icosphere = geo::IcoSphere().setRandomColors();
+	auto geometry = geo::Grid();
 	
-	auto positionBuffer =	vk::Buffer::create(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, icosphere.getPositions());
-	auto colorBuffer =		vk::Buffer::create(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, icosphere.getColors());
-	auto indexBuffer =		vk::Buffer::create(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, icosphere.getIndices());
-	auto uniformBuffer =	vk::Buffer::create(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(UniformBufferData), nullptr);
-	std::vector<vk::BufferRef> vertexBuffers = { positionBuffer, colorBuffer };
+	auto vertexBuffer0 = vksp::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getPositions());
+	auto vertexBuffer1 = vksp::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getTextureCoordinates());
+	auto indexBuffer = vksp::Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.getIndices());
+	auto uniformBuffer = vksp::Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
+	std::vector<vksp::BufferRef> vertexBuffers = { vertexBuffer0, vertexBuffer1 };
 
 	/// vk::Pipeline
-	auto bindingDescriptionPosition =	vk::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 3);
-	auto bindingDescriptionColor =		vk::Pipeline::createVertexInputBindingDescription(1, sizeof(float) * 3);
-	auto attributeDescriptionPosition = vk::Pipeline::createVertexInputAttributeDescription(0, VK_FORMAT_R32G32B32_SFLOAT, 0, 0);
-	auto attributeDescriptionColor =	vk::Pipeline::createVertexInputAttributeDescription(1, VK_FORMAT_R32G32B32_SFLOAT, 1, 0);
+	auto bindingDescription0 = vksp::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 3);
+	auto bindingDescription1 = vksp::Pipeline::createVertexInputBindingDescription(1, sizeof(float) * 2);
+	auto attributeDescription0 = vksp::Pipeline::createVertexInputAttributeDescription(0, vk::Format::eR32G32B32Sfloat, 0, 0);	// 3 floats: position
+	auto attributeDescription1 = vksp::Pipeline::createVertexInputAttributeDescription(1, vk::Format::eR32G32Sfloat, 1, 0);		// 2 floats: uv
 
-	std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescriptionPosition, bindingDescriptionColor };
-	std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescriptionPosition, attributeDescriptionColor };
+	std::vector<vk::VertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription0, bindingDescription1 };
+	std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescription0, attributeDescription1 };
 
-	auto vertexShader =		vk::ShaderModule::create(device, "assets/shaders/vert.spv");
-	auto fragmentShader =	vk::ShaderModule::create(device, "assets/shaders/frag.spv");
+	auto vertexShader = vksp::ShaderModule::create(device, "assets/shaders/vert.spv");
+	auto fragmentShader = vksp::ShaderModule::create(device, "assets/shaders/frag.spv");
 
-	auto pipelineOptions = vk::Pipeline::Options()
+	auto pipelineOptions = vksp::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
 		.vertexInputAttributeDescriptions(vertexInputAttributeDescriptions)
 		.viewport(window->getFullscreenViewport())
 		.scissor(window->getFullscreenScissorRect2D())
-		.attachShaderStage(vertexShader, VK_SHADER_STAGE_VERTEX_BIT)
-		.attachShaderStage(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.polygonMode(VK_POLYGON_MODE_LINE);
-	auto pipeline = vk::Pipeline::create(device, renderPass, pipelineOptions);
+		.attachShaderStage(vertexShader, vk::ShaderStageFlagBits::eVertex)
+		.attachShaderStage(fragmentShader, vk::ShaderStageFlagBits::eFragment)
+		.cullMode(vk::CullModeFlagBits::eNone)
+		.primitiveTopology(geometry.getTopology());
+	auto pipeline = vksp::Pipeline::create(device, renderPass, pipelineOptions);
 	std::cout << pipeline << std::endl;
 
 	/// vk::DescriptorPool
-	VkDescriptorPool descriptorPool = pipeline->createCompatibleDescriptorPool(0);
+	vk::DescriptorPool descriptorPool = pipeline->createCompatibleDescriptorPool(0);
 	
 	/// vk::DescriptorSet
-	VkDescriptorSetLayout descriptorSetLayout = pipeline->getDescriptorSetLayout(0);
-	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
-	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	descriptorSetAllocateInfo.descriptorPool = descriptorPool;
-	descriptorSetAllocateInfo.descriptorSetCount = 1;
-	descriptorSetAllocateInfo.pSetLayouts = &descriptorSetLayout;
+	vk::DescriptorSetLayout descriptorSetLayout = pipeline->getDescriptorSetLayout(0);
+	vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(descriptorPool, 1, &descriptorSetLayout);
 		
-	VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-	auto result = vkAllocateDescriptorSets(device->getHandle(), &descriptorSetAllocateInfo, &descriptorSet);
-	assert(result == VK_SUCCESS);
+	vk::DescriptorSet descriptorSet = device->getHandle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
 
-	VkDescriptorBufferInfo descriptorBufferInfo = {};
-	descriptorBufferInfo.buffer = uniformBuffer->getHandle();
-	descriptorBufferInfo.offset = 0;
-	descriptorBufferInfo.range = uniformBuffer->getSize();
+	vk::DescriptorBufferInfo descriptorBufferInfo{ uniformBuffer->getHandle(), 0, uniformBuffer->getRequestedSize() };
+	vk::WriteDescriptorSet writeDescriptorSet{ descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &descriptorBufferInfo };
 
-	VkWriteDescriptorSet writeDescriptorSet = {};
-	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSet.dstSet = descriptorSet;
-	writeDescriptorSet.dstBinding = 0;
-	writeDescriptorSet.dstArrayElement = 0;
-	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	writeDescriptorSet.descriptorCount = 1;
-	writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
-
-	vkUpdateDescriptorSets(device->getHandle(), 1, &writeDescriptorSet, 0, nullptr);
+	vkUpdateDescriptorSets(device->getHandle(), 1, &static_cast<VkWriteDescriptorSet>(writeDescriptorSet), 0, nullptr);
 
 	/// vk::Framebuffer
-	std::vector<vk::FramebufferRef> framebuffers(swapchainImageViews.size());
+	std::vector<vksp::FramebufferRef> framebuffers(swapchainImageViews.size());
 	for (size_t i = 0; i < swapchainImageViews.size(); ++i)
 	{
-		std::vector<VkImageView> imageViews = { swapchainImageViews[i] };
-		framebuffers[i] = vk::Framebuffer::create(device, renderPass, imageViews, width, height);
+		std::vector<vk::ImageView> imageViews = { swapchainImageViews[i] };
+		framebuffers[i] = vksp::Framebuffer::create(device, renderPass, imageViews, width, height);
 	}
 
 	/// vk::CommandPool
-	auto commandPoolOptions = vk::CommandPool::Options().commandPoolCreateFlags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	auto commandPool = vk::CommandPool::create(device, device->getQueueFamilyIndices().mGraphicsIndex, commandPoolOptions);
+	auto commandPool = vksp::CommandPool::create(device, device->getQueueFamiliesMapping().graphics().second);
 
 	/// vk::CommandBuffer
-	std::vector<vk::CommandBufferRef> commandBuffers(framebuffers.size(), vk::CommandBuffer::create(device, commandPool));
+	std::vector<vksp::CommandBufferRef> commandBuffers(framebuffers.size(), vksp::CommandBuffer::create(device, commandPool));
 	
 	/// vk::Semaphore
-	auto imageAvailableSemaphore = vk::Semaphore::create(device);
-	auto renderFinishedSemaphore = vk::Semaphore::create(device);
+	auto imageAvailableSemaphore = vksp::Semaphore::create(device);
+	auto renderFinishedSemaphore = vksp::Semaphore::create(device);
+
+	UniformBufferData ubo = {};
+	ubo.model = glm::mat4();
+	ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.projection = glm::perspective(glm::radians(45.0f), width / (float)height, 0.1f, 1000.0f);
 
 	auto startTime = std::chrono::high_resolution_clock::now();
 	while (!window->shouldWindowClose())
@@ -163,21 +136,15 @@ int main()
 		mousePosition.x /= width;
 		mousePosition.y /= height;
 
-		// Update the uniform buffer object.
-		UniformBufferData ubo = {};
-		auto translation = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, -2.0f));
-		auto rotation = glm::rotate(glm::mat4(), elapsed * 0.2f * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		ubo.model = translation * rotation;
-		ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		ubo.projection = glm::perspective(glm::radians(45.0f), width / (float)height, 0.1f, 1000.0f);
+		ubo.model = glm::rotate(glm::mat4(), elapsed * 0.25f, glm::vec3(0.0, 0.0, 1.0f));
 
-		void *data = uniformBuffer->map(0, uniformBuffer->getSize());
+		// Update the uniform buffer object.
+		void *data = uniformBuffer->getDeviceMemory()->map(0, uniformBuffer->getDeviceMemory()->getAllocationSize());
 		memcpy(data, &ubo, sizeof(ubo));
-		uniformBuffer->unmap();
+		uniformBuffer->getDeviceMemory()->unmap();
 
 		// Get the index of the next available image.
 		uint32_t imageIndex = swapchain->acquireNextSwapchainImage(imageAvailableSemaphore);
-
 		commandBuffers[imageIndex]->begin();
 		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex]);
 		commandBuffers[imageIndex]->bindPipeline(pipeline);
@@ -185,19 +152,17 @@ int main()
 		commandBuffers[imageIndex]->bindIndexBuffer(indexBuffer);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "time", &elapsed);
 		commandBuffers[imageIndex]->updatePushConstantRanges(pipeline, "mouse", &mousePosition);
-		vkCmdBindDescriptorSets(commandBuffers[imageIndex]->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipelineLayoutHandle(), 0, 1, &descriptorSet, 0, nullptr);
-		commandBuffers[imageIndex]->drawIndexed(static_cast<uint32_t>(icosphere.getIndices().size()), 1, 0, 0, 0);
+		commandBuffers[imageIndex]->getHandle().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->getPipelineLayoutHandle(), 0, 1, &descriptorSet, 0, nullptr);
+		commandBuffers[imageIndex]->drawIndexed(static_cast<uint32_t>(geometry.getIndices().size()), 1, 0, 0, 0);
 		commandBuffers[imageIndex]->endRenderPass();
 		commandBuffers[imageIndex]->end();
 		
 		auto commandBufferHandle = commandBuffers[imageIndex]->getHandle();
-
-		VkSemaphore waitSemaphores[] = { imageAvailableSemaphore->getHandle() };
-		VkSemaphore signalSemaphores[] = { renderFinishedSemaphore->getHandle() };
-		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		vk::Semaphore waitSemaphores[] = { imageAvailableSemaphore->getHandle() };
+		vk::Semaphore signalSemaphores[] = { renderFinishedSemaphore->getHandle() };
+		vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 		
-		VkSubmitInfo submitInfo = {};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		vk::SubmitInfo submitInfo;
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;		// Wait for the image to be acquired from the swapchain.
 		submitInfo.pWaitDstStageMask = waitStages;
@@ -206,13 +171,12 @@ int main()
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;	// Signal that rendering has finished.
 
-		auto result = vkQueueSubmit(device->getQueueHandles().mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		assert(result == VK_SUCCESS);
+		device->getQueueFamiliesMapping().graphics().first.submit(submitInfo, VK_NULL_HANDLE);
 
 		// Submit the result back to the swapchain for presentation:  make sure to wait for rendering to finish before attempting to present.
-		VkSwapchainKHR swapchains[] = { swapchain->getHandle() };
-		VkPresentInfoKHR presentInfo = {};
-		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		vk::SwapchainKHR swapchains[] = { swapchain->getHandle() };
+
+		vk::PresentInfoKHR presentInfo;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;		
 		presentInfo.swapchainCount = 1;
@@ -221,10 +185,8 @@ int main()
 		presentInfo.pResults = nullptr;
 
 		// This is equivalent to submitting a fence to a queue and waiting with an infinite timeout for that fence to signal.
-		vkQueueWaitIdle(device->getQueueHandles().mGraphicsQueue);
-
-		// Finally, present the image to the screen.
-		vkQueuePresentKHR(device->getQueueHandles().mPresentationQueue, &presentInfo);
+		device->getQueueFamiliesMapping().graphics().first.waitIdle();
+		device->getQueueFamiliesMapping().presentation().first.presentKHR(presentInfo);
 	}
 
 	return 0;

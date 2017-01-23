@@ -1,6 +1,6 @@
 #include "Window.h"
 
-namespace vk
+namespace vksp
 {
 
 	Window::Options::Options()
@@ -173,4 +173,4 @@ namespace vk
 		glfwSetScrollCallback(mWindowHandle, scrollProxy);
 	}
 
-} // namespace vk
+} // namespace vksp

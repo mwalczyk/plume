@@ -1,28 +1,26 @@
 #include "CommandPool.h"
 
-namespace vk
+namespace vksp
 {
 	
 	CommandPool::Options::Options()
 	{
-		mCommandPoolCreateFlags = 0;
+		mCommandPoolCreateFlags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 	}
 
 	CommandPool::CommandPool(const DeviceRef &tDevice, uint32_t tQueueFamilyIndex, const Options &tOptions) :
 		mDevice(tDevice)
 	{
-		VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+		vk::CommandPoolCreateInfo commandPoolCreateInfo;
 		commandPoolCreateInfo.flags = tOptions.mCommandPoolCreateFlags;
 		commandPoolCreateInfo.queueFamilyIndex = tQueueFamilyIndex;
-		commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 
-		auto result = vkCreateCommandPool(mDevice->getHandle(), &commandPoolCreateInfo, nullptr, &mCommandPoolHandle);
-		assert(result == VK_SUCCESS);
+		mCommandPoolHandle = mDevice->getHandle().createCommandPool(commandPoolCreateInfo);
 	}
 
 	CommandPool::~CommandPool()
 	{
-		vkDestroyCommandPool(mDevice->getHandle(), mCommandPoolHandle, nullptr);
+		mDevice->getHandle().destroyCommandPool(mCommandPoolHandle);
 	}
 
-} // namespace vk
+} // namespace vksp

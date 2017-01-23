@@ -72,22 +72,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -199,8 +199,10 @@
     <ClCompile Include="..\src\CommandBuffer.cpp" />
     <ClCompile Include="..\src\CommandPool.cpp" />
     <ClCompile Include="..\src\Device.cpp" />
+    <ClCompile Include="..\src\DeviceMemory.cpp" />
     <ClCompile Include="..\src\Framebuffer.cpp" />
     <ClCompile Include="..\src\Geometry.cpp" />
+    <ClCompile Include="..\src\Image.cpp" />
     <ClCompile Include="..\src\Instance.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Pipeline.cpp" />
@@ -212,13 +214,17 @@
     <ClCompile Include="..\src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\Application.h" />
     <ClInclude Include="..\include\Buffer.h" />
     <ClInclude Include="..\include\CommandBuffer.h" />
     <ClInclude Include="..\include\CommandPool.h" />
     <ClInclude Include="..\include\Device.h" />
+    <ClInclude Include="..\include\DeviceMemory.h" />
     <ClInclude Include="..\include\Framebuffer.h" />
     <ClInclude Include="..\include\Geometry.h" />
+    <ClInclude Include="..\include\Image.h" />
     <ClInclude Include="..\include\Instance.h" />
+    <ClInclude Include="..\include\Noncopyable.h" />
     <ClInclude Include="..\include\Pipeline.h" />
     <ClInclude Include="..\include\Platform.h" />
     <ClInclude Include="..\include\RenderPass.h" />

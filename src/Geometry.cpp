@@ -3,8 +3,43 @@
 namespace geo
 {
 
+	float* Geometry::getVertexAttribute(VertexAttribute tAttribute) 
+	{
+		switch (tAttribute)
+		{
+		case geo::VertexAttribute::ATTRIBUTE_POSITION: return reinterpret_cast<float*>(mPositions.data());
+		case geo::VertexAttribute::ATTRIBUTE_COLOR: return reinterpret_cast<float*>(mColors.data());
+		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return reinterpret_cast<float*>(mNormals.data());
+		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return reinterpret_cast<float*>(mTextureCoordinates.data());
+		}
+	}
+
+	void Geometry::setRandomColors()
+	{
+		static std::random_device rand;
+		static std::mt19937 mersenne(rand());
+		static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+
+		mColors.clear();
+		mColors.resize(getVertexCount());
+
+		std::generate(mColors.begin(), mColors.end(), [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
+	}
+
+	size_t Geometry::getVertexAttributeDimensions(VertexAttribute tAttribute) const
+	{
+		switch (tAttribute)
+		{
+		case geo::VertexAttribute::ATTRIBUTE_POSITION: return 3;
+		case geo::VertexAttribute::ATTRIBUTE_COLOR: return 3;
+		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return 3;
+		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return 2;
+		}
+	}
+
 	IcoSphere::IcoSphere()
 	{
+		// See: http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html
 		float t = (1.0f + sqrtf(5.0f)) / 2.0f;
 		
 		// Calculate positions.
@@ -56,83 +91,49 @@ namespace geo
 		};
 	}
 
-	IcoSphere& IcoSphere::setRandomColors()
+	Grid::Grid()
 	{
-		std::random_device rand;
-		std::mt19937 mersenne(rand());
-		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+		mPositions = {
+			{ -1.0f, -1.0f, 0.0f },
+			{  1.0f, -1.0f,	0.0f },
+			{  1.0f, 1.0f,	0.0f },
+			{ -1.0f, 1.0f,	0.0f }
+		};
 
-		mColors.clear();
-		mColors.resize(getVertexCount());
+		// Set the default color.
+		setSolidColor({ 1.0f, 1.0f, 1.0f });
 
-		std::generate(mColors.begin(), mColors.end(), [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
+		mTextureCoordinates = {
+			{ 0.0f, 1.0f },
+			{ 1.0f, 1.0f },
+			{ 1.0f, 0.0f },
+			{ 0.0f, 0.0f }
+		};
 
-		return *this;
+		mIndices = {
+			0, 1, 2, 
+			2, 3, 0
+		};
 	}
 
-	IcoSphere& IcoSphere::setColorFrom(VertexAttribute tAttribute, const std::function<glm::vec3(glm::vec3)> tFunc)
+	Circle::Circle(float tRadius, uint32_t tSubdivisions)
 	{
-		mColors.clear();
-		mColors.resize(getVertexCount());
+		mPositions.push_back({ 0.0f, 0.0f, -2.0f });
+		mIndices.push_back(0);
 
-		const auto *inputData = getVertexAttribute(tAttribute);
-		size_t inputAttributeDimensions = getVertexAttributeDimensions(tAttribute);
-
-		if (inputAttributeDimensions == 3)
+		float angleDivisor = (2.0f * M_PI) / tSubdivisions;
+		for (size_t i = 0; i < tSubdivisions; ++i)
 		{
-			//fillColors(reinterpret_cast<const glm::vec3*>(inputData), tFunc);
-		}
-		else if (inputAttributeDimensions == 2)
-		{
-			//fillColors(reinterpret_cast<const glm::vec2*>(inputData), tFunc);
-		}
-
-		for (size_t i = 0; i < mColors.size(); i++)
-		{
-			//1111mColors[i] = tFunc(inputData[i]);
+			float c = cosf(angleDivisor * i) * tRadius;
+			float s = sinf(angleDivisor * i) * tRadius;
+			mPositions.push_back({ c, s, -2.0f });
+			mIndices.push_back(i + 1);
 		}
 
-		return *this;
-	}
+		mIndices.push_back(1);
 
-	IcoSphere& IcoSphere::setColorFrom(VertexAttribute tAttribute, const std::function<glm::vec3(glm::vec2)> tFunc)
-	{
-		mColors.clear();
-		mColors.resize(getVertexCount());
-
-		return *this;
-	}
-
-	float* IcoSphere::getVertexAttribute(VertexAttribute tAttribute) 
-	{
-		switch (tAttribute)
-		{
-		case geo::VertexAttribute::ATTRIBUTE_POSITION: return reinterpret_cast<float*>(mPositions.data());
-		case geo::VertexAttribute::ATTRIBUTE_COLOR: return reinterpret_cast<float*>(mColors.data());
-		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return reinterpret_cast<float*>(mNormals.data());
-		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return reinterpret_cast<float*>(mTextureCoordinates.data());
-		}
-	}
-
-	size_t IcoSphere::getVertexAttributeDimensions(VertexAttribute tAttribute)
-	{
-		switch (tAttribute)
-		{
-		case geo::VertexAttribute::ATTRIBUTE_POSITION: 
-		case geo::VertexAttribute::ATTRIBUTE_COLOR: 
-		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return 3;
-		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return 2;
-		}
-	}
-
-	void IcoSphere::fillColors(const glm::vec2 *tInputData, const std::function<glm::vec3(glm::vec2)> tFunc)
-	{
-
-	}
-
-	void IcoSphere::fillColors(const glm::vec3 *tInputData, const std::function<glm::vec3(glm::vec3)> tFunc)
-	{
-
+		// Set the default color.
+		setSolidColor({ 1.0f, 1.0f, 1.0f });
 	}
 
 } // namespace geo

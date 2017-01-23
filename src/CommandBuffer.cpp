@@ -1,11 +1,11 @@
 #include "CommandBuffer.h"
 
-namespace vk
+namespace vksp
 {
 
 	CommandBuffer::Options::Options()
 	{
-		mCommandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		mCommandBufferLevel = vk::CommandBufferLevel::ePrimary;
 	}
 
 	CommandBuffer::CommandBuffer(const DeviceRef &tDevice, const CommandPoolRef &tCommandPool, const Options &tOptions) :
@@ -13,99 +13,95 @@ namespace vk
 		mCommandPool(tCommandPool),
 		mCommandBufferLevel(tOptions.mCommandBufferLevel)
 	{
-		VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
-		commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		vk::CommandBufferAllocateInfo commandBufferAllocateInfo;
 		commandBufferAllocateInfo.commandPool = mCommandPool->getHandle();
 		commandBufferAllocateInfo.level = mCommandBufferLevel;
 		commandBufferAllocateInfo.commandBufferCount = 1;
 
-		auto result = vkAllocateCommandBuffers(mDevice->getHandle(), &commandBufferAllocateInfo, &mCommandBufferHandle);
-		assert(result == VK_SUCCESS);
+		mCommandBufferHandle = mDevice->getHandle().allocateCommandBuffers(commandBufferAllocateInfo)[0];
+
 	}
 
 	CommandBuffer::~CommandBuffer()
 	{
 		// Command buffers are automatically destroyed when the command pool from which they were allocated are destroyed.
-		vkFreeCommandBuffers(mDevice->getHandle(), mCommandPool->getHandle(), 1, &mCommandBufferHandle);
+		mDevice->getHandle().freeCommandBuffers(mCommandPool->getHandle(), mCommandBufferHandle);
 	}
 
 	void CommandBuffer::begin()
 	{
-		VkCommandBufferBeginInfo commandBufferBeginInfo = {};
-		commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		vk::CommandBufferBeginInfo commandBufferBeginInfo;
+		commandBufferBeginInfo.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
 		commandBufferBeginInfo.pInheritanceInfo = nullptr;
-		commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-		vkBeginCommandBuffer(mCommandBufferHandle, &commandBufferBeginInfo);
+		mCommandBufferHandle.begin(commandBufferBeginInfo);
 	}
 
-	void CommandBuffer::beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const VkClearValue &tClearValue)
+	void CommandBuffer::beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const vk::ClearValue &tClearValue)
 	{
-		VkRenderPassBeginInfo renderPassBeginInfo = {};
+		vk::RenderPassBeginInfo renderPassBeginInfo;
 		renderPassBeginInfo.clearValueCount = 1;
 		renderPassBeginInfo.framebuffer = tFramebuffer->getHandle();
 		renderPassBeginInfo.pClearValues = &tClearValue;
-		renderPassBeginInfo.pNext = nullptr;
 		renderPassBeginInfo.renderArea.extent = { tFramebuffer->getWidth(), tFramebuffer->getHeight() };
 		renderPassBeginInfo.renderArea.offset = { 0, 0 };
 		renderPassBeginInfo.renderPass = tRenderPass->getHandle();
-		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 
-		vkCmdBeginRenderPass(mCommandBufferHandle, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		mCommandBufferHandle.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 	}
 
 	void CommandBuffer::bindPipeline(const PipelineRef &tPipeline)
 	{
-		vkCmdBindPipeline(mCommandBufferHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, tPipeline->getHandle());
+		mCommandBufferHandle.bindPipeline(vk::PipelineBindPoint::eGraphics, tPipeline->getHandle());
 	}
 
 	void CommandBuffer::bindVertexBuffers(const std::vector<BufferRef> &tBuffers)
 	{
-		std::vector<VkBuffer> bufferHandles(tBuffers.size());
+		std::vector<vk::Buffer> bufferHandles(tBuffers.size());
 		std::transform(tBuffers.begin(), tBuffers.end(), bufferHandles.begin(), [](const BufferRef &tBuffer) { return tBuffer->getHandle(); } );
-		std::vector<VkDeviceSize> offsets(tBuffers.size(), 0);
+		std::vector<vk::DeviceSize> offsets(tBuffers.size(), 0);
 
 		uint32_t firstBinding = 0;
 		uint32_t bindingCount = static_cast<uint32_t>(tBuffers.size());
 
-		vkCmdBindVertexBuffers(mCommandBufferHandle, firstBinding, bindingCount, bufferHandles.data(), offsets.data());
+		mCommandBufferHandle.bindVertexBuffers(firstBinding, bufferHandles, offsets);
 	}
 
 	void CommandBuffer::bindIndexBuffer(const BufferRef &tBuffer)
 	{
-		vkCmdBindIndexBuffer(mCommandBufferHandle, tBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT32);
+		mCommandBufferHandle.bindIndexBuffer(tBuffer->getHandle(), 0, vk::IndexType::eUint32);
 	}
 
-	void CommandBuffer::updatePushConstantRanges(const PipelineRef &tPipeline, VkShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData)
+	void CommandBuffer::updatePushConstantRanges(const PipelineRef &tPipeline, vk::ShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData)
 	{
-		vkCmdPushConstants(mCommandBufferHandle, tPipeline->getPipelineLayoutHandle(), tStageFlags, tOffset, tSize, tData);
+		mCommandBufferHandle.pushConstants(tPipeline->getPipelineLayoutHandle(), tStageFlags, tOffset, tSize, tData);
 	}
 
 	void CommandBuffer::updatePushConstantRanges(const PipelineRef &tPipeline, const std::string &tMemberName, const void* tData)
 	{
 		auto pushConstantsMember = tPipeline->getPushConstantsMember(tMemberName);
-		vkCmdPushConstants(mCommandBufferHandle, tPipeline->getPipelineLayoutHandle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, tData);
+
+		mCommandBufferHandle.pushConstants(tPipeline->getPipelineLayoutHandle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, tData);
 	}
 
 	void CommandBuffer::draw(uint32_t tVertexCount, uint32_t tInstanceCount, uint32_t tFirstVertex, uint32_t tFirstInstance)
 	{
-		vkCmdDraw(mCommandBufferHandle, tVertexCount, tInstanceCount, tFirstVertex, tFirstInstance);
+		mCommandBufferHandle.draw(tVertexCount, tInstanceCount, tFirstVertex, tFirstInstance);
 	}
 
 	void CommandBuffer::drawIndexed(uint32_t tIndexCount, uint32_t tInstanceCount, uint32_t tFirstIndex, uint32_t tVertexOffset, uint32_t tFirstInstance)
 	{
-		vkCmdDrawIndexed(mCommandBufferHandle, tIndexCount, tInstanceCount, tFirstIndex, tVertexOffset, tFirstInstance);
+		mCommandBufferHandle.drawIndexed(tIndexCount, tInstanceCount, tFirstIndex, tVertexOffset, tFirstInstance);
 	}
 
 	void CommandBuffer::endRenderPass()
 	{
-		vkCmdEndRenderPass(mCommandBufferHandle);
+		mCommandBufferHandle.endRenderPass();
 	}
 
 	void CommandBuffer::end()
 	{
-		auto result = vkEndCommandBuffer(mCommandBufferHandle);
-		assert(result == VK_SUCCESS);
+		mCommandBufferHandle.end();
 	}
 
-} // namespace vk
+} // namespace vksp

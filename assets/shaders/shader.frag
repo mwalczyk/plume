@@ -17,6 +17,6 @@ void main()
 {
 	float t = sin(constants.time);
 	float m = constants.mouse.x;
-	vec3 modified = vec3(m, vsColor.gb);
-	oColor = vec4(modified, 1.0);
+
+	oColor = vec4(vsColor, 1.0);
 }

@@ -1,8 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(location = 0) in vec3 vsColor;
-layout(location = 1) in vec2 vsTexcoord;
+layout(location = 0) in vec2 vsTexcoord;
 
 layout(location = 0) out vec4 oColor;
 
@@ -10,11 +9,11 @@ layout(std430, push_constant) uniform PushConstants
 {
 	float time;
 	vec2 mouse;
-	vec3 position;
 } constants;
 
-const int MAX_STEPS = 64;
-const float MIN_HIT_DISTANCE = 0.001;
+const int MAX_STEPS = 128;
+const float MAX_TRACE_DISTANCE = 20.0;
+const float MIN_HIT_DISTANCE = 0.01;
 
 struct sphere
 {
@@ -27,8 +26,6 @@ struct ray
 	vec3 origin;
 	vec3 direction;
 };
-
-sphere s = sphere(1.0, vec3(0.0, 0.0, 10.0));
 
 vec2 hash2(in vec2 p)
 {
@@ -58,36 +55,85 @@ float noise(in vec2 p)
                         dot(b, f - vec2(1.0,0.0)), u.x),
                     mix(dot(c, f - vec2(0.0,1.0)),
                         dot(d, f - vec2(1.0,1.0)), u.x), u.y);
+
     return val * 0.5 + 0.5;
 }
 
+vec3 modifier_repeat(in vec3 q, in vec3 r)
+{
+	return mod(q, r) - r * 0.5;
+}
+
+float op_union(float d0, float d1)
+{
+	return min(d0, d1);
+}
+
+float op_smin(float a, float b, float k)
+{
+    a = pow(a, k);
+    b = pow(b, k);
+    return pow((a * b) / (a + b), 1.0 / k);
+}
 
 float sdf_sphere(in sphere s, in vec3 p)
 {
-	s.radius += noise(p.xy * 10.0 + constants.time) * 0.1;
+	vec3 r = vec3(8.0, 8.0, 0.0);
+	vec3 id = floor(p * r);
+
 	return length(s.center - p) - s.radius;
+}
+
+float t = constants.time;
+sphere s0 = sphere(2.0, vec3(cos(t) * 8.0, sin(t * 3.0) * 8.0, 0.0));
+sphere s1 = sphere(10.0, vec3(0.0));
+sphere s2 = sphere(3.0, vec3(cos(t * 2.0) * 10.0, sin(t) * 10.0, 0.0));
+
+float map(in vec3 p)
+{
+	float s = sin(t) * 0.5 + 0.5;
+	float c = cos(t) * 0.5 + 0.5;
+	float n = noise(p.xy * pow(c * s, 0.725) + t);  // * 2.0 - 1.0;
+
+	float dist_s0 = sdf_sphere(s0, p);
+	float dist_s1 = sdf_sphere(s1, p + n * p.y);
+	float dist_s2 = sdf_sphere(s2, p);
+
+	return dist_s1;// op_smin(dist_s2, op_smin(dist_s0, dist_s1, 0.4), 0.5);
+}
+
+vec3 calculate_normal(in vec3 p)
+{
+    vec3 eps = vec3(0.001, 0.0, 0.0);
+    vec3 n = vec3(map(p + eps.xyy) - map(p - eps.xyy),
+                  map(p + eps.yxy) - map(p - eps.yxy),
+                  map(p + eps.yyx) - map(p - eps.yyx));
+    return normalize(n);
 }
 
 vec3 raymarch(in ray r)
 {
 	vec3 color = vec3(0.0);
-	vec3 start = r.origin;
+	vec3 current_position = r.origin;
 
 	for (int i = 0; i < MAX_STEPS; ++i)
 	{
-		float distance_to = sdf_sphere(s, start);
+		float distance_to = map(current_position);
+
 		if (distance_to < MIN_HIT_DISTANCE)
 		{
-			vec3 light_position = vec3(4.0, 5.0, 0.0);
-			vec3 to_light = normalize(start - light_position);
+			const vec3 light_position = vec3(0.0, 0.0, 4.0);
 
-			vec3 normal = normalize(s.center - start);
-			float lighting = max(0.25, dot(normal, to_light));
+			vec3 to_light = normalize(current_position - light_position);
+			vec3 normal = calculate_normal(current_position);
 
-			color = (normal * 0.5 + 0.5) * lighting;
+			float lighting = max(0.55, dot(normal, to_light));
+			color = (normal * 0.5 + 0.5);
+		//	color = vec3( lighting);
+
 			break;
 		}
-		start += distance_to * r.direction;
+		current_position += distance_to * r.direction;
 	}
 	return color;
 }
@@ -96,16 +142,25 @@ void main()
 {
 	vec2 uv = vsTexcoord * 2.0 - 1.0;
 
-	vec3 camera_position = vec3(0.0, 0.0, -10.0);
-	vec3 camera_up = vec3(0.0, 1.0, 0.0);
-	vec3 camera_right = vec3(1.0, 0.0, 0.0);
+	float mx = constants.mouse.x * 2.0 - 1.0;
+	vec3 camera_position = vec3(0.0, 0.0, -20.0);
+	vec3 target = vec3(0.0, 0.0, 0.0);
+
+	// construct the camera's lookat matrix
+	vec3 forward = normalize(target - camera_position);
+	vec3 right = cross(forward, vec3(0.0, 1.0, 0.0));
+	vec3 up = cross(right, forward);
+
+	mat3 lookat = mat3(right, up, forward);
 
 	vec3 ro = camera_position;
-	vec3 rd = normalize(vec3(uv, 0.0) - ro);
+	vec3 rd = vec3(uv.xy, 1.0);
+	rd = normalize(lookat * rd);
+
 	ray r = ray(ro, rd);
 
 	vec3 result = raymarch(r);
-	vec2 m = constants.mouse;
+
 	vec4 color = vec4(result, 1.0);
 
 	oColor = color;

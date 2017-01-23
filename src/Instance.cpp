@@ -1,6 +1,6 @@
 #include "Instance.h"
 
-namespace vk
+namespace vksp
 {
 
 	Instance::Options::Options()
@@ -14,32 +14,31 @@ namespace vk
 		mApplicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 		mApplicationInfo.pApplicationName = "Spectra Application";
 		mApplicationInfo.pEngineName = "Spectra Engine";
-		mApplicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	}
 
 	//! Proxy function for creating a debug callback object
-	VkResult createDebugReportCallbackEXT(VkInstance tInstance, const VkDebugReportCallbackCreateInfoEXT* tCreateInfo, const VkAllocationCallbacks* tAllocator, VkDebugReportCallbackEXT* tCallback)
+	vk::Result createDebugReportCallbackEXT(VkInstance tInstance, const VkDebugReportCallbackCreateInfoEXT* tCreateInfo, const VkAllocationCallbacks* tAllocator, VkDebugReportCallbackEXT* tCallback)
 	{
 		auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(tInstance, "vkCreateDebugReportCallbackEXT");
 
 		if (func != nullptr)
 		{
-			return func(tInstance, tCreateInfo, tAllocator, tCallback);
+			return static_cast<vk::Result>(func(tInstance, tCreateInfo, tAllocator, tCallback));
 		}
 		else
 		{
-			return VK_ERROR_EXTENSION_NOT_PRESENT;
+			return vk::Result::eErrorExtensionNotPresent;
 		}
 	}
 
 	//! Proxy function for destroying a debug callback object
-	void destroyDebugReportCallbackEXT(VkInstance tInstance, VkDebugReportCallbackEXT tCallback, const VkAllocationCallbacks* tAllocator)
+	void destroyDebugReportCallbackEXT(vk::Instance tInstance, VkDebugReportCallbackEXT tCallback, const VkAllocationCallbacks* tAllocator)
 	{
 		auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(tInstance, "vkDestroyDebugReportCallbackEXT");
 
 		if (func != nullptr)
 		{
-			func(tInstance, tCallback, tAllocator);
+			func(static_cast<VkInstance>(tInstance), tCallback, tAllocator);
 		}
 	}
 
@@ -48,18 +47,10 @@ namespace vk
 		mRequiredExtensions(tOptions.mRequiredExtensions)
 	{
 		// Store the instance extension properties.
-		uint32_t instanceExtensionPropertiesCount = 0;
-		vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertiesCount, nullptr);
-
-		mInstanceExtensionProperties.resize(instanceExtensionPropertiesCount);
-		vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertiesCount, mInstanceExtensionProperties.data());
+		mInstanceExtensionProperties = vk::enumerateInstanceExtensionProperties();
 
 		// Store the instance layer properties.
-		uint32_t instanceLayerCount = 0;
-		vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
-
-		mInstanceLayerProperties.resize(instanceLayerCount);
-		vkEnumerateInstanceLayerProperties(&instanceLayerCount, mInstanceLayerProperties.data());
+		mInstanceLayerProperties = vk::enumerateInstanceLayerProperties();
 
 		if (!checkInstanceLayerSupport())
 		{
@@ -75,16 +66,14 @@ namespace vk
 		mRequiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
 		// Create the instance.
-		VkInstanceCreateInfo instanceCreateInfo = {};
+		vk::InstanceCreateInfo instanceCreateInfo;
 		instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(mRequiredExtensions.size());
 		instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mRequiredLayers.size());
 		instanceCreateInfo.pApplicationInfo = &tOptions.mApplicationInfo;
 		instanceCreateInfo.ppEnabledExtensionNames = mRequiredExtensions.data();
 		instanceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
-		instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 
-		auto result = vkCreateInstance(&instanceCreateInfo, nullptr, &mInstanceHandle);
-		assert(result == VK_SUCCESS);
+		mInstanceHandle = vk::createInstance(instanceCreateInfo);
 
 		// Only set up the debug callback object if the VK_EXT_debug_report extension is present.
 		if (std::find(mRequiredExtensions.begin(), mRequiredExtensions.end(), "VK_EXT_debug_report") != mRequiredExtensions.end())
@@ -93,21 +82,17 @@ namespace vk
 		}
 
 		// Store the handles to each of the present physical devices (note that this needs to happen after initialization).
-		uint32_t physicalDeviceCount = 0;
-		vkEnumeratePhysicalDevices(mInstanceHandle, &physicalDeviceCount, nullptr);
-
-		mPhysicalDevices.resize(physicalDeviceCount);
-		vkEnumeratePhysicalDevices(mInstanceHandle, &physicalDeviceCount, mPhysicalDevices.data());
+		mPhysicalDevices = mInstanceHandle.enumeratePhysicalDevices();
 	}
 
 	Instance::~Instance()
 	{
 		destroyDebugReportCallbackEXT(mInstanceHandle, mDebugReportCallback, nullptr);
-
-		vkDestroyInstance(mInstanceHandle, nullptr);
+		
+		mInstanceHandle.destroy();
 	}
 
-	VkPhysicalDevice Instance::pickPhysicalDevice(const std::function<bool(VkPhysicalDevice)> &tCandidacyFunc)
+	vk::PhysicalDevice Instance::pickPhysicalDevice(const std::function<bool(vk::PhysicalDevice)> &tCandidacyFunc)
 	{
 		for (const auto &physicalDevice : mPhysicalDevices)
 		{
@@ -124,7 +109,7 @@ namespace vk
 	{
 		for (const auto& requiredLayerName: mRequiredLayers)
 		{
-			auto predicate = [&](const VkLayerProperties &layerProperty) { return strcmp(requiredLayerName, layerProperty.layerName) == 0; };
+			auto predicate = [&](const vk::LayerProperties &layerProperty) { return strcmp(requiredLayerName, layerProperty.layerName) == 0; };
 			if (std::find_if(mInstanceLayerProperties.begin(), mInstanceLayerProperties.end(), predicate) == mInstanceLayerProperties.end())
 			{
 				std::cerr << "Required layer " << requiredLayerName << " is not supported\n";
@@ -143,8 +128,7 @@ namespace vk
 		debugReportCallbackCreateInfo.pUserData = nullptr;
 		debugReportCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 		
-		auto result = createDebugReportCallbackEXT(mInstanceHandle, &debugReportCallbackCreateInfo, nullptr, &mDebugReportCallback);
-		assert(result == VK_SUCCESS);
+		createDebugReportCallbackEXT(mInstanceHandle, &debugReportCallbackCreateInfo, nullptr, &mDebugReportCallback);
 	}
 
-} // namespace vk
+} // namespace vksp

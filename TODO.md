@@ -24,3 +24,4 @@
 - [ ] Fix the `shaderStageAsString` helper method inside of the pipeline class
 - [ ] Create a separate class for resource management (i.e. shader files, etc.)
 - [ ] Add proper exception subclasses
+- [ ] Move all constructors into the `private` data section - figure out a way to prevent copies but allow moves

@@ -1,6 +1,6 @@
 #include "RenderPass.h"
 
-namespace vk
+namespace vksp
 {
 
 	std::pair<VkAttachmentDescription, VkAttachmentReference> RenderPass::createColorAttachment(const VkFormat &tFormat, uint32_t tAttachment)
@@ -26,8 +26,9 @@ namespace vk
 
 	VkSubpassDescription RenderPass::createSubpassDescription(const std::vector<VkAttachmentReference> &tAttachmentReferences, VkPipelineBindPoint tPipelineBindPoint)
 	{
+		// Currently, only graphics subpasses are supported by Vulkan.
 		VkSubpassDescription subpassDescription = {};
-		subpassDescription.pipelineBindPoint = tPipelineBindPoint;		// Currently, only graphics subpasses are supported by Vulkan.
+		subpassDescription.pipelineBindPoint = tPipelineBindPoint;		
 		subpassDescription.colorAttachmentCount = static_cast<uint32_t>(tAttachmentReferences.size());
 		subpassDescription.pColorAttachments = tAttachmentReferences.data();
 
@@ -83,4 +84,4 @@ namespace vk
 		vkDestroyRenderPass(mDevice->getHandle(), mRenderPassHandle, nullptr);
 	}
 
-} // namespace vk
+} // namespace vksp

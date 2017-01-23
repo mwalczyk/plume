@@ -1,35 +1,33 @@
 #include "Framebuffer.h"
 
-namespace vk
+namespace vksp
 {
 
 	Framebuffer::Options::Options()
 	{
 	}
 
-	Framebuffer::Framebuffer(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<VkImageView> &tImageViews, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
+	Framebuffer::Framebuffer(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<vk::ImageView> &tImageViews, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
 		mDevice(tDevice),
 		mRenderPass(tRenderPass),
 		mImageViews(tImageViews),
 		mWidth(tWidth),
 		mHeight(tHeight)
 	{
-		VkFramebufferCreateInfo framebufferCreateInfo = {};
+		vk::FramebufferCreateInfo framebufferCreateInfo;
 		framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(mImageViews.size());
 		framebufferCreateInfo.height = mHeight;
 		framebufferCreateInfo.layers = 1;
 		framebufferCreateInfo.pAttachments = mImageViews.data();
 		framebufferCreateInfo.renderPass = mRenderPass->getHandle();		
-		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferCreateInfo.width = mWidth;
 
-		auto result = vkCreateFramebuffer(mDevice->getHandle(), &framebufferCreateInfo, nullptr, &mFramebufferHandle);
-		assert(result == VK_SUCCESS);
+		mFramebufferHandle = mDevice->getHandle().createFramebuffer(framebufferCreateInfo);
 	}
 
 	Framebuffer::~Framebuffer()
 	{
-		vkDestroyFramebuffer(mDevice->getHandle(), mFramebufferHandle, nullptr);
+		mDevice->getHandle().destroyFramebuffer(mFramebufferHandle);
 	}
 
-} // namespace vk
+} // namespace vksp

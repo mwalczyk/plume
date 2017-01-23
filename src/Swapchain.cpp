@@ -1,10 +1,10 @@
 #include "Swapchain.h"
 
-namespace vk
+namespace vksp
 {
 	Swapchain::Options::Options()
 	{
-		mPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+		mPresentMode = vk::PresentModeKHR::eMailbox;
 	}
 
 	Swapchain::Swapchain(const DeviceRef &tDevice, const SurfaceRef &tSurface, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
@@ -29,33 +29,28 @@ namespace vk
 
 		// For now, we assume that the graphics and presentation queues are the same - this is indicated by the VK_SHARING_MODE_EXCLUSIVE flag.
 		// In the future, we will need to account for the fact that these two operations may be a part of different queue families.
-		VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
+		vk::SwapchainCreateInfoKHR swapchainCreateInfo;
 		swapchainCreateInfo.clipped = VK_TRUE;										// Make sure to ignore pixels that are obscured by other windows.
-		swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;		// This window should not blend with any other windows in the windowing system.
+		swapchainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;	// This window should not blend with any other windows in the windowing system.
 		swapchainCreateInfo.imageArrayLayers = 1;									
 		swapchainCreateInfo.imageColorSpace = selectedSurfaceFormat.colorSpace;
 		swapchainCreateInfo.imageExtent = selectedExtent;
 		swapchainCreateInfo.imageFormat = selectedSurfaceFormat.format;
-		swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;			// This swapchain is only accessed by one queue family (see notes above).
-		swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;			// This swapchain is only accessed by one queue family (see notes above).
+		swapchainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 		swapchainCreateInfo.minImageCount = imageCount;
 		swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 		swapchainCreateInfo.pQueueFamilyIndices = nullptr;							// If the sharing mode is exlusive, we don't need to specify this.
 		swapchainCreateInfo.presentMode = selectedPresentMode;
 		swapchainCreateInfo.preTransform = swapchainSupportDetails.mCapabilities.currentTransform;
 		swapchainCreateInfo.queueFamilyIndexCount = 0;								// Again, if the sharing mode is exlusive, we don't need to specify this.
-		swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 		swapchainCreateInfo.surface = mSurface->getHandle();
 
-		auto result = vkCreateSwapchainKHR(mDevice->getHandle(), &swapchainCreateInfo, nullptr, &mSwapchainHandle);
-		assert(result == VK_SUCCESS);
+		mSwapchainHandle = mDevice->getHandle().createSwapchainKHR(swapchainCreateInfo);
 
 		// Note that the Vulkan implementation may create more swapchain images than requested above - this is why we query the number of images again.
-		vkGetSwapchainImagesKHR(mDevice->getHandle(), mSwapchainHandle, &imageCount, nullptr);
-
-		mImageHandles.resize(imageCount);
-		vkGetSwapchainImagesKHR(mDevice->getHandle(), mSwapchainHandle, &imageCount, mImageHandles.data());
-
+		mImageHandles = mDevice->getHandle().getSwapchainImagesKHR(mSwapchainHandle);
+	
 		// Store the image format and extent for later use.
 		mSwapchainImageFormat = selectedSurfaceFormat.format;
 		mSwapchainImageExtent = selectedExtent;
@@ -65,32 +60,30 @@ namespace vk
 
 	Swapchain::~Swapchain()
 	{
-		vkDestroySwapchainKHR(mDevice->getHandle(), mSwapchainHandle, nullptr);
+		mDevice->getHandle().destroySwapchainKHR(mSwapchainHandle);
 	}
 
 	uint32_t Swapchain::acquireNextSwapchainImage(const SemaphoreRef &tSemaphore, uint32_t tNanosecondsTimeout)
 	{
-		uint32_t imageIndex = 0;
-		vkAcquireNextImageKHR(mDevice->getHandle(), mSwapchainHandle, tNanosecondsTimeout, tSemaphore->getHandle(), VK_NULL_HANDLE, &imageIndex);
-
-		return imageIndex;
+		auto result = mDevice->getHandle().acquireNextImageKHR(mSwapchainHandle, tNanosecondsTimeout, tSemaphore->getHandle(), VK_NULL_HANDLE);
+		return result.value;
 	}
 
-	VkSurfaceFormatKHR Swapchain::selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &tSurfaceFormats) const
+	vk::SurfaceFormatKHR Swapchain::selectSwapchainSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &tSurfaceFormats) const
 	{
-		// If there is only one VkSurfaceFormatKHR entry with format VK_FORMAT_UNDEFINED, this means that the surface has no preferred format,
-		// in which case we default to VK_FORMAT_B8G8R8A8_UNORM and VK_COLOR_SPACE_SRGB_NONLINEAR_KHR.
+		// If there is only one VkSurfaceFormatKHR entry with format vk::Format::eUndefined, this means that the surface has no preferred format,
+		// in which case we default to vk::Format::eB8G8R8A8Unorm and vk::ColorSpaceKHR::eSrgbNonlinear.
 		if (tSurfaceFormats.size() == 1 &&
-			tSurfaceFormats[0].format == VK_FORMAT_UNDEFINED)
+			tSurfaceFormats[0].format == vk::Format::eUndefined)
 		{
-			return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+			return { vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear };
 		}
 
 		// Otherwise, there is a preferred format - iterate through and see if the above combination is available.
 		for (const auto &surfaceFormat : tSurfaceFormats)
 		{
-			if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
-				surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
+			if (surfaceFormat.format == vk::Format::eB8G8R8A8Unorm &&
+				surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
 			{
 				return surfaceFormat;
 			}
@@ -101,26 +94,26 @@ namespace vk
 		return tSurfaceFormats[0];
 	}
 
-	VkPresentModeKHR Swapchain::selectSwapchainPresentMode(const std::vector<VkPresentModeKHR> &tPresentModes) const
+	vk::PresentModeKHR Swapchain::selectSwapchainPresentMode(const std::vector<vk::PresentModeKHR> &tPresentModes) const
 	{
 		// The swapchain can use one of the following modes for presentation:
-		// VK_PRESENT_MODE_IMMEDIATE_KHR
-		// VK_PRESENT_MODE_FIFO_KHR (the only mode guaranteed to be available)
-		// VK_PRESENT_MODE_FIFO_RELAXED_KHR
-		// VK_PRESENT_MODE_MAILBOX_KHR
+		// vk::PresentModeKHR::eImmediate
+		// vk::PresentModeKHR::eFifo (the only mode guaranteed to be available)
+		// vk::PresentModeKHR::eFifoRelaxed
+		// vk::PresentModeKHR::eMailbox
 		for (const auto& presentMode : tPresentModes)
 		{
-			if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+			if (presentMode == vk::PresentModeKHR::eMailbox)
 			{
 				return presentMode;
 			}
 		}
-
+		
 		// This present mode is always available - use it if the preferred mode is not found.
-		return VK_PRESENT_MODE_FIFO_KHR;
+		return vk::PresentModeKHR::eFifo;
 	}
 
-	VkExtent2D Swapchain::selectSwapchainExtent(const VkSurfaceCapabilitiesKHR &tSurfaceCapabilities) const
+	vk::Extent2D Swapchain::selectSwapchainExtent(const vk::SurfaceCapabilitiesKHR &tSurfaceCapabilities) const
 	{
 		if (tSurfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 		{
@@ -128,7 +121,7 @@ namespace vk
 		}
 		else
 		{
-			VkExtent2D actualExtent = { mWidth, mHeight };
+			vk::Extent2D actualExtent = { mWidth, mHeight };
 			actualExtent.width = std::max(tSurfaceCapabilities.minImageExtent.width, std::min(tSurfaceCapabilities.maxImageExtent.width, actualExtent.width));
 			actualExtent.height = std::max(tSurfaceCapabilities.minImageExtent.height, std::min(tSurfaceCapabilities.maxImageExtent.height, actualExtent.height));
 			return actualExtent;
@@ -141,26 +134,22 @@ namespace vk
 
 		for (size_t i = 0; i < mImageViewHandles.size(); ++i)
 		{
-			VkImageViewCreateInfo imageViewCreateInfo;
-			imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;				// For now, do not swizzle any of the color channels.
-			imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			imageViewCreateInfo.flags = 0;
+			vk::ImageViewCreateInfo imageViewCreateInfo;
+			imageViewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;					// For now, do not swizzle any of the color channels.
+			imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
+			imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
+			imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
 			imageViewCreateInfo.format = mSwapchainImageFormat;
 			imageViewCreateInfo.image = mImageHandles[i];
-			imageViewCreateInfo.pNext = nullptr;
-			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;	// This describes the image's purpose - we will be using these images as color targets.
-			imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;						// This describes which part of the image we will access.
+			imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;	// This describes the image's purpose - we will be using these images as color targets.
+			imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;							// This describes which part of the image we will access.
 			imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 			imageViewCreateInfo.subresourceRange.layerCount = 1;
 			imageViewCreateInfo.subresourceRange.levelCount = 1;
-			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;							// Treat the image as a standard 2D texture.
+			imageViewCreateInfo.viewType = vk::ImageViewType::e2D;								// Treat the image as a standard 2D texture.
 
-			auto result = vkCreateImageView(mDevice->getHandle(), &imageViewCreateInfo, nullptr, &mImageViewHandles[i]);
-			assert(result == VK_SUCCESS);
+			mImageViewHandles[i] = mDevice->getHandle().createImageView(imageViewCreateInfo);
 		}
 	}
 
-} // namespace vk
+} // namespace vksp

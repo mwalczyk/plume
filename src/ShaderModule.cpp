@@ -1,6 +1,6 @@
 #include "ShaderModule.h"
 
-namespace vk
+namespace vksp
 {
 	static std::vector<uint8_t> readFile(const std::string &tFileName)
 	{
@@ -80,20 +80,18 @@ namespace vk
 		mShaderCode = std::vector<uint32_t>(pCode, pCode + shaderSrc.size() / sizeof(uint32_t));
 
 		// Create the actual shader module.
-		VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
+		vk::ShaderModuleCreateInfo shaderModuleCreateInfo;
 		shaderModuleCreateInfo.codeSize = shaderSrc.size();
 		shaderModuleCreateInfo.pCode = pCode;
-		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-
-		auto result = vkCreateShaderModule(mDevice->getHandle(), &shaderModuleCreateInfo, nullptr, &mShaderModuleHandle);
-		assert(result == VK_SUCCESS);
+		
+		mShaderModuleHandle = mDevice->getHandle().createShaderModule(shaderModuleCreateInfo);
 
 		performReflection();
 	}
 
 	ShaderModule::~ShaderModule()
 	{
-		vkDestroyShaderModule(mDevice->getHandle(), mShaderModuleHandle, nullptr);
+		mDevice->getHandle().destroyShaderModule(mShaderModuleHandle);
 	}
 
 	void ShaderModule::performReflection()
@@ -180,11 +178,11 @@ namespace vk
 			descriptor.layoutSet = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
 			descriptor.layoutBinding = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationBinding);
 			descriptor.descriptorCount = 1;
-			descriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptor.descriptorType = vk::DescriptorType::eUniformBuffer;
 			descriptor.name = resource.name;
 
 			mDescriptors.push_back(descriptor);
 		}
 	}
 
-} // namespace vk
+} // namespace vksp
