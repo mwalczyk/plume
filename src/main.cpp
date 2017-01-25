@@ -54,26 +54,26 @@ int main()
 	auto renderPass = graphics::RenderPass::create(device);
 
 	/// vk::Buffer
-	auto geometry = geo::Grid();
+	auto geometry = geo::IcoSphere();
+	geometry.setRandomColors();
 	
 	auto vertexBuffer0 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getPositions());
-	auto vertexBuffer1 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getTextureCoordinates());
+	auto vertexBuffer1 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getColors());
 	auto indexBuffer = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.getIndices());
 	auto uniformBuffer = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
 	std::vector<graphics::BufferRef> vertexBuffers = { vertexBuffer0, vertexBuffer1 };
 
 	/// vk::Pipeline
 	auto bindingDescription0 = graphics::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 3);
-	auto bindingDescription1 = graphics::Pipeline::createVertexInputBindingDescription(1, sizeof(float) * 2);
-	auto attributeDescription0 = graphics::Pipeline::createVertexInputAttributeDescription(0, vk::Format::eR32G32B32Sfloat, 0, 0);	// 3 floats: position
-	auto attributeDescription1 = graphics::Pipeline::createVertexInputAttributeDescription(1, vk::Format::eR32G32Sfloat, 1, 0);		// 2 floats: uv
+	auto bindingDescription1 = graphics::Pipeline::createVertexInputBindingDescription(1, sizeof(float) * 3);
+	auto attributeDescription0 = graphics::Pipeline::createVertexInputAttributeDescription(0, vk::Format::eR32G32B32Sfloat, 0, 0);		// 3 floats: position
+	auto attributeDescription1 = graphics::Pipeline::createVertexInputAttributeDescription(1, vk::Format::eR32G32B32Sfloat, 1, 0);		// 3 floats: color
 
 	std::vector<vk::VertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription0, bindingDescription1 };
 	std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescription0, attributeDescription1 };
-
 	
-	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/vert.spv"));
-	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/frag.spv"));
+	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("assets/shaders/vert.spv"));
+	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("assets/shaders/frag.spv"));
 
 	auto pipelineOptions = graphics::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
@@ -102,7 +102,7 @@ int main()
 	std::vector<graphics::CommandBufferRef> commandBuffers(framebuffers.size(), graphics::CommandBuffer::create(device, commandPool));
 	
 	/// vk::Image
-	auto image = graphics::Image::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, ResourceManager::loadImage("../assets/textures/texture.jpg"));
+	auto image = graphics::Image::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, ResourceManager::loadImage("assets/textures/texture.jpg"));
 	auto transitionCb = graphics::CommandBuffer::create(device, commandPool);
 	transitionCb->begin();
 	transitionCb->transitionImageLayout(image, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -131,7 +131,7 @@ int main()
 	auto renderFinishedSemaphore = graphics::Semaphore::create(device);
 
 	UniformBufferData ubo = {};
-	ubo.model = glm::mat4();
+	ubo.model = glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, -2.0f));
 	ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.projection = glm::perspective(glm::radians(45.0f), width / (float)height, 0.1f, 1000.0f);
 
@@ -146,7 +146,7 @@ int main()
 		mousePosition.x /= width;
 		mousePosition.y /= height;
 
-		ubo.model = glm::rotate(glm::mat4(), elapsed * 0.25f, glm::vec3(0.0, 0.0, 1.0f));
+		//ubo.model = glm::rotate(glm::mat4(), elapsed * 0.25f, glm::vec3(0.0, 0.0, 1.0f));
 
 		// Update the uniform buffer object.
 		void *data = uniformBuffer->getDeviceMemory()->map(0, uniformBuffer->getDeviceMemory()->getAllocationSize());
