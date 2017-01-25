@@ -99,6 +99,45 @@ namespace vksp
 		mCommandBufferHandle.endRenderPass();
 	}
 
+	void CommandBuffer::transitionImageLayout(const ImageRef &tImage, vk::ImageLayout tFromLayout, vk::ImageLayout tToLayout)
+	{
+		vk::ImageMemoryBarrier imageMemoryBarrier;
+
+		// Based on the starting and ending layout of this image, select the appropriate access masks.
+		if (tFromLayout == vk::ImageLayout::ePreinitialized && tToLayout == vk::ImageLayout::eTransferSrcOptimal)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+		}
+		else if (tFromLayout == vk::ImageLayout::ePreinitialized && tToLayout == vk::ImageLayout::eTransferDstOptimal)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+		}
+		else if (tFromLayout == vk::ImageLayout::eTransferDstOptimal && tToLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		}
+		else 
+		{
+			throw std::invalid_argument("Unsupported layout transition");
+		}
+
+		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.image = tImage->getHandle();
+		imageMemoryBarrier.newLayout = tToLayout;
+		imageMemoryBarrier.oldLayout = tFromLayout;
+		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+		imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+		imageMemoryBarrier.subresourceRange.layerCount = 1;
+		imageMemoryBarrier.subresourceRange.levelCount = 1;
+
+		mCommandBufferHandle.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTopOfPipe, {}, {}, {}, imageMemoryBarrier);
+	}
+
 	void CommandBuffer::end()
 	{
 		mCommandBufferHandle.end();

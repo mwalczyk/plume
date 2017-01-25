@@ -9,6 +9,7 @@
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "Buffer.h"
+#include "Image.h"
 
 namespace vksp
 {
@@ -58,7 +59,10 @@ namespace vksp
 		void draw(uint32_t tVertexCount, uint32_t tInstanceCount, uint32_t tFirstVertex, uint32_t tFirstInstance);
 		void drawIndexed(uint32_t tIndexCount, uint32_t tInstanceCount, uint32_t tFirstIndex, uint32_t tVertexOffset, uint32_t tFirstInstance);
 		void endRenderPass();
-		
+
+		//! Use an image memory barrier to transition an image from one layout to another.
+		void transitionImageLayout(const ImageRef &tImage, vk::ImageLayout tFromLayout, vk::ImageLayout tToLayout);
+
 		//! Stop recording into the command buffer.
 		void end();
 

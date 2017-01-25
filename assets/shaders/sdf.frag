@@ -85,21 +85,19 @@ float sdf_sphere(in sphere s, in vec3 p)
 }
 
 float t = constants.time;
-sphere s0 = sphere(2.0, vec3(cos(t) * 8.0, sin(t * 3.0) * 8.0, 0.0));
-sphere s1 = sphere(10.0, vec3(0.0));
-sphere s2 = sphere(3.0, vec3(cos(t * 2.0) * 10.0, sin(t) * 10.0, 0.0));
+sphere s0 = sphere(10.0, vec3(0.0));
 
 float map(in vec3 p)
 {
 	float s = sin(t) * 0.5 + 0.5;
 	float c = cos(t) * 0.5 + 0.5;
-	float n = noise(p.xy * pow(c * s, 0.725) + t);  // * 2.0 - 1.0;
+	float n0 = noise((p.xz + p.xy * c) * 0.5 + t * 2.0);
+	float n1 = noise(p.yz * n0 * s * 0.5 + t);
 
-	float dist_s0 = sdf_sphere(s0, p);
-	float dist_s1 = sdf_sphere(s1, p + n * p.y);
-	float dist_s2 = sdf_sphere(s2, p);
+	p -= normalize(p) * n1 * n0 * 2.0;
+	float dist = sdf_sphere(s0, p);
 
-	return dist_s1;// op_smin(dist_s2, op_smin(dist_s0, dist_s1, 0.4), 0.5);
+	return dist;
 }
 
 vec3 calculate_normal(in vec3 p)
@@ -122,14 +120,15 @@ vec3 raymarch(in ray r)
 
 		if (distance_to < MIN_HIT_DISTANCE)
 		{
-			const vec3 light_position = vec3(0.0, 0.0, 4.0);
+			const vec3 light_position = vec3(0.0, 14.0, 14.0);
 
 			vec3 to_light = normalize(current_position - light_position);
 			vec3 normal = calculate_normal(current_position);
 
 			float lighting = max(0.55, dot(normal, to_light));
-			color = (normal * 0.5 + 0.5);
-		//	color = vec3( lighting);
+			color = 1.0 - (normal * 0.5 + 0.5);
+			color = mix(vec3(1.0), color, lighting);
+			color *= lighting;
 
 			break;
 		}

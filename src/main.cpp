@@ -73,8 +73,8 @@ int main()
 	std::vector<vk::VertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription0, bindingDescription1 };
 	std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescription0, attributeDescription1 };
 
-	auto vertexShader = vksp::ShaderModule::create(device, "assets/shaders/vert.spv");
-	auto fragmentShader = vksp::ShaderModule::create(device, "assets/shaders/frag.spv");
+	auto vertexShader = vksp::ShaderModule::create(device, "../assets/shaders/vert.spv");
+	auto fragmentShader = vksp::ShaderModule::create(device, "../assets/shaders/frag.spv");
 
 	auto pipelineOptions = vksp::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
@@ -101,6 +101,9 @@ int main()
 	vk::WriteDescriptorSet writeDescriptorSet{ descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &descriptorBufferInfo };
 
 	vkUpdateDescriptorSets(device->getHandle(), 1, &static_cast<VkWriteDescriptorSet>(writeDescriptorSet), 0, nullptr);
+
+	/// vk::Image
+	auto image = vksp::Image::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, "../assets/textures/texture.jpg");
 
 	/// vk::Framebuffer
 	std::vector<vksp::FramebufferRef> framebuffers(swapchainImageViews.size());

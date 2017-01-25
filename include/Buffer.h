@@ -53,11 +53,9 @@ namespace vksp
 
 	private:
 
-		vk::Buffer mBufferHandle;
-
 		DeviceRef mDevice;
 		DeviceMemoryRef mDeviceMemory;
-
+		vk::Buffer mBufferHandle;
 		vk::BufferUsageFlags mBufferUsageFlags;
 		size_t mRequestedSize;
 	};

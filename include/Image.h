@@ -4,11 +4,9 @@
 #include <vector>
 #include <string>
 
-#define STB_IMAGE_IMPLEMENTATION
-//#include "stb_image.h"
-
 #include "Platform.h"
 #include "Device.h"
+#include "DeviceMemory.h"
 
 namespace vksp
 {
@@ -33,12 +31,19 @@ namespace vksp
 
 		//! Factory method for returning a new ImageRef.
 		template<class T>
-		static ImageRef create(const DeviceRef &tDevice, uint32_t tWidth, uint32_t tHeight, const std::vector<T> &tData, const Options &tOptions = Options())
+		static ImageRef create(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, uint32_t tWidth, uint32_t tHeight, const std::vector<T> &tData, const Options &tOptions = Options())
 		{
-			return std::make_shared<Image>(tDevice, tWidth, tHeight, sizeof(T) * tData.size(), tData.data(), tOptions);
+			return std::make_shared<Image>(tDevice, tImageUsageFlags, tWidth, tHeight, sizeof(T) * tData.size(), tData.data(), tOptions);
 		}
 
-		Image(const DeviceRef &tDevice, uint32_t tWidth, uint32_t tHeight, size_t tSize, const void *tData, const Options &tOptions = Options());
+		//! Factory method for returning a new ImageRef from an image file.
+		static ImageRef create(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const std::string &tFilePath, const Options &tOptions = Options())
+		{
+			return std::make_shared<Image>(tDevice, tImageUsageFlags, tFilePath, tOptions);
+		}
+
+		Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, uint32_t tWidth, uint32_t tHeight, size_t tSize, const void *tData, const Options &tOptions = Options());
+		Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const std::string &tFilePath, const Options &tOptions = Options());
 		~Image();
 
 		inline vk::Image getHandle() const { return mImageHandle; }
@@ -46,13 +51,14 @@ namespace vksp
 
 	private:
 	
-
-
 		DeviceRef mDevice;	
+		DeviceMemoryRef mDeviceMemory;
 		vk::Image mImageHandle;
 		vk::DeviceMemory mDeviceMemoryHandle;
+		vk::ImageUsageFlags mImageUsageFlags;
 		uint32_t mWidth;
 		uint32_t mHeight;
+		uint32_t mChannels;
 	};
 
 } // namespace vksp
