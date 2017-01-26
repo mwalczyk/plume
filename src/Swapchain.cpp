@@ -1,6 +1,6 @@
 #include "Swapchain.h"
 
-namespace vksp
+namespace graphics
 {
 	Swapchain::Options::Options()
 	{
@@ -152,4 +152,4 @@ namespace vksp
 		}
 	}
 
-} // namespace vksp
+} // namespace graphics

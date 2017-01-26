@@ -1,6 +1,6 @@
 #include "Buffer.h"
 
-namespace vksp
+namespace graphics
 {
 	
 	Buffer::Options::Options()
@@ -74,4 +74,4 @@ namespace vksp
 		vkDestroyBuffer(mDevice->getHandle(), mBufferHandle, nullptr);
 	}
 
-} // namespace vksp
+} // namespace graphics

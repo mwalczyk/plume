@@ -1,10 +1,12 @@
 #pragma once
 
+#include <memory>
+
 #include "Platform.h"
 #include "Noncopyable.h"
 #include "Device.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class DeviceMemory;
@@ -38,4 +40,4 @@ namespace vksp
 		uint32_t mSelectedMemoryIndex;
 	};
 
-} // namespace vksp
+} // namespace graphics

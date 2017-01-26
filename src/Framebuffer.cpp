@@ -1,6 +1,6 @@
 #include "Framebuffer.h"
 
-namespace vksp
+namespace graphics
 {
 
 	Framebuffer::Options::Options()
@@ -30,4 +30,4 @@ namespace vksp
 		mDevice->getHandle().destroyFramebuffer(mFramebufferHandle);
 	}
 
-} // namespace vksp
+} // namespace graphics

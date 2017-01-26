@@ -1,6 +1,6 @@
 #include "CommandPool.h"
 
-namespace vksp
+namespace graphics
 {
 	
 	CommandPool::Options::Options()
@@ -23,4 +23,4 @@ namespace vksp
 		mDevice->getHandle().destroyCommandPool(mCommandPoolHandle);
 	}
 
-} // namespace vksp
+} // namespace graphics

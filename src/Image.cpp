@@ -1,9 +1,6 @@
 #include "Image.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-namespace vksp
+namespace graphics
 {
 
 	Image::Options::Options()
@@ -35,24 +32,22 @@ namespace vksp
 		imageCreateInfo.usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled;*/
 	}
 
-	Image::Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const std::string &tFilePath, const Options &tOptions) :
+	Image::Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const ImageResource &tResource, const Options &tOptions) :
 		mDevice(tDevice),
-		mImageUsageFlags(tImageUsageFlags)
+		mImageUsageFlags(tImageUsageFlags),
+		mFormat(tOptions.mFormat),
+		mWidth(tResource.width),
+		mHeight(tResource.height),
+		mChannels(tResource.channels)
 	{
-		stbi_uc* pixels = stbi_load(tFilePath.c_str(), (int*)(&mWidth), (int*)(&mHeight), (int*)(&mChannels), STBI_rgb_alpha);
 		VkDeviceSize imageSize = mWidth * mHeight * 4;
 		
-		if (!pixels)
-		{
-			throw std::runtime_error("Failed to load image file");
-		}
-
 		vk::ImageCreateInfo imageCreateInfo;
 		imageCreateInfo.arrayLayers = 1;
 		imageCreateInfo.extent.width = mWidth;
 		imageCreateInfo.extent.height = mHeight;
 		imageCreateInfo.extent.depth = 1;
-		imageCreateInfo.format = tOptions.mFormat;
+		imageCreateInfo.format = mFormat;
 		imageCreateInfo.initialLayout = vk::ImageLayout::ePreinitialized;
 		imageCreateInfo.imageType = vk::ImageType::e2D;
 		imageCreateInfo.mipLevels = 1;
@@ -86,7 +81,7 @@ namespace vksp
 		// This usually happens when the requested image is a power-of-two texture.
 		if (subresourceLayout.rowPitch == mWidth * 4)
 		{
-			memcpy(mappedPtr, pixels, static_cast<size_t>(imageSize));
+			memcpy(mappedPtr, tResource.contents.data(), static_cast<size_t>(imageSize));
 		}
 		else 
 		{
@@ -94,7 +89,7 @@ namespace vksp
 			for (size_t i = 0; i < mHeight; ++i)
 			{
 				memcpy(&dataAsBytes[i * subresourceLayout.rowPitch],
-					   &pixels[i * mWidth * 4],
+					   &tResource.contents[i * mWidth * 4],
 						mWidth * 4);
 			}
 		}
@@ -104,7 +99,38 @@ namespace vksp
 		// Associate the device memory with this buffer object.
 		mDevice->getHandle().bindImageMemory(mImageHandle, mDeviceMemory->getHandle(), 0);
 
-		stbi_image_free(pixels);
+		// Create a basic image view for this image.
+		vk::ImageViewCreateInfo imageViewCreateInfo;
+		imageViewCreateInfo.format = mFormat;
+		imageViewCreateInfo.image = mImageHandle;
+		imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+		imageViewCreateInfo.subresourceRange.layerCount = 1;
+		imageViewCreateInfo.subresourceRange.levelCount = 1;
+		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
+
+		mImageViewHandle = mDevice->getHandle().createImageView(imageViewCreateInfo);
+
+		// Create a basic sampler for this image.
+		vk::SamplerCreateInfo samplerCreateInfo;
+		samplerCreateInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.anisotropyEnable = VK_TRUE; 
+		samplerCreateInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+		samplerCreateInfo.compareEnable = VK_FALSE;
+		samplerCreateInfo.compareOp = vk::CompareOp::eAlways;
+		samplerCreateInfo.magFilter = vk::Filter::eLinear;
+		samplerCreateInfo.maxAnisotropy = 16;
+		samplerCreateInfo.maxLod = 0.0f;
+		samplerCreateInfo.minFilter = vk::Filter::eLinear;
+		samplerCreateInfo.minLod = 0.0f;
+		samplerCreateInfo.mipLodBias = 0.0f;
+		samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
+
+		mSamplerHandle = mDevice->getHandle().createSampler(samplerCreateInfo);
 	}
 
 	Image::~Image()
@@ -112,4 +138,4 @@ namespace vksp
 		mDevice->getHandle().destroyImage(mImageHandle);
 	}
 
-} // namespace vksp
+} // namespace graphics

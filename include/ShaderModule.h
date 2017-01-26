@@ -1,16 +1,14 @@
 #pragma once
 
 #include <memory>
-#include <vector>
-#include <fstream>
-#include <string>
 
 #include "spirv_glsl.hpp"
 
 #include "Platform.h"
 #include "Device.h"
+#include "ResourceManager.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class ShaderModule;
@@ -60,12 +58,12 @@ namespace vksp
 		};
 
 		//! Factory method for returning a new ShaderModuleRef.
-		static ShaderModuleRef create(const DeviceRef &tDevice, const std::string &tFilePath)
+		static ShaderModuleRef create(const DeviceRef &tDevice, const FileResource &tResource)
 		{
-			return std::make_shared<ShaderModule>(tDevice, tFilePath);
+			return std::make_shared<ShaderModule>(tDevice, tResource);
 		}
 
-		ShaderModule(const DeviceRef &tDevice, const std::string &tFilePath);
+		ShaderModule(const DeviceRef &tDevice, const FileResource &tResource);
 		~ShaderModule();
 
 		inline vk::ShaderModule getHandle() const { return mShaderModuleHandle; }
@@ -86,6 +84,9 @@ namespace vksp
 
 		void performReflection();
 
+		//! Used during reflection to convert a shader resource into a descriptor struct.
+		void resourceToDescriptor(const spirv_cross::CompilerGLSL &tCompiler, const spirv_cross::Resource &tResource, vk::DescriptorType tDescriptorType);
+
 		DeviceRef mDevice;
 		vk::ShaderModule mShaderModuleHandle;
 		std::vector<uint32_t> mShaderCode;
@@ -93,7 +94,6 @@ namespace vksp
 		std::vector<StageInput> mStageInputs;
 		std::vector<PushConstant> mPushConstants;
 		std::vector<Descriptor> mDescriptors;
-
 	};
 
-} // namespace vksp
+} // namespace graphics

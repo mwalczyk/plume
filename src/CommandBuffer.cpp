@@ -1,6 +1,6 @@
 #include "CommandBuffer.h"
 
-namespace vksp
+namespace graphics
 {
 
 	CommandBuffer::Options::Options()
@@ -119,6 +119,11 @@ namespace vksp
 			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
 			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 		}
+		else if (tFromLayout == vk::ImageLayout::ePreinitialized && tToLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		}
 		else 
 		{
 			throw std::invalid_argument("Unsupported layout transition");
@@ -143,4 +148,4 @@ namespace vksp
 		mCommandBufferHandle.end();
 	}
 
-} // namespace vksp
+} // namespace graphics

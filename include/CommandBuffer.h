@@ -11,7 +11,7 @@
 #include "Buffer.h"
 #include "Image.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class CommandBuffer;
@@ -74,4 +74,4 @@ namespace vksp
 		vk::CommandBufferLevel mCommandBufferLevel;
 	};
 
-} // namespace vksp
+} // namespace graphics

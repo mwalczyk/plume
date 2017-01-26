@@ -1,6 +1,6 @@
 #include "DeviceMemory.h"
 
-namespace vksp
+namespace graphics
 {
 
 	DeviceMemory::DeviceMemory(const DeviceRef &tDevice, const vk::MemoryRequirements &tMemoryRequirements, vk::MemoryPropertyFlags tRequiredMemoryProperties) :
@@ -46,4 +46,4 @@ namespace vksp
 		mDevice->getHandle().unmapMemory(mDeviceMemoryHandle);
 	}
 
-} // namespace vksp
+} // namespace graphics

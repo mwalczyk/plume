@@ -1,6 +1,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+layout (set = 0, binding = 1) uniform sampler2D CombinedImageSampler;
+
 layout(location = 0) in vec2 vsTexcoord;
 
 layout(location = 0) out vec4 oColor;
@@ -78,9 +80,6 @@ float op_smin(float a, float b, float k)
 
 float sdf_sphere(in sphere s, in vec3 p)
 {
-	vec3 r = vec3(8.0, 8.0, 0.0);
-	vec3 id = floor(p * r);
-
 	return length(s.center - p) - s.radius;
 }
 
@@ -91,10 +90,11 @@ float map(in vec3 p)
 {
 	float s = sin(t) * 0.5 + 0.5;
 	float c = cos(t) * 0.5 + 0.5;
-	float n0 = noise((p.xz + p.xy * c) * 0.5 + t * 2.0);
-	float n1 = noise(p.yz * n0 * s * 0.5 + t);
+	float n0 = noise((p.xz + p.zy) * 0.25 + t) * 2.0 - 1.0;
+	float n1 = noise(p.yz * n0 * 0.5 + t) * 2.0 - 1.0;
 
-	p -= normalize(p) * n1 * n0 * 2.0;
+	p += normalize(p) * n0 * n1 * 1.0;
+	p += sin(p.x + t) * sin(p.y + t) * sin(p.z + t) * 1.0;
 	float dist = sdf_sphere(s0, p);
 
 	return dist;
@@ -125,10 +125,10 @@ vec3 raymarch(in ray r)
 			vec3 to_light = normalize(current_position - light_position);
 			vec3 normal = calculate_normal(current_position);
 
-			float lighting = max(0.55, dot(normal, to_light));
-			color = 1.0 - (normal * 0.5 + 0.5);
-			color = mix(vec3(1.0), color, lighting);
-			color *= lighting;
+			float lighting = max(0.4, dot(normal, to_light));
+			color = normal * 0.5 + 0.5;
+			color = 1.0 - color;
+			color *= pow(1.0 - lighting, 0.5);
 
 			break;
 		}
@@ -139,9 +139,11 @@ vec3 raymarch(in ray r)
 
 void main()
 {
-	vec2 uv = vsTexcoord * 2.0 - 1.0;
-
+	vec4 sampledColor = texture(CombinedImageSampler, vsTexcoord);
 	float mx = constants.mouse.x * 2.0 - 1.0;
+
+	// remap to -1..1
+	vec2 uv = vsTexcoord * 2.0 - 1.0;
 	vec3 camera_position = vec3(0.0, 0.0, -20.0);
 	vec3 target = vec3(0.0, 0.0, 0.0);
 

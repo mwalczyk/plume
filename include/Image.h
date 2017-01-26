@@ -7,8 +7,9 @@
 #include "Platform.h"
 #include "Device.h"
 #include "DeviceMemory.h"
+#include "ResourceManager.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class Image;
@@ -37,28 +38,33 @@ namespace vksp
 		}
 
 		//! Factory method for returning a new ImageRef from an image file.
-		static ImageRef create(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const std::string &tFilePath, const Options &tOptions = Options())
+		static ImageRef create(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const ImageResource &tResource, const Options &tOptions = Options())
 		{
-			return std::make_shared<Image>(tDevice, tImageUsageFlags, tFilePath, tOptions);
+			return std::make_shared<Image>(tDevice, tImageUsageFlags, tResource, tOptions);
 		}
 
 		Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, uint32_t tWidth, uint32_t tHeight, size_t tSize, const void *tData, const Options &tOptions = Options());
-		Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const std::string &tFilePath, const Options &tOptions = Options());
+		Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const ImageResource &tResource, const Options &tOptions = Options());
 		~Image();
 
 		inline vk::Image getHandle() const { return mImageHandle; }
+		inline vk::ImageView getImageViewHandle() const { return mImageViewHandle; }
 		inline vk::DeviceMemory getDeviceMemoryHandle() const { return mDeviceMemoryHandle; }
+		inline vk::Sampler getSamplerHandle() const { return mSamplerHandle; }
 
 	private:
 	
 		DeviceRef mDevice;	
 		DeviceMemoryRef mDeviceMemory;
 		vk::Image mImageHandle;
+		vk::ImageView mImageViewHandle;
 		vk::DeviceMemory mDeviceMemoryHandle;
+		vk::Sampler mSamplerHandle;
 		vk::ImageUsageFlags mImageUsageFlags;
+		vk::Format mFormat;
 		uint32_t mWidth;
 		uint32_t mHeight;
 		uint32_t mChannels;
 	};
 
-} // namespace vksp
+} // namespace graphics

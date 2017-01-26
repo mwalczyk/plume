@@ -1,6 +1,6 @@
 #include "RenderPass.h"
 
-namespace vksp
+namespace graphics
 {
 
 	std::pair<VkAttachmentDescription, VkAttachmentReference> RenderPass::createColorAttachment(const VkFormat &tFormat, uint32_t tAttachment)
@@ -84,4 +84,4 @@ namespace vksp
 		vkDestroyRenderPass(mDevice->getHandle(), mRenderPassHandle, nullptr);
 	}
 
-} // namespace vksp
+} // namespace graphics

@@ -1,6 +1,6 @@
 #include "Pipeline.h"
 
-namespace vksp
+namespace graphics
 {
 	static const std::string spectraUniformNames[] =
 	{
@@ -444,4 +444,4 @@ namespace vksp
 		return tStream;
 	}
 	
-} // namespace vksp
+} // namespace graphics

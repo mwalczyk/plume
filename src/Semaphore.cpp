@@ -1,6 +1,6 @@
 #include "Semaphore.h"
 
-namespace vksp
+namespace graphics
 {
 
 	Semaphore::Semaphore(const DeviceRef &tDevice) :
@@ -18,4 +18,4 @@ namespace vksp
 		vkDestroySemaphore(mDevice->getHandle(), mSemaphoreHandle, nullptr);
 	}
 
-} // namespace vksp
+} // namespace graphics

@@ -1,30 +1,7 @@
 #include "ShaderModule.h"
 
-namespace vksp
+namespace graphics
 {
-	static std::vector<uint8_t> readFile(const std::string &tFileName)
-	{
-		// Start reading at the end of the file to determine file size.
-		std::ifstream file(tFileName, std::ios::ate | std::ios::binary);
-
-		if (!file.is_open())
-		{
-			throw std::runtime_error("Failed to open file " + tFileName);
-		}
-
-		size_t fileSize = static_cast<size_t>(file.tellg());
-		std::vector<uint8_t> fileContents(fileSize);
-
-		// Go back to the beginning of the file.
-		file.seekg(0);
-
-		// Read and close the file.
-		auto data = reinterpret_cast<char*>(fileContents.data());
-		file.read(data, fileSize);
-		file.close();
-
-		return fileContents;
-	}
 
 	static uint32_t getSizeFromType(spirv_cross::SPIRType tBaseType, uint32_t tRows, uint32_t tColumns)
 	{
@@ -66,10 +43,10 @@ namespace vksp
 		return size;
 	}
 
-	ShaderModule::ShaderModule(const DeviceRef &tDevice, const std::string &tFilePath) :
+	ShaderModule::ShaderModule(const DeviceRef &tDevice, const FileResource &tResource) :
 		mDevice(tDevice)
 	{
-		auto shaderSrc = readFile(tFilePath);
+		auto shaderSrc = tResource.contents;
 		if (shaderSrc.size() % 4)
 		{
 			throw std::runtime_error("Shader source code is an invalid size");
@@ -139,16 +116,19 @@ namespace vksp
 		// Sampled images
 		for (const auto &resource : shaderResources.sampled_images)
 		{
+			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eCombinedImageSampler);
 		}
 
 		// Seperate samplers
 		for (const auto &resource : shaderResources.separate_samplers)
 		{
+			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eSampler);
 		}
 
 		// Separate images
 		for (const auto &resource : shaderResources.separate_images)
 		{
+			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eSampledImage);
 		}
 
 		// Atomic counters
@@ -164,25 +144,32 @@ namespace vksp
 		// Storage buffers (SSBOs)
 		for (const auto &resource : shaderResources.storage_buffers)
 		{
+			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eStorageBuffer);
 		}
 
 		// Storage images
 		for (const auto &resource : shaderResources.storage_images)
 		{
+			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eStorageImage);
 		}
 
 		// Uniform buffers (UBOs)
 		for (const auto &resource : shaderResources.uniform_buffers)
 		{
-			Descriptor descriptor;
-			descriptor.layoutSet = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
-			descriptor.layoutBinding = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationBinding);
-			descriptor.descriptorCount = 1;
-			descriptor.descriptorType = vk::DescriptorType::eUniformBuffer;
-			descriptor.name = resource.name;
-
-			mDescriptors.push_back(descriptor);
+			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eUniformBuffer);
 		}
 	}
 
-} // namespace vksp
+	void ShaderModule::resourceToDescriptor(const spirv_cross::CompilerGLSL &tCompiler, const spirv_cross::Resource &tResource, vk::DescriptorType tDescriptorType)
+	{
+		Descriptor descriptor;
+		descriptor.layoutSet = tCompiler.get_decoration(tResource.id, spv::Decoration::DecorationDescriptorSet);
+		descriptor.layoutBinding = tCompiler.get_decoration(tResource.id, spv::Decoration::DecorationBinding);
+		descriptor.descriptorCount = 1;
+		descriptor.descriptorType = tDescriptorType;
+		descriptor.name = tResource.name;
+
+		mDescriptors.push_back(descriptor);
+	}
+
+} // namespace graphics

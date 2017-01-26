@@ -1,6 +1,6 @@
 #include "Surface.h"
 
-namespace vksp
+namespace graphics
 {
 
 	Surface::Surface(const InstanceRef &tInstance) :
@@ -14,4 +14,4 @@ namespace vksp
 		vkDestroySurfaceKHR(mInstance->getHandle(), mSurfaceHandle, nullptr);
 	}
 
-} // namespace vksp
+} // namespace graphics

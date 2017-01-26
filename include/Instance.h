@@ -9,7 +9,7 @@
 
 #include "Platform.h"
 
-namespace vksp
+namespace graphics
 {
 	
 	class Instance;
@@ -90,4 +90,4 @@ namespace vksp
 		}
 	};
 
-} // namespace vksp
+} // namespace graphics

@@ -1,6 +1,6 @@
 #include "Instance.h"
 
-namespace vksp
+namespace graphics
 {
 
 	Instance::Options::Options()
@@ -131,4 +131,4 @@ namespace vksp
 		createDebugReportCallbackEXT(mInstanceHandle, &debugReportCallbackCreateInfo, nullptr, &mDebugReportCallback);
 	}
 
-} // namespace vksp
+} // namespace graphics

@@ -26,20 +26,18 @@ int main()
 	const uint32_t height = 800;
 
 	/// vk::Instance
-	auto instance = vksp::Instance::create();
+	auto instance = graphics::Instance::create();
 	auto physicalDevices = instance->getPhysicalDevices();
-	assert(physicalDevices.size() > 0);
 
 	/// vk::Window
-	auto windowOptions = vksp::Window::Options().title("Vulkan Application");
-	auto window = vksp::Window::create(instance, width, height, windowOptions);
+	auto window = graphics::Window::create(instance, width, height);
 
 	/// vk::Surface
 	auto surface = window->createSurface();
 
 	/// vk::Device
-	auto deviceOptions = vksp::Device::Options().requiredQueueFlags(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer);
-	auto device = vksp::Device::create(physicalDevices[0], deviceOptions);
+	auto deviceOptions = graphics::Device::Options().requiredQueueFlags(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer);
+	auto device = graphics::Device::create(physicalDevices[0], deviceOptions);
 	auto queueFamilyProperties = device->getPhysicalDeviceQueueFamilyProperties();
 	for (size_t i = 0; i < queueFamilyProperties.size(); ++i)
 	{
@@ -49,34 +47,35 @@ int main()
 	std::cout << device << std::endl;
 
 	/// vk::Swapchain
-	auto swapchain = vksp::Swapchain::create(device, surface, width, height);
+	auto swapchain = graphics::Swapchain::create(device, surface, width, height);
 	auto swapchainImageViews = swapchain->getImageViewHandles();
 
 	/// vk::RenderPass
-	auto renderPass = vksp::RenderPass::create(device);
+	auto renderPass = graphics::RenderPass::create(device);
 
 	/// vk::Buffer
 	auto geometry = geo::Grid();
 	
-	auto vertexBuffer0 = vksp::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getPositions());
-	auto vertexBuffer1 = vksp::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getTextureCoordinates());
-	auto indexBuffer = vksp::Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.getIndices());
-	auto uniformBuffer = vksp::Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
-	std::vector<vksp::BufferRef> vertexBuffers = { vertexBuffer0, vertexBuffer1 };
+	auto vertexBuffer0 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getPositions());
+	auto vertexBuffer1 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.getTextureCoordinates());
+	auto indexBuffer = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.getIndices());
+	auto uniformBuffer = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
+	std::vector<graphics::BufferRef> vertexBuffers = { vertexBuffer0, vertexBuffer1 };
 
 	/// vk::Pipeline
-	auto bindingDescription0 = vksp::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 3);
-	auto bindingDescription1 = vksp::Pipeline::createVertexInputBindingDescription(1, sizeof(float) * 2);
-	auto attributeDescription0 = vksp::Pipeline::createVertexInputAttributeDescription(0, vk::Format::eR32G32B32Sfloat, 0, 0);	// 3 floats: position
-	auto attributeDescription1 = vksp::Pipeline::createVertexInputAttributeDescription(1, vk::Format::eR32G32Sfloat, 1, 0);		// 2 floats: uv
+	auto bindingDescription0 = graphics::Pipeline::createVertexInputBindingDescription(0, sizeof(float) * 3);
+	auto bindingDescription1 = graphics::Pipeline::createVertexInputBindingDescription(1, sizeof(float) * 2);
+	auto attributeDescription0 = graphics::Pipeline::createVertexInputAttributeDescription(0, vk::Format::eR32G32B32Sfloat, 0, 0);	// 3 floats: position
+	auto attributeDescription1 = graphics::Pipeline::createVertexInputAttributeDescription(1, vk::Format::eR32G32Sfloat, 1, 0);		// 2 floats: uv
 
 	std::vector<vk::VertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription0, bindingDescription1 };
 	std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescription0, attributeDescription1 };
 
-	auto vertexShader = vksp::ShaderModule::create(device, "../assets/shaders/vert.spv");
-	auto fragmentShader = vksp::ShaderModule::create(device, "../assets/shaders/frag.spv");
+	
+	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/vert.spv"));
+	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/frag.spv"));
 
-	auto pipelineOptions = vksp::Pipeline::Options()
+	auto pipelineOptions = graphics::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
 		.vertexInputAttributeDescriptions(vertexInputAttributeDescriptions)
 		.viewport(window->getFullscreenViewport())
@@ -85,43 +84,51 @@ int main()
 		.attachShaderStage(fragmentShader, vk::ShaderStageFlagBits::eFragment)
 		.cullMode(vk::CullModeFlagBits::eNone)
 		.primitiveTopology(geometry.getTopology());
-	auto pipeline = vksp::Pipeline::create(device, renderPass, pipelineOptions);
+	auto pipeline = graphics::Pipeline::create(device, renderPass, pipelineOptions);
 	std::cout << pipeline << std::endl;
 
-	/// vk::DescriptorPool
-	vk::DescriptorPool descriptorPool = pipeline->createCompatibleDescriptorPool(0);
-	
-	/// vk::DescriptorSet
-	vk::DescriptorSetLayout descriptorSetLayout = pipeline->getDescriptorSetLayout(0);
-	vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(descriptorPool, 1, &descriptorSetLayout);
-		
-	vk::DescriptorSet descriptorSet = device->getHandle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
-
-	vk::DescriptorBufferInfo descriptorBufferInfo{ uniformBuffer->getHandle(), 0, uniformBuffer->getRequestedSize() };
-	vk::WriteDescriptorSet writeDescriptorSet{ descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &descriptorBufferInfo };
-
-	vkUpdateDescriptorSets(device->getHandle(), 1, &static_cast<VkWriteDescriptorSet>(writeDescriptorSet), 0, nullptr);
-
-	/// vk::Image
-	auto image = vksp::Image::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, "../assets/textures/texture.jpg");
-
 	/// vk::Framebuffer
-	std::vector<vksp::FramebufferRef> framebuffers(swapchainImageViews.size());
+	std::vector<graphics::FramebufferRef> framebuffers(swapchainImageViews.size());
 	for (size_t i = 0; i < swapchainImageViews.size(); ++i)
 	{
 		std::vector<vk::ImageView> imageViews = { swapchainImageViews[i] };
-		framebuffers[i] = vksp::Framebuffer::create(device, renderPass, imageViews, width, height);
+		framebuffers[i] = graphics::Framebuffer::create(device, renderPass, imageViews, width, height);
 	}
 
 	/// vk::CommandPool
-	auto commandPool = vksp::CommandPool::create(device, device->getQueueFamiliesMapping().graphics().second);
+	auto commandPool = graphics::CommandPool::create(device, device->getQueueFamiliesMapping().graphics().second);
 
 	/// vk::CommandBuffer
-	std::vector<vksp::CommandBufferRef> commandBuffers(framebuffers.size(), vksp::CommandBuffer::create(device, commandPool));
+	std::vector<graphics::CommandBufferRef> commandBuffers(framebuffers.size(), graphics::CommandBuffer::create(device, commandPool));
 	
+	/// vk::Image
+	auto image = graphics::Image::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, ResourceManager::loadImage("../assets/textures/texture.jpg"));
+	auto transitionCb = graphics::CommandBuffer::create(device, commandPool);
+	transitionCb->begin();
+	transitionCb->transitionImageLayout(image, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
+	transitionCb->end();
+
+	/// vk::DescriptorPool
+	vk::DescriptorPool descriptorPool = pipeline->createCompatibleDescriptorPool(0);
+
+	/// vk::DescriptorSet
+	vk::DescriptorSetLayout descriptorSetLayout = pipeline->getDescriptorSetLayout(0);
+	vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(descriptorPool, 1, &descriptorSetLayout);
+
+	vk::DescriptorSet descriptorSet = device->getHandle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
+
+	vk::DescriptorBufferInfo descriptorBufferInfo{ uniformBuffer->getHandle(), 0, uniformBuffer->getRequestedSize() };									// ubo
+	vk::DescriptorImageInfo descriptorImageInfo{ image->getSamplerHandle(), image->getImageViewHandle(), vk::ImageLayout::eShaderReadOnlyOptimal };		// sampler
+
+	vk::WriteDescriptorSet writeDescriptorSetBuffer{ descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &descriptorBufferInfo };		// ubo
+	vk::WriteDescriptorSet writeDescriptorSetSampler{ descriptorSet, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo };		// sampler
+	std::vector<vk::WriteDescriptorSet> writeDescriptorSets = { writeDescriptorSetBuffer, writeDescriptorSetSampler };
+
+	device->getHandle().updateDescriptorSets(writeDescriptorSets, {});
+
 	/// vk::Semaphore
-	auto imageAvailableSemaphore = vksp::Semaphore::create(device);
-	auto renderFinishedSemaphore = vksp::Semaphore::create(device);
+	auto imageAvailableSemaphore = graphics::Semaphore::create(device);
+	auto renderFinishedSemaphore = graphics::Semaphore::create(device);
 
 	UniformBufferData ubo = {};
 	ubo.model = glm::mat4();

@@ -7,7 +7,7 @@
 #include "Device.h"
 #include "DeviceMemory.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class Buffer;
@@ -60,4 +60,4 @@ namespace vksp
 		size_t mRequestedSize;
 	};
 
-} // namespace vksp
+} // namespace graphics

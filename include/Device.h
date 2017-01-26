@@ -9,7 +9,7 @@
 #include "Instance.h"
 #include "Surface.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class Device;
@@ -26,31 +26,10 @@ namespace vksp
 			std::vector<vk::PresentModeKHR> mPresentModes;
 		};
 
-		enum class QueueFamily
-		{
-			FAMILY_GRAPHICS,
-			FAMILY_COMPUTE,
-			FAMILY_TRANSFER,
-			FAMILY_SPARSE_BINDING,
-			FAMILY_PRESENTATION
-		};
-
 		class QueueFamiliesMapping
 		{
 		public:
-			QueueFamiliesMapping() = default;
-			
-			std::pair<vk::Queue, uint32_t> getQueueFamily(QueueFamily tFamily)
-			{
-				switch (tFamily)	
-				{
-				case QueueFamily::FAMILY_GRAPHICS: graphics(); break;
-				case QueueFamily::FAMILY_COMPUTE: compute(); break;
-				case QueueFamily::FAMILY_TRANSFER: transfer(); break;
-				case QueueFamily::FAMILY_SPARSE_BINDING: sparseBinding(); break;
-				case QueueFamily::FAMILY_PRESENTATION: presentation(); break;
-				}
-			}
+			QueueFamiliesMapping() = default;		
 
 			std::pair<vk::Queue, uint32_t> graphics() const { return mGraphicsQueue; }
 			std::pair<vk::Queue, uint32_t> compute() const { return mComputeQueue; }
@@ -127,4 +106,4 @@ namespace vksp
 		std::vector<const char*> mRequiredDeviceExtensions;
 	};
 
-} // namespace vksp
+} // namespace graphics

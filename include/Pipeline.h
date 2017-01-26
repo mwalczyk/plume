@@ -12,7 +12,7 @@
 #include "RenderPass.h"
 #include "ShaderModule.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class Pipeline;
@@ -114,4 +114,4 @@ namespace vksp
 		std::map<uint32_t, vk::DescriptorSetLayout> mDescriptorSetLayoutsMapping;
 	};
 
-} // namespace vksp
+} // namespace graphics

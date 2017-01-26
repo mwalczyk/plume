@@ -5,7 +5,7 @@
 #include "Platform.h"
 #include "Device.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class Semaphore;
@@ -33,4 +33,4 @@ namespace vksp
 		DeviceRef mDevice;
 	};
 
-} // namespace vksp
+} // namespace graphics

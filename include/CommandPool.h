@@ -5,7 +5,7 @@
 #include "Platform.h"
 #include "Device.h"
 
-namespace vksp
+namespace graphics
 {
 
 	class CommandPool;
@@ -49,4 +49,4 @@ namespace vksp
 		vk::CommandPool mCommandPoolHandle;
 	};
 
-} // namespace vksp
+} // namespace graphics

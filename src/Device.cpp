@@ -1,6 +1,6 @@
 #include "Device.h"
 
-namespace vksp
+namespace graphics
 {
 
 	Device::Options::Options()
@@ -212,4 +212,4 @@ namespace vksp
 		return tStream;
 	}
 
-} // namespace vksp
+} // namespace graphics
