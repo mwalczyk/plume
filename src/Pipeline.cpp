@@ -337,6 +337,7 @@ namespace graphics
 		descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
 
 		vk::DescriptorPool descriptorPoolHandle = mDevice->getHandle().createDescriptorPool(descriptorPoolCreateInfo);
+
 		return descriptorPoolHandle;
 	}
 

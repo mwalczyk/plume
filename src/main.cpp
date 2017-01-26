@@ -72,8 +72,8 @@ int main()
 	std::vector<vk::VertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription0, bindingDescription1 };
 	std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescription0, attributeDescription1 };
 	
-	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/vert.spv"));
-	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/frag.spv"));
+	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("assets/shaders/vert.spv"));
+	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("assets/shaders/frag.spv"));
 
 	auto pipelineOptions = graphics::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
@@ -96,26 +96,28 @@ int main()
 	std::vector<graphics::CommandBufferRef> commandBuffers(swapchainImageViews.size(), graphics::CommandBuffer::create(device, commandPool));
 	
 	/// vk::Image
-	auto image = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::loadImage("../assets/textures/texture.jpg"));
-	auto imageView = image->buildImageView();
-	auto imageSampler = image->buildSampler();
+	auto texture = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::loadImage("assets/textures/texture.jpg"));
+	auto textureView = texture->buildImageView();
+	auto textureSampler = texture->buildSampler();
 	
 	auto depthImageOptions = graphics::Image2D::Options().imageTiling(vk::ImageTiling::eOptimal);
 	auto depthImage = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::Format::eD32Sfloat, width, height, depthImageOptions);
 	auto depthImageView = depthImage->buildImageView();
 
-	auto transitionCb = graphics::CommandBuffer::create(device, commandPool);
-	auto transitionCbHandle = transitionCb->getHandle();
-	transitionCb->begin();
-	transitionCb->transitionImageLayout(image, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
-	transitionCb->transitionImageLayout(depthImage, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
-	transitionCb->end();
+	{
+		auto temporaryCommandBuffer = graphics::CommandBuffer::create(device, commandPool);
+		auto temporaryCommandBufferHandle = temporaryCommandBuffer->getHandle();
+		temporaryCommandBuffer->begin();
+		temporaryCommandBuffer->transitionImageLayout(texture, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
+		temporaryCommandBuffer->transitionImageLayout(depthImage, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		temporaryCommandBuffer->end();
 
-	vk::SubmitInfo submitInfo;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &transitionCbHandle;
-	device->getQueueFamiliesMapping().graphics().first.submit(submitInfo, VK_NULL_HANDLE);
-	device->getQueueFamiliesMapping().graphics().first.waitIdle();
+		vk::SubmitInfo submitInfo;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &temporaryCommandBufferHandle;
+		device->getQueueFamiliesMapping().graphics().first.submit(submitInfo, {});
+		device->getQueueFamiliesMapping().graphics().first.waitIdle();
+	}
 
 	/// vk::Framebuffer
 	std::vector<graphics::FramebufferRef> framebuffers(swapchainImageViews.size());
@@ -135,7 +137,7 @@ int main()
 	vk::DescriptorSet descriptorSet = device->getHandle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
 
 	vk::DescriptorBufferInfo descriptorBufferInfo{ uniformBuffer->getHandle(), 0, uniformBuffer->getRequestedSize() };									// ubo
-	vk::DescriptorImageInfo descriptorImageInfo{ imageSampler, imageView, vk::ImageLayout::eShaderReadOnlyOptimal };									// sampler
+	vk::DescriptorImageInfo descriptorImageInfo{ textureSampler, textureView, vk::ImageLayout::eShaderReadOnlyOptimal };								// sampler
 
 	vk::WriteDescriptorSet writeDescriptorSetBuffer{ descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &descriptorBufferInfo };		// ubo
 	vk::WriteDescriptorSet writeDescriptorSetSampler{ descriptorSet, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo };		// sampler
@@ -152,7 +154,11 @@ int main()
 	ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.projection = glm::perspective(glm::radians(45.0f), width / (float)height, 0.1f, 1000.0f);
 
-	auto startTime = std::chrono::high_resolution_clock::now();
+	// Update the uniform buffer object.
+	void *data = uniformBuffer->getDeviceMemory()->map(0, uniformBuffer->getDeviceMemory()->getAllocationSize());
+	memcpy(data, &ubo, sizeof(ubo));
+	uniformBuffer->getDeviceMemory()->unmap();
+
 	while (!window->shouldWindowClose())
 	{
 		window->pollEvents();
@@ -162,13 +168,6 @@ int main()
 		glm::vec2 mousePosition = window->getMousePosition();
 		mousePosition.x /= width;
 		mousePosition.y /= height;
-
-		//ubo.model = glm::rotate(glm::mat4(), elapsed * 0.25f, glm::vec3(0.0, 0.0, 1.0f));
-
-		// Update the uniform buffer object.
-		void *data = uniformBuffer->getDeviceMemory()->map(0, uniformBuffer->getDeviceMemory()->getAllocationSize());
-		memcpy(data, &ubo, sizeof(ubo));
-		uniformBuffer->getDeviceMemory()->unmap();
 
 		// Get the index of the next available image.
 		std::vector<vk::ClearValue> clearValues(2);
@@ -202,7 +201,7 @@ int main()
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;	// Signal that rendering has finished.
 
-		device->getQueueFamiliesMapping().graphics().first.submit(submitInfo, VK_NULL_HANDLE);
+		device->getQueueFamiliesMapping().graphics().first.submit(submitInfo, {});
 
 		// Submit the result back to the swapchain for presentation:  make sure to wait for rendering to finish before attempting to present.
 		vk::SwapchainKHR swapchains[] = { swapchain->getHandle() };
