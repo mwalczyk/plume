@@ -3,75 +3,143 @@
 namespace graphics
 {
 
-	Image::Options::Options()
+	bool ImageBase::isDepthFormat(vk::Format tFormat)
 	{
-		mFormat = vk::Format::eR8G8B8A8Unorm;
-		mImageTiling = vk::ImageTiling::eLinear;
+		return (tFormat == vk::Format::eD16Unorm ||
+			tFormat == vk::Format::eD16UnormS8Uint ||
+			tFormat == vk::Format::eD24UnormS8Uint ||
+			tFormat == vk::Format::eD32Sfloat ||
+			tFormat == vk::Format::eD32SfloatS8Uint);
 	}
 
-	Image::Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, uint32_t tWidth, uint32_t tHeight, size_t tSize, const void *tData, const Options &tOptions) :
-		mDevice(tDevice),
-		mImageUsageFlags(tImageUsageFlags),
-		mWidth(tWidth),
-		mHeight(tHeight)
+	bool ImageBase::isStencilFormat(vk::Format tFormat)
 	{
-		/*vk::ImageCreateInfo imageCreateInfo;
-		imageCreateInfo.arrayLayers = 1;
-		imageCreateInfo.extent.width = mWidth;
-		imageCreateInfo.extent.height = mHeight;
-		imageCreateInfo.extent.depth = 1;
-		imageCreateInfo.format = tOptions.mFormat;
-		imageCreateInfo.initialLayout = (tData) ? vk::ImageLayout::ePreinitialized : vk::ImageLayout::eUndefined;
-		imageCreateInfo.imageType = vk::ImageType::e2D;
-		imageCreateInfo.mipLevels = 1;
-		imageCreateInfo.pQueueFamilyIndices = nullptr;
-		imageCreateInfo.queueFamilyIndexCount = 0;
-		imageCreateInfo.samples = vk::SampleCountFlagBits::e1;
-		imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-		imageCreateInfo.tiling = tOptions.mImageTiling;
-		imageCreateInfo.usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled;*/
+		return (tFormat == vk::Format::eD16UnormS8Uint ||
+				tFormat == vk::Format::eD24UnormS8Uint ||
+				tFormat == vk::Format::eD32SfloatS8Uint);
 	}
 
-	Image::Image(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, const ImageResource &tResource, const Options &tOptions) :
-		mDevice(tDevice),
-		mImageUsageFlags(tImageUsageFlags),
-		mFormat(tOptions.mFormat),
-		mWidth(tResource.width),
-		mHeight(tResource.height),
-		mChannels(tResource.channels)
+	vk::ImageAspectFlags ImageBase::formatToAspectMask(vk::Format tFormat)
 	{
-		VkDeviceSize imageSize = mWidth * mHeight * 4;
+		vk::ImageAspectFlags imageAspectFlags;
+
+		if (isDepthFormat(tFormat))
+		{
+			imageAspectFlags = vk::ImageAspectFlagBits::eDepth;
+			if (isStencilFormat(tFormat))
+			{
+				imageAspectFlags |= vk::ImageAspectFlagBits::eStencil;
+			}
+		}
+		else
+		{
+			imageAspectFlags = vk::ImageAspectFlagBits::eColor;
+		}
 		
-		vk::ImageCreateInfo imageCreateInfo;
-		imageCreateInfo.arrayLayers = 1;
-		imageCreateInfo.extent.width = mWidth;
-		imageCreateInfo.extent.height = mHeight;
-		imageCreateInfo.extent.depth = 1;
-		imageCreateInfo.format = mFormat;
-		imageCreateInfo.initialLayout = vk::ImageLayout::ePreinitialized;
-		imageCreateInfo.imageType = vk::ImageType::e2D;
-		imageCreateInfo.mipLevels = 1;
-		imageCreateInfo.pQueueFamilyIndices = nullptr;
-		imageCreateInfo.queueFamilyIndexCount = 0;
-		imageCreateInfo.samples = vk::SampleCountFlagBits::e1;
-		imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-		imageCreateInfo.tiling = tOptions.mImageTiling;
-		imageCreateInfo.usage = mImageUsageFlags; 
+		return imageAspectFlags;
+	}
 
-		mImageHandle = mDevice->getHandle().createImage(imageCreateInfo);
+	ImageBase::~ImageBase()
+	{
+		mDevice->getHandle().destroyImage(mImageHandle);
+	}
 
-		// Store the memory requirements for this buffer object.
+	vk::Sampler ImageBase::buildSampler() const
+	{
+		vk::SamplerCreateInfo samplerCreateInfo;
+		samplerCreateInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.anisotropyEnable = VK_TRUE;
+		samplerCreateInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+		samplerCreateInfo.compareEnable = VK_FALSE;
+		samplerCreateInfo.compareOp = vk::CompareOp::eAlways;
+		samplerCreateInfo.magFilter = vk::Filter::eLinear;
+		samplerCreateInfo.maxAnisotropy = 16;
+		samplerCreateInfo.maxLod = 0.0f;
+		samplerCreateInfo.minFilter = vk::Filter::eLinear;
+		samplerCreateInfo.minLod = 0.0f;
+		samplerCreateInfo.mipLodBias = 0.0f;
+		samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
+
+		return mDevice->getHandle().createSampler(samplerCreateInfo);
+	}
+
+	void ImageBase::initializeDeviceMemoryWithFlags(vk::MemoryPropertyFlags tMemoryPropertyFlags)
+	{
+		// Retrieve the memory requirements for this image.
 		auto memoryRequirements = mDevice->getHandle().getImageMemoryRequirements(mImageHandle);
-		auto requiredMemoryProperties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+		auto requiredMemoryProperties = tMemoryPropertyFlags;
 
 		// Allocate device memory.
 		mDeviceMemory = DeviceMemory::create(mDevice, memoryRequirements, requiredMemoryProperties);
 
+		// Associate the device memory with this image.
+		mDevice->getHandle().bindImageMemory(mImageHandle, mDeviceMemory->getHandle(), 0);
+	}
+
+	Image2D::Options::Options()
+	{
+		mImageTiling = vk::ImageTiling::eLinear;
+		mSampleCountFlagBits = vk::SampleCountFlagBits::e1;
+		mMipLevels = 1;
+	}
+
+	Image2D::Image2D(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, vk::Format tFormat, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
+		ImageBase(tDevice, tImageUsageFlags, tFormat, tWidth, tHeight, 1),
+		mMipLevels(tOptions.mMipLevels)
+	{
+		vk::ImageCreateInfo imageCreateInfo;
+		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.extent.width = mWidth;
+		imageCreateInfo.extent.height = mHeight;
+		imageCreateInfo.extent.depth = mDepth;
+		imageCreateInfo.format = mFormat;
+		imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
+		imageCreateInfo.imageType = vk::ImageType::e2D;
+		imageCreateInfo.mipLevels = mMipLevels;
+		imageCreateInfo.pQueueFamilyIndices = tOptions.mQueueFamilyIndices.data();
+		imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(tOptions.mQueueFamilyIndices.size());
+		imageCreateInfo.samples = tOptions.mSampleCountFlagBits;
+		imageCreateInfo.sharingMode = (imageCreateInfo.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
+		imageCreateInfo.tiling = tOptions.mImageTiling;
+		imageCreateInfo.usage = mImageUsageFlags;
+
+		mImageHandle = mDevice->getHandle().createImage(imageCreateInfo);
+
+		initializeDeviceMemoryWithFlags(vk::MemoryPropertyFlagBits::eDeviceLocal);
+	}
+
+	Image2D::Image2D(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, vk::Format tFormat, const ImageResource &tResource, const Options &tOptions) :
+		ImageBase(tDevice, tImageUsageFlags, tFormat, tResource.width, tResource.height, 1),
+		mMipLevels(tOptions.mMipLevels)
+	{	
+		vk::ImageCreateInfo imageCreateInfo;
+		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.extent.width = mWidth;
+		imageCreateInfo.extent.height = mHeight;
+		imageCreateInfo.extent.depth = mDepth;
+		imageCreateInfo.format = mFormat;
+		imageCreateInfo.initialLayout = vk::ImageLayout::ePreinitialized;
+		imageCreateInfo.imageType = vk::ImageType::e2D;
+		imageCreateInfo.mipLevels = mMipLevels;
+		imageCreateInfo.pQueueFamilyIndices = tOptions.mQueueFamilyIndices.data();
+		imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(tOptions.mQueueFamilyIndices.size());
+		imageCreateInfo.samples = tOptions.mSampleCountFlagBits;
+		imageCreateInfo.sharingMode = (imageCreateInfo.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
+		imageCreateInfo.tiling = tOptions.mImageTiling;
+		imageCreateInfo.usage = mImageUsageFlags; 
+
+		mImageHandle = mDevice->getHandle().createImage(imageCreateInfo);
+		
+		initializeDeviceMemoryWithFlags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+	
 		// Fill the image with the provided data.
 		void* mappedPtr = mDeviceMemory->map(0, mDeviceMemory->getAllocationSize());	// Map
 
 		vk::ImageSubresource imageSubresource;
-		imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageSubresource.aspectMask = formatToAspectMask(mFormat);
 		imageSubresource.arrayLayer = 0;
 		imageSubresource.mipLevel = 0;
 
@@ -79,6 +147,7 @@ namespace graphics
 			
 		// The subresource has no additional padding, so we can directly copy the pixel data into the image.
 		// This usually happens when the requested image is a power-of-two texture.
+		VkDeviceSize imageSize = mWidth * mHeight * 4;
 		if (subresourceLayout.rowPitch == mWidth * 4)
 		{
 			memcpy(mappedPtr, tResource.contents.data(), static_cast<size_t>(imageSize));
@@ -95,47 +164,21 @@ namespace graphics
 		}
 			
 		mDeviceMemory->unmap();															// Unmap
-		
-		// Associate the device memory with this buffer object.
-		mDevice->getHandle().bindImageMemory(mImageHandle, mDeviceMemory->getHandle(), 0);
+	}
 
-		// Create a basic image view for this image.
+	vk::ImageView Image2D::buildImageView() const
+	{
 		vk::ImageViewCreateInfo imageViewCreateInfo;
 		imageViewCreateInfo.format = mFormat;
 		imageViewCreateInfo.image = mImageHandle;
-		imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageViewCreateInfo.subresourceRange.aspectMask = formatToAspectMask(mFormat);
 		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 		imageViewCreateInfo.subresourceRange.layerCount = 1;
 		imageViewCreateInfo.subresourceRange.levelCount = 1;
 		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
 
-		mImageViewHandle = mDevice->getHandle().createImageView(imageViewCreateInfo);
-
-		// Create a basic sampler for this image.
-		vk::SamplerCreateInfo samplerCreateInfo;
-		samplerCreateInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
-		samplerCreateInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
-		samplerCreateInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
-		samplerCreateInfo.anisotropyEnable = VK_TRUE; 
-		samplerCreateInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
-		samplerCreateInfo.compareEnable = VK_FALSE;
-		samplerCreateInfo.compareOp = vk::CompareOp::eAlways;
-		samplerCreateInfo.magFilter = vk::Filter::eLinear;
-		samplerCreateInfo.maxAnisotropy = 16;
-		samplerCreateInfo.maxLod = 0.0f;
-		samplerCreateInfo.minFilter = vk::Filter::eLinear;
-		samplerCreateInfo.minLod = 0.0f;
-		samplerCreateInfo.mipLodBias = 0.0f;
-		samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
-		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
-
-		mSamplerHandle = mDevice->getHandle().createSampler(samplerCreateInfo);
-	}
-
-	Image::~Image()
-	{
-		mDevice->getHandle().destroyImage(mImageHandle);
+		return mDevice->getHandle().createImageView(imageViewCreateInfo);
 	}
 
 } // namespace graphics

@@ -24,8 +24,13 @@ namespace graphics
 		return { attachmentDescription, attachmentReference };
 	}
 
-	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::createDepthStencilAttachment(const vk::Format &tFormat, uint32_t tAttachment, bool tStencil)
+	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::createDepthStencilAttachment(const vk::Format &tFormat, uint32_t tAttachment)
 	{
+		if (!ImageBase::isDepthFormat(tFormat))
+		{
+			throw std::runtime_error("Attempting to create a depth stencil attachment with an invalid image format");
+		}
+
 		// Set up the attachment description
 		vk::AttachmentDescription attachmentDescription;
 		attachmentDescription.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
@@ -33,8 +38,8 @@ namespace graphics
 		attachmentDescription.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 		attachmentDescription.loadOp = vk::AttachmentLoadOp::eClear;
 		attachmentDescription.samples = vk::SampleCountFlagBits::e1;
-		attachmentDescription.stencilLoadOp = (tStencil) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
-		attachmentDescription.stencilStoreOp = (tStencil) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
+		attachmentDescription.stencilLoadOp = ImageBase::isStencilFormat(tFormat) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
+		attachmentDescription.stencilStoreOp = ImageBase::isStencilFormat(tFormat) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
 		attachmentDescription.storeOp = vk::AttachmentStoreOp::eDontCare;
 
 		// Set up the attachment reference
@@ -45,13 +50,13 @@ namespace graphics
 		return { attachmentDescription, attachmentReference };
 	}
 
-	vk::SubpassDescription RenderPass::createSubpassDescription(const std::vector<vk::AttachmentReference> &tAttachmentReferences, vk::PipelineBindPoint tPipelineBindPoint)
+	vk::SubpassDescription RenderPass::createSubpassDescription(const std::vector<vk::AttachmentReference> &tColorAttachmentReferences, const vk::AttachmentReference &tDepthStencilAttachmentReference)
 	{
-		// Currently, only graphics subpasses are supported by Vulkan.
-		vk::SubpassDescription subpassDescription = {};
-		subpassDescription.pipelineBindPoint = tPipelineBindPoint;		
-		subpassDescription.colorAttachmentCount = static_cast<uint32_t>(tAttachmentReferences.size());
-		subpassDescription.pColorAttachments = tAttachmentReferences.data();
+		vk::SubpassDescription subpassDescription;
+		subpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;	// Currently, only graphics subpasses are supported by Vulkan.
+		subpassDescription.colorAttachmentCount = static_cast<uint32_t>(tColorAttachmentReferences.size());
+		subpassDescription.pColorAttachments = tColorAttachmentReferences.data();
+		subpassDescription.pDepthStencilAttachment = &tDepthStencilAttachmentReference;
 
 		return subpassDescription;
 	}
@@ -62,7 +67,7 @@ namespace graphics
 		subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		subpassDependency.dstSubpass = 0;
 		subpassDependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput; 
-		//subpassDependency.srcAccessMask = 0; 
+		subpassDependency.srcAccessMask = {};
 		subpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 		subpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
 
@@ -72,14 +77,18 @@ namespace graphics
 	RenderPass::Options::Options()
 	{
 		auto colorAttachment = createColorAttachment(vk::Format::eB8G8R8A8Unorm, 0);
-		auto depthAttachment = createDepthStencilAttachment(vk::Format::eD32Sfloat, 0);
+		auto depthAttachment = createDepthStencilAttachment(vk::Format::eD32Sfloat, 1);
 
-		mAttachmentDescriptions = { colorAttachment.first };
-		mAttachmentReferences = { colorAttachment.second };
+		mAttachmentDescriptions = { colorAttachment.first, depthAttachment.first };
+		mAttachmentReferences = { colorAttachment.second, depthAttachment.second };
 
-		//mAttachmentDescriptions.emplace_back(colorAttachment.first);
-		//mAttachmentReferences.emplace_back(colorAttachment.second);
-		mSubpassDescriptions.emplace_back(createSubpassDescription(mAttachmentReferences));
+		vk::SubpassDescription subpassDescription;
+		subpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;	// Currently, only graphics subpasses are supported by Vulkan.
+		subpassDescription.colorAttachmentCount = 1;
+		subpassDescription.pColorAttachments = &mAttachmentReferences[0];
+		subpassDescription.pDepthStencilAttachment = &mAttachmentReferences[1];
+
+		mSubpassDescriptions.emplace_back(subpassDescription);
 		mSubpassDependencies.emplace_back(createDefaultSubpassDependency());
 	}
 

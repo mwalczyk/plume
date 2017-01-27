@@ -72,8 +72,8 @@ int main()
 	std::vector<vk::VertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription0, bindingDescription1 };
 	std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescription0, attributeDescription1 };
 	
-	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("assets/shaders/vert.spv"));
-	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("assets/shaders/frag.spv"));
+	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/vert.spv"));
+	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/frag.spv"));
 
 	auto pipelineOptions = graphics::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
@@ -83,30 +83,47 @@ int main()
 		.attachShaderStage(vertexShader, vk::ShaderStageFlagBits::eVertex)
 		.attachShaderStage(fragmentShader, vk::ShaderStageFlagBits::eFragment)
 		.cullMode(vk::CullModeFlagBits::eNone)
-		.primitiveTopology(geometry.getTopology());
+		.primitiveTopology(geometry.getTopology())
+		.depthTest()
+		.stencilTest();
 	auto pipeline = graphics::Pipeline::create(device, renderPass, pipelineOptions);
 	std::cout << pipeline << std::endl;
-
-	/// vk::Framebuffer
-	std::vector<graphics::FramebufferRef> framebuffers(swapchainImageViews.size());
-	for (size_t i = 0; i < swapchainImageViews.size(); ++i)
-	{
-		std::vector<vk::ImageView> imageViews = { swapchainImageViews[i] };
-		framebuffers[i] = graphics::Framebuffer::create(device, renderPass, imageViews, width, height);
-	}
 
 	/// vk::CommandPool
 	auto commandPool = graphics::CommandPool::create(device, device->getQueueFamiliesMapping().graphics().second);
 
 	/// vk::CommandBuffer
-	std::vector<graphics::CommandBufferRef> commandBuffers(framebuffers.size(), graphics::CommandBuffer::create(device, commandPool));
+	std::vector<graphics::CommandBufferRef> commandBuffers(swapchainImageViews.size(), graphics::CommandBuffer::create(device, commandPool));
 	
 	/// vk::Image
-	auto image = graphics::Image::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, ResourceManager::loadImage("assets/textures/texture.jpg"));
+	auto image = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::loadImage("../assets/textures/texture.jpg"));
+	auto imageView = image->buildImageView();
+	auto imageSampler = image->buildSampler();
+	
+	auto depthImageOptions = graphics::Image2D::Options().imageTiling(vk::ImageTiling::eOptimal);
+	auto depthImage = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::Format::eD32Sfloat, width, height, depthImageOptions);
+	auto depthImageView = depthImage->buildImageView();
+
 	auto transitionCb = graphics::CommandBuffer::create(device, commandPool);
+	auto transitionCbHandle = transitionCb->getHandle();
 	transitionCb->begin();
 	transitionCb->transitionImageLayout(image, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
+	transitionCb->transitionImageLayout(depthImage, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	transitionCb->end();
+
+	vk::SubmitInfo submitInfo;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &transitionCbHandle;
+	device->getQueueFamiliesMapping().graphics().first.submit(submitInfo, VK_NULL_HANDLE);
+	device->getQueueFamiliesMapping().graphics().first.waitIdle();
+
+	/// vk::Framebuffer
+	std::vector<graphics::FramebufferRef> framebuffers(swapchainImageViews.size());
+	for (size_t i = 0; i < swapchainImageViews.size(); ++i)
+	{
+		std::vector<vk::ImageView> imageViews = { swapchainImageViews[i], depthImageView };
+		framebuffers[i] = graphics::Framebuffer::create(device, renderPass, imageViews, width, height);
+	}
 
 	/// vk::DescriptorPool
 	vk::DescriptorPool descriptorPool = pipeline->createCompatibleDescriptorPool(0);
@@ -118,7 +135,7 @@ int main()
 	vk::DescriptorSet descriptorSet = device->getHandle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
 
 	vk::DescriptorBufferInfo descriptorBufferInfo{ uniformBuffer->getHandle(), 0, uniformBuffer->getRequestedSize() };									// ubo
-	vk::DescriptorImageInfo descriptorImageInfo{ image->getSamplerHandle(), image->getImageViewHandle(), vk::ImageLayout::eShaderReadOnlyOptimal };		// sampler
+	vk::DescriptorImageInfo descriptorImageInfo{ imageSampler, imageView, vk::ImageLayout::eShaderReadOnlyOptimal };									// sampler
 
 	vk::WriteDescriptorSet writeDescriptorSetBuffer{ descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &descriptorBufferInfo };		// ubo
 	vk::WriteDescriptorSet writeDescriptorSetSampler{ descriptorSet, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo };		// sampler
@@ -154,9 +171,13 @@ int main()
 		uniformBuffer->getDeviceMemory()->unmap();
 
 		// Get the index of the next available image.
+		std::vector<vk::ClearValue> clearValues(2);
+		clearValues[0].color = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };
+		clearValues[1].depthStencil = {1, 0};
+	
 		uint32_t imageIndex = swapchain->acquireNextSwapchainImage(imageAvailableSemaphore);
 		commandBuffers[imageIndex]->begin();
-		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex]);
+		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex], clearValues);
 		commandBuffers[imageIndex]->bindPipeline(pipeline);
 		commandBuffers[imageIndex]->bindVertexBuffers(vertexBuffers);
 		commandBuffers[imageIndex]->bindIndexBuffer(indexBuffer);

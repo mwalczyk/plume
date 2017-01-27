@@ -38,7 +38,9 @@ namespace graphics
 			Options& cullMode(vk::CullModeFlags tCullModeFlags) { mCullModeFlags = tCullModeFlags; return *this; }
 			Options& primitiveRestart(bool tPrimitiveRestart) { mPrimitiveRestart = tPrimitiveRestart; return *this; }
 			Options& primitiveTopology(vk::PrimitiveTopology tPrimitiveTopology) { mPrimitiveTopology = tPrimitiveTopology; return *this; }
-			
+			Options& depthTest(bool tDepthTestEnabled = true) { mDepthTestEnabled = tDepthTestEnabled; return *this; }
+			Options& stencilTest(bool tStencilTestEnabled = true) { mStencilTestEnabled = tStencilTestEnabled; return *this; }
+
 			//! Configure per-attached framebuffer color blending, which determines how new fragments are composited with colors that are already in the framebuffer.
 			Options& pipelineColorBlendAttachmentState(const vk::PipelineColorBlendAttachmentState &tPipelineColorBlendAttachmentState) { mPipelineColorBlendAttachmentState = tPipelineColorBlendAttachmentState; return *this; }
 		
@@ -55,6 +57,8 @@ namespace graphics
 			bool mPrimitiveRestart;
 			vk::PrimitiveTopology mPrimitiveTopology;
 			vk::PipelineColorBlendAttachmentState mPipelineColorBlendAttachmentState;
+			bool mDepthTestEnabled;
+			bool mStencilTestEnabled;
 
 			friend class Pipeline;
 		};

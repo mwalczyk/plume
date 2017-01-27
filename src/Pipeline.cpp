@@ -111,6 +111,10 @@ namespace graphics
 		mPipelineColorBlendAttachmentState = {};
 		mPipelineColorBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 		mPipelineColorBlendAttachmentState.blendEnable = VK_FALSE;	
+		
+		// Turn off depth and stencil testing by default.
+		mDepthTestEnabled = VK_FALSE;
+		mStencilTestEnabled = VK_FALSE;
 	}
    
 	vk::VertexInputBindingDescription Pipeline::createVertexInputBindingDescription(uint32_t tBinding, uint32_t tStride, vk::VertexInputRate tVertexInputRate)
@@ -212,8 +216,17 @@ namespace graphics
 		multisampleStateCreateInfo.rasterizationSamples = vk::SampleCountFlagBits::e1;
 		multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
 
-		// For now, we are not using depth and stencil tests.
-	
+		// Configure depth stencil testing.
+		vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo;
+		depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
+		depthStencilStateCreateInfo.depthCompareOp = vk::CompareOp::eLess;
+		depthStencilStateCreateInfo.depthTestEnable = tOptions.mDepthTestEnabled;
+		depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
+		depthStencilStateCreateInfo.maxDepthBounds = 1.0f;	// This is optional, since the depth bounds test is disabled.
+		depthStencilStateCreateInfo.minDepthBounds = 0.0f;  // This is optional, since the depth bounds test is disabled.
+		depthStencilStateCreateInfo.stencilTestEnable = tOptions.mStencilTestEnabled;
+		
+		// Configure color blending properties.
 		vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo;
 		colorBlendStateCreateInfo.attachmentCount = 1;
 		colorBlendStateCreateInfo.blendConstants[0] = 0.0f;
@@ -251,7 +264,7 @@ namespace graphics
 		graphicsPipelineCreateInfo.basePipelineIndex = -1;
 		graphicsPipelineCreateInfo.layout = mPipelineLayoutHandle;
 		graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
-		graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
+		graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
 		graphicsPipelineCreateInfo.pDynamicState = nullptr;
 		graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
 		graphicsPipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;

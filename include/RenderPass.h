@@ -5,6 +5,7 @@
 
 #include "Platform.h"
 #include "Device.h"
+#include "Image.h"
 
 namespace graphics
 {
@@ -60,9 +61,11 @@ namespace graphics
 			return std::make_shared<RenderPass>(tDevice, tOptions);
 		}
 
+		//! The numeric index that is used to build each attachment reference corresponds to the index of a attachment description in
+		//! the array that is used to construct the render pass. 
 		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> createColorAttachment(const vk::Format &tFormat, uint32_t tAttachment);
-		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> createDepthStencilAttachment(const vk::Format &tFormat, uint32_t tAttachment, bool tStencil = false);
-		static vk::SubpassDescription createSubpassDescription(const std::vector<vk::AttachmentReference> &tAttachmentReferences, vk::PipelineBindPoint tPipelineBindPoint = vk::PipelineBindPoint::eGraphics);
+		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> createDepthStencilAttachment(const vk::Format &tFormat, uint32_t tAttachment);
+		static vk::SubpassDescription createSubpassDescription(const std::vector<vk::AttachmentReference> &tColorAttachmentReferences, const vk::AttachmentReference &tDepthStencilAttachmentReference);
 		static vk::SubpassDependency createDefaultSubpassDependency();
 
 		RenderPass(const DeviceRef &tDevice, const Options &tOptions = Options());

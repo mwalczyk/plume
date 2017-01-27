@@ -37,12 +37,12 @@ namespace graphics
 		mCommandBufferHandle.begin(commandBufferBeginInfo);
 	}
 
-	void CommandBuffer::beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const vk::ClearValue &tClearValue)
+	void CommandBuffer::beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const std::vector<vk::ClearValue> &tClearValues)
 	{
 		vk::RenderPassBeginInfo renderPassBeginInfo;
-		renderPassBeginInfo.clearValueCount = 1;
+		renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(tClearValues.size());
 		renderPassBeginInfo.framebuffer = tFramebuffer->getHandle();
-		renderPassBeginInfo.pClearValues = &tClearValue;
+		renderPassBeginInfo.pClearValues = tClearValues.data();
 		renderPassBeginInfo.renderArea.extent = { tFramebuffer->getWidth(), tFramebuffer->getHeight() };
 		renderPassBeginInfo.renderArea.offset = { 0, 0 };
 		renderPassBeginInfo.renderPass = tRenderPass->getHandle();
@@ -124,6 +124,11 @@ namespace graphics
 			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
 			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 		}
+		else if (tFromLayout == vk::ImageLayout::eUndefined && tToLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
+		{
+			imageMemoryBarrier.srcAccessMask = {};
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		}
 		else 
 		{
 			throw std::invalid_argument("Unsupported layout transition");
@@ -134,7 +139,7 @@ namespace graphics
 		imageMemoryBarrier.newLayout = tToLayout;
 		imageMemoryBarrier.oldLayout = tFromLayout;
 		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageMemoryBarrier.subresourceRange.aspectMask = ImageBase::formatToAspectMask(tImage->getFormat());
 		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
 		imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
 		imageMemoryBarrier.subresourceRange.layerCount = 1;

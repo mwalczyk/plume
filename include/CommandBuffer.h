@@ -50,7 +50,7 @@ namespace graphics
 
 		//! Start recording into the command buffer.
 		void begin();
-		void beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const vk::ClearValue &tClearValue = vk::ClearColorValue(std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }));
+		void beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const std::vector<vk::ClearValue> &tClearValues = { vk::ClearColorValue(std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }) });
 		void bindPipeline(const PipelineRef &tPipeline);
 		void bindVertexBuffers(const std::vector<BufferRef> &tBuffers);
 		void bindIndexBuffer(const BufferRef &tBuffer);
