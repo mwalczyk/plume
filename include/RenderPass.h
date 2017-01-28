@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 #include "Image.h"
 
@@ -19,7 +20,7 @@ namespace graphics
 	//! Rendering commands are recorded into a particular subpass of a render pass. The specific image views
 	//! that will be used for the attachments are specified by framebuffer objects. Framebuffers are created
 	//! with respect to a specific render pass that the framebuffer is compatible with.
-	class RenderPass
+	class RenderPass : public Noncopyable
 	{
 	public:
 

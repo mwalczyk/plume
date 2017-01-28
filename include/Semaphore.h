@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 
 namespace graphics
@@ -11,7 +12,7 @@ namespace graphics
 	class Semaphore;
 	using SemaphoreRef = std::shared_ptr<Semaphore>;
 
-	class Semaphore
+	class Semaphore : public Noncopyable
 	{
 	public:
 

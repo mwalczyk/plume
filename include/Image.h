@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 #include "DeviceMemory.h"
 #include "ResourceManager.h"
@@ -16,7 +17,7 @@ namespace graphics
 	using ImageBaseRef = std::shared_ptr<ImageBase>;
 	using ImageRef = ImageBaseRef;
 
-	class ImageBase
+	class ImageBase : public Noncopyable
 	{
 	public:
 		virtual ~ImageBase();

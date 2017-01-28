@@ -5,6 +5,7 @@
 #include "spirv_glsl.hpp"
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 #include "ResourceManager.h"
 
@@ -14,7 +15,7 @@ namespace graphics
 	class ShaderModule;
 	using ShaderModuleRef = std::shared_ptr<ShaderModule>;
 
-	class ShaderModule
+	class ShaderModule : public Noncopyable
 	{
 
 	public:

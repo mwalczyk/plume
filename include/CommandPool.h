@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 
 namespace graphics
@@ -11,7 +12,7 @@ namespace graphics
 	class CommandPool;
 	using CommandPoolRef = std::shared_ptr<CommandPool>;
 
-	class CommandPool
+	class CommandPool : public Noncopyable
 	{
 	public:
 

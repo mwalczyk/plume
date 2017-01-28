@@ -7,6 +7,7 @@
 #include <map>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Instance.h"
 #include "Surface.h"
 
@@ -20,7 +21,7 @@ namespace graphics
 	class Window;
 	using WindowRef = std::shared_ptr<Window>;
 
-	class Window
+	class Window : public Noncopyable
 	{
 	public:
 

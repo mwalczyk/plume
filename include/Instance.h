@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 
 namespace graphics
 {
@@ -15,7 +16,7 @@ namespace graphics
 	class Instance;
 	using InstanceRef = std::shared_ptr<Instance>;
 
-	class Instance
+	class Instance : public Noncopyable
 	{
 	public:
 

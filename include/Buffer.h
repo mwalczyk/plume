@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 #include "DeviceMemory.h"
 
@@ -13,7 +14,7 @@ namespace graphics
 	class Buffer;
 	using BufferRef = std::shared_ptr<Buffer>;
 
-	class Buffer
+	class Buffer : public Noncopyable
 	{
 	public:
 

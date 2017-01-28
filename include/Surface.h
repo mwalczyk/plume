@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Instance.h"
 
 namespace graphics
@@ -11,7 +12,7 @@ namespace graphics
 	class Surface;
 	using SurfaceRef = std::shared_ptr<Surface>;
 
-	class Surface
+	class Surface : public Noncopyable
 	{
 	public:
 

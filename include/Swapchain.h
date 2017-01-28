@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 #include "Semaphore.h"
 
@@ -13,7 +14,7 @@ namespace graphics
 	class Swapchain;
 	using SwapchainRef = std::shared_ptr<Swapchain>;
 
-	class Swapchain
+	class Swapchain : public Noncopyable
 	{
 	public:
 

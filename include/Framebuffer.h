@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 #include "RenderPass.h"
 
@@ -25,7 +26,7 @@ namespace graphics
 	//!
 	//! A framebuffer is compatible with a render pass if it was created using the same render pass or a 
 	//! compatible render pass.
-	class Framebuffer
+	class Framebuffer : public Noncopyable
 	{
 	public:
 

@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 #include "CommandPool.h"
 #include "Framebuffer.h"
@@ -17,7 +18,7 @@ namespace graphics
 	class CommandBuffer;
 	using CommandBufferRef = std::shared_ptr<CommandBuffer>;
 
-	class CommandBuffer
+	class CommandBuffer : public Noncopyable
 	{
 	public:
 

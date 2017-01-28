@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Instance.h"
 #include "Surface.h"
 
@@ -15,7 +16,7 @@ namespace graphics
 	class Device;
 	using DeviceRef = std::shared_ptr<Device>;
 
-	class Device
+	class Device : public Noncopyable
 	{
 	public:
 

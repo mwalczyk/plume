@@ -8,6 +8,7 @@
 #include <ostream>
 
 #include "Platform.h"
+#include "Noncopyable.h"
 #include "Device.h"
 #include "RenderPass.h"
 #include "ShaderModule.h"
@@ -18,7 +19,7 @@ namespace graphics
 	class Pipeline;
 	using PipelineRef = std::shared_ptr<Pipeline>;
 
-	class Pipeline
+	class Pipeline : public Noncopyable
 	{
 	public:
 
