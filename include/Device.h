@@ -85,7 +85,12 @@ namespace graphics
 		inline const QueueFamiliesMapping& getQueueFamiliesMapping() const { return mQueueFamiliesMapping; }
 		inline const std::vector<vk::QueueFamilyProperties>& getPhysicalDeviceQueueFamilyProperties() const { return mPhysicalDeviceQueueFamilyProperties; }
 		inline const std::vector<vk::ExtensionProperties>& getPhysicalDeviceExtensionProperties() const { return mPhysicalDeviceExtensionProperties; }
+		
+		//! Format features are properties of the physical device.
 		inline vk::FormatProperties getPhysicalDeviceFormatProperties(vk::Format tFormat) const { return mPhysicalDeviceHandle.getFormatProperties(tFormat); }
+		
+		//! Depth formats are not necessarily supported by the system. Retrieve the highest precision format available.
+		vk::Format getSupportedDepthFormat() const;
 
 		//! Returns a structure that contains information related to the chosen physical device's swapchain support.
 		SwapchainSupportDetails getSwapchainSupportDetails(const SurfaceRef &tSurface) const;

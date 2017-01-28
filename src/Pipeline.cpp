@@ -219,7 +219,7 @@ namespace graphics
 		// Configure depth stencil testing.
 		vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo;
 		depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
-		depthStencilStateCreateInfo.depthCompareOp = vk::CompareOp::eLess;
+		depthStencilStateCreateInfo.depthCompareOp = vk::CompareOp::eLessOrEqual;
 		depthStencilStateCreateInfo.depthTestEnable = tOptions.mDepthTestEnabled;
 		depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
 		depthStencilStateCreateInfo.maxDepthBounds = 1.0f;	// This is optional, since the depth bounds test is disabled.
@@ -282,7 +282,8 @@ namespace graphics
 
 	Pipeline::~Pipeline()
 	{
-		vkDestroyPipeline(mDevice->getHandle(), mPipelineHandle, nullptr);
+		mDevice->getHandle().destroyPipeline(mPipelineHandle);
+		mDevice->getHandle().destroyPipelineLayout(mPipelineLayoutHandle);
 	}
 
 	vk::PushConstantRange Pipeline::getPushConstantsMember(const std::string &tMemberName) const

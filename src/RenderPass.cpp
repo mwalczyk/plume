@@ -77,16 +77,20 @@ namespace graphics
 	RenderPass::Options::Options()
 	{
 		auto colorAttachment = createColorAttachment(vk::Format::eB8G8R8A8Unorm, 0);
-		auto depthAttachment = createDepthStencilAttachment(vk::Format::eD32Sfloat, 1);
+		auto depthAttachment = createDepthStencilAttachment(vk::Format::eD32SfloatS8Uint, 1);
 
+		// Aggregate all attachment references and descriptions.
 		mAttachmentDescriptions = { colorAttachment.first, depthAttachment.first };
 		mAttachmentReferences = { colorAttachment.second, depthAttachment.second };
 
 		vk::SubpassDescription subpassDescription;
-		subpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;	// Currently, only graphics subpasses are supported by Vulkan.
+		subpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;	
 		subpassDescription.colorAttachmentCount = 1;
 		subpassDescription.pColorAttachments = &mAttachmentReferences[0];
 		subpassDescription.pDepthStencilAttachment = &mAttachmentReferences[1];
+		subpassDescription.preserveAttachmentCount = 0;
+		subpassDescription.pPreserveAttachments = nullptr;
+		subpassDescription.pResolveAttachments = nullptr;
 
 		mSubpassDescriptions.emplace_back(subpassDescription);
 		mSubpassDependencies.emplace_back(createDefaultSubpassDependency());

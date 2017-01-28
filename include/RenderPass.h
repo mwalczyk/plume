@@ -27,6 +27,8 @@ namespace graphics
 		{
 		public:
 
+			//! Construct a simple render pass with a subpass that contains a single color attachment and a single
+			//! depth attachment.
 			Options();
 
 			//! An attachment description describes the properties of an attachment including its format, sample count, and
@@ -61,11 +63,20 @@ namespace graphics
 			return std::make_shared<RenderPass>(tDevice, tOptions);
 		}
 
-		//! The numeric index that is used to build each attachment reference corresponds to the index of a attachment description in
-		//! the array that is used to construct the render pass. 
+		//! Constructs a generic attachment description and attachment reference for a color attachment with the specified image 
+		//! format and attachment index. The numeric index that is used to build each attachment reference corresponds to the 
+		//! index of a attachment description in the array that is used to construct the render pass. 
 		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> createColorAttachment(const vk::Format &tFormat, uint32_t tAttachment);
+		
+		//! Constructs a generic attachment description and attachment reference for a depth stencil attachment with the specified 
+		//! image format and attachment index. The numeric index that is used to build each attachment reference corresponds to the 
+		//! index of a attachment description in the array that is used to construct the render pass. 
 		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> createDepthStencilAttachment(const vk::Format &tFormat, uint32_t tAttachment);
+
 		static vk::SubpassDescription createSubpassDescription(const std::vector<vk::AttachmentReference> &tColorAttachmentReferences, const vk::AttachmentReference &tDepthStencilAttachmentReference);
+		
+		//! This should only be used if the render pass has a single subpass. Internally, this constructs a subpass dependency
+		//! whose source subpass is the special keyword VK_SUBPASS_EXTERNAL.
 		static vk::SubpassDependency createDefaultSubpassDependency();
 
 		RenderPass(const DeviceRef &tDevice, const Options &tOptions = Options());

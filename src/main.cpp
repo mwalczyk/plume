@@ -72,8 +72,8 @@ int main()
 	std::vector<vk::VertexInputBindingDescription> vertexInputBindingDescriptions = { bindingDescription0, bindingDescription1 };
 	std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = { attributeDescription0, attributeDescription1 };
 	
-	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("assets/shaders/vert.spv"));
-	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("assets/shaders/frag.spv"));
+	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/vert.spv"));
+	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::loadFile("../assets/shaders/frag.spv"));
 
 	auto pipelineOptions = graphics::Pipeline::Options()
 		.vertexInputBindingDescriptions(vertexInputBindingDescriptions)
@@ -84,8 +84,7 @@ int main()
 		.attachShaderStage(fragmentShader, vk::ShaderStageFlagBits::eFragment)
 		.cullMode(vk::CullModeFlagBits::eNone)
 		.primitiveTopology(geometry.getTopology())
-		.depthTest()
-		.stencilTest();
+		.depthTest();
 	auto pipeline = graphics::Pipeline::create(device, renderPass, pipelineOptions);
 	std::cout << pipeline << std::endl;
 
@@ -96,12 +95,12 @@ int main()
 	std::vector<graphics::CommandBufferRef> commandBuffers(swapchainImageViews.size(), graphics::CommandBuffer::create(device, commandPool));
 	
 	/// vk::Image
-	auto texture = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::loadImage("assets/textures/texture.jpg"));
+	auto texture = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::loadImage("../assets/textures/texture.jpg"));
 	auto textureView = texture->buildImageView();
-	auto textureSampler = texture->buildSampler();
+	auto textureSampler = texture->buildSampler(); 
 	
 	auto depthImageOptions = graphics::Image2D::Options().imageTiling(vk::ImageTiling::eOptimal);
-	auto depthImage = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::Format::eD32Sfloat, width, height, depthImageOptions);
+	auto depthImage = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eDepthStencilAttachment, device->getSupportedDepthFormat(), width, height, depthImageOptions);
 	auto depthImageView = depthImage->buildImageView();
 
 	{

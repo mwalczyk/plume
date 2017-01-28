@@ -17,7 +17,7 @@ namespace graphics
 		mPhysicalDeviceProperties = mPhysicalDeviceHandle.getProperties();
 		mPhysicalDeviceFeatures = mPhysicalDeviceHandle.getFeatures();
 		mPhysicalDeviceMemoryProperties = mPhysicalDeviceHandle.getMemoryProperties();
-
+		
 		// Store the queue family properties of the chosen physical device.
 		mPhysicalDeviceQueueFamilyProperties = mPhysicalDeviceHandle.getQueueFamilyProperties();
 
@@ -172,6 +172,28 @@ namespace graphics
 		throw std::runtime_error("Could not find a matching queue family");
 	}
 
+	vk::Format Device::getSupportedDepthFormat() const
+	{
+		static const std::vector<vk::Format> depthFormats = {
+			vk::Format::eD32SfloatS8Uint,
+			vk::Format::eD32Sfloat,
+			vk::Format::eD24UnormS8Uint,
+			vk::Format::eD16UnormS8Uint,
+			vk::Format::eD16Unorm
+		};
+
+		for (const auto &format : depthFormats)
+		{
+			auto formatProperties = getPhysicalDeviceFormatProperties(format);
+			if (formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+			{
+				return format;
+			}
+		}
+		
+		return vk::Format::eUndefined;
+	}
+
 	Device::SwapchainSupportDetails Device::getSwapchainSupportDetails(const SurfaceRef &tSurface) const
 	{
 		SwapchainSupportDetails swapchainSupportDetails;
@@ -201,7 +223,7 @@ namespace graphics
 		std::cout << "\tDevice ID: " << tDevice->mPhysicalDeviceProperties.deviceID << std::endl;
 		std::cout << "\tDevice name: " << tDevice->mPhysicalDeviceProperties.deviceName << std::endl;
 		std::cout << "\tVendor ID: " << tDevice->mPhysicalDeviceProperties.vendorID << std::endl;
-		
+
 		tStream << "Queue family details:" << std::endl;
 		tStream << "\tQueue family - graphics index: " << tDevice->mQueueFamiliesMapping.graphics().second << std::endl;
 		tStream << "\tQueue family - compute index: " << tDevice->mQueueFamiliesMapping.compute().second << std::endl;

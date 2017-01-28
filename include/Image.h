@@ -31,6 +31,10 @@ namespace graphics
 		static vk::ImageAspectFlags formatToAspectMask(vk::Format tFormat);
 
 		virtual vk::ImageView buildImageView() const = 0;
+
+		//! Image samplers are used by the implementation to read image data and apply filtering and
+		//! other transformations inside of a shader. Note that a single sampler can be used with multiple 
+		//! attachments when constructing descriptor sets.
 		virtual vk::Sampler buildSampler() const final;
 		virtual inline vk::Image getHandle() const final { return mImageHandle; }
 		virtual inline vk::Format getFormat() const final { return mFormat; }
