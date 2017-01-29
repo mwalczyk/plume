@@ -87,10 +87,8 @@ namespace graphics
 
 	private:
 
-		vk::RenderPass mRenderPassHandle;
-
 		DeviceRef mDevice;
-
+		vk::RenderPass mRenderPassHandle;
 		std::vector<vk::AttachmentDescription> mAttachmentDescriptions;
 		std::vector<vk::AttachmentReference> mAttachmentReferences;
 		std::vector<vk::SubpassDescription> mSubpassDescriptions;

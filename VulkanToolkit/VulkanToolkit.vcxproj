@@ -198,6 +198,7 @@
     <ClCompile Include="..\src\Buffer.cpp" />
     <ClCompile Include="..\src\CommandBuffer.cpp" />
     <ClCompile Include="..\src\CommandPool.cpp" />
+    <ClCompile Include="..\src\DescriptorPool.cpp" />
     <ClCompile Include="..\src\Device.cpp" />
     <ClCompile Include="..\src\DeviceMemory.cpp" />
     <ClCompile Include="..\src\Framebuffer.cpp" />
@@ -219,6 +220,7 @@
     <ClInclude Include="..\include\Buffer.h" />
     <ClInclude Include="..\include\CommandBuffer.h" />
     <ClInclude Include="..\include\CommandPool.h" />
+    <ClInclude Include="..\include\DescriptorPool.h" />
     <ClInclude Include="..\include\Device.h" />
     <ClInclude Include="..\include\DeviceMemory.h" />
     <ClInclude Include="..\include\Framebuffer.h" />

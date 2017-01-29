@@ -36,6 +36,7 @@
 #include "Buffer.h"
 #include "CommandBuffer.h"
 #include "CommandPool.h"
+#include "DescriptorPool.h"
 #include "Device.h"
 #include "Framebuffer.h"
 #include "Image.h"

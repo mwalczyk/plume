@@ -39,7 +39,8 @@ namespace graphics
 		virtual vk::Sampler buildSampler() const final;
 		virtual inline vk::Image getHandle() const final { return mImageHandle; }
 		virtual inline vk::Format getFormat() const final { return mFormat; }
-
+		virtual inline vk::DescriptorImageInfo buildDescriptorInfo(vk::Sampler tSampler, vk::ImageView tImageView, vk::ImageLayout tImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal) const { return { tSampler, tImageView, tImageLayout }; }
+	
 	protected:
 
 		ImageBase(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, vk::Format tFormat, uint32_t tWidth, uint32_t tHeight, uint32_t tDepth) :
@@ -60,10 +61,13 @@ namespace graphics
 		vk::Image mImageHandle;
 		vk::ImageUsageFlags mImageUsageFlags;
 		vk::Format mFormat;
+		vk::ImageLayout mCurrentLayout;
 		uint32_t mWidth;
 		uint32_t mHeight;
 		uint32_t mDepth;
 		uint32_t mChannels;
+
+		friend class CommandBuffer;
 	};
 
 	class Image2D;

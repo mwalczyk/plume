@@ -145,6 +145,9 @@ namespace graphics
 		imageMemoryBarrier.subresourceRange.layerCount = 1;
 		imageMemoryBarrier.subresourceRange.levelCount = 1;
 
+		// This class is a friend of the image class - store its new layout.
+		tImage->mCurrentLayout = tToLayout;
+
 		mCommandBufferHandle.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTopOfPipe, {}, {}, {}, imageMemoryBarrier);
 	}
 

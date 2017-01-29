@@ -106,15 +106,12 @@ namespace graphics
 		void onKeyPressed(int tKey, int tScancode, int tAction, int tMods);
 		void onScroll(double tXOffset, double tYOffset);
 
-		GLFWwindow *mWindowHandle;
-
 		InstanceRef mInstance;
-
+		GLFWwindow *mWindowHandle;
 		uint32_t mWidth;
 		uint32_t mHeight;
 		std::string mTitle;
 		WindowMode mWindowMode;
-		
 		std::vector<MouseMovedFuncType> mMouseMovedConnections;
 		std::vector<MousePressedFuncType> mMousePressedConnections;
 		std::vector<KeyPressedFuncType> mKeyPressedConnections;

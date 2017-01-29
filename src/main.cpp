@@ -127,19 +127,19 @@ int main()
 	}
 
 	/// vk::DescriptorPool
-	vk::DescriptorPool descriptorPool = pipeline->createCompatibleDescriptorPool(0);
+	auto descriptorPool = graphics::DescriptorPool::create(device, { {vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1} } );
 
 	/// vk::DescriptorSet
 	vk::DescriptorSetLayout descriptorSetLayout = pipeline->getDescriptorSetLayout(0);
-	vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(descriptorPool, 1, &descriptorSetLayout);
+	vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(descriptorPool->getHandle(), 1, &descriptorSetLayout);
 
 	vk::DescriptorSet descriptorSet = device->getHandle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
 
-	vk::DescriptorBufferInfo descriptorBufferInfo{ uniformBuffer->getHandle(), 0, uniformBuffer->getRequestedSize() };									// ubo
-	vk::DescriptorImageInfo descriptorImageInfo{ textureSampler, textureView, vk::ImageLayout::eShaderReadOnlyOptimal };								// sampler
+	auto descriptorBufferInfo = uniformBuffer->buildDescriptorInfo();							// ubo
+	auto descriptorImageInfo = texture->buildDescriptorInfo(textureSampler, textureView);		// sampler
 
-	vk::WriteDescriptorSet writeDescriptorSetBuffer{ descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &descriptorBufferInfo };		// ubo
-	vk::WriteDescriptorSet writeDescriptorSetSampler{ descriptorSet, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo };		// sampler
+	vk::WriteDescriptorSet writeDescriptorSetBuffer = { descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &descriptorBufferInfo };	// ubo
+	vk::WriteDescriptorSet writeDescriptorSetSampler = { descriptorSet, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo };		// sampler
 	std::vector<vk::WriteDescriptorSet> writeDescriptorSets = { writeDescriptorSetBuffer, writeDescriptorSetSampler };
 
 	device->getHandle().updateDescriptorSets(writeDescriptorSets, {});

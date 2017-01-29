@@ -47,7 +47,8 @@ namespace graphics
 		inline vk::Buffer getHandle() const { return mBufferHandle; }
 		inline DeviceMemoryRef getDeviceMemory() const { return mDeviceMemory; }
 		inline vk::BufferUsageFlags getBufferUsageFlags() const { return mBufferUsageFlags; }
-		
+		inline vk::DescriptorBufferInfo buildDescriptorInfo(vk::DeviceSize tOffset = 0, vk::DeviceSize tRange = VK_WHOLE_SIZE) const { return { mBufferHandle, tOffset, tRange };  }
+
 		//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
 		//! allocation size, which can be queried from the buffer's device memory reference.
 		inline size_t getRequestedSize() const { return mRequestedSize; }

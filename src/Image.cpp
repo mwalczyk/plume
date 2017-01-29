@@ -90,13 +90,15 @@ namespace graphics
 		ImageBase(tDevice, tImageUsageFlags, tFormat, tWidth, tHeight, 1),
 		mMipLevels(tOptions.mMipLevels)
 	{
+		mCurrentLayout = vk::ImageLayout::eUndefined;
+
 		vk::ImageCreateInfo imageCreateInfo;
 		imageCreateInfo.arrayLayers = 1;
 		imageCreateInfo.extent.width = mWidth;
 		imageCreateInfo.extent.height = mHeight;
 		imageCreateInfo.extent.depth = mDepth;
 		imageCreateInfo.format = mFormat;
-		imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
+		imageCreateInfo.initialLayout = mCurrentLayout;
 		imageCreateInfo.imageType = vk::ImageType::e2D;
 		imageCreateInfo.mipLevels = mMipLevels;
 		imageCreateInfo.pQueueFamilyIndices = tOptions.mQueueFamilyIndices.data();
@@ -115,13 +117,15 @@ namespace graphics
 		ImageBase(tDevice, tImageUsageFlags, tFormat, tResource.width, tResource.height, 1),
 		mMipLevels(tOptions.mMipLevels)
 	{	
+		mCurrentLayout = vk::ImageLayout::ePreinitialized;
+
 		vk::ImageCreateInfo imageCreateInfo;
 		imageCreateInfo.arrayLayers = 1;
 		imageCreateInfo.extent.width = mWidth;
 		imageCreateInfo.extent.height = mHeight;
 		imageCreateInfo.extent.depth = mDepth;
 		imageCreateInfo.format = mFormat;
-		imageCreateInfo.initialLayout = vk::ImageLayout::ePreinitialized;
+		imageCreateInfo.initialLayout = mCurrentLayout;
 		imageCreateInfo.imageType = vk::ImageType::e2D;
 		imageCreateInfo.mipLevels = mMipLevels;
 		imageCreateInfo.pQueueFamilyIndices = tOptions.mQueueFamilyIndices.data();
