@@ -1,37 +1,30 @@
-#pragma once
+/*
+*
+* MIT License
+*
+* Copyright(c) 2017 Michael Walczyk
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files(the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions :
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*
+*/
 
-/// Naming conventions used throughout this toolkit:
-///
-/// Class names are the same as they appear in the Vulkan API, minus the "Vk" prefix:
-///		e.g. VkDevice -> Device
-/// Shared pointers to classes are the same as the class name, plus the "Ref" suffix:
-///		e.g. Device -> DeviceRef
-/// Vulkan related variables should always use the full name, minus the "Vk" prefix and
-///		without extension specific suffixes like "EXT" and "KHR":
-///		e.g. VkExtensionProperties -> extensionProperties
-///		e.g. VkSwapchainKHR -> swapchain;
-///	All member variables should be prefixed with an "m":
-///		e.g. uint32_t mNumberOfObjects;
-/// All method parameters should be prefixed with a "t":
-///		e.g. void multiply(uint32_t tValue);
-///	Handles to Vulkan objects should be declared with the "Handle" suffix:
-///		e.g. VkInstance -> mInstanceHandle
-///	Furthermore, each Vulkan wrapper class should have an inline member function called
-///		getHandle() that returns this value
-/// "Getters" and "setters" should be inline in the header file
-///
-///	Note that all classes and structs exist in the "vk" namespace
-/// 
-/// In general, class items should appear in the following order:
-///		Forward declarations and typedefs
-///		Internal structs
-///		Static variables and functions (e.g. factory "create" methods)
-///		Constructors
-///		Deconstructor
-///		Public methods
-///		Public member variables
-///		Private methods
-///		Private member variables
+#pragma once
 
 #include "Buffer.h"
 #include "CommandBuffer.h"
