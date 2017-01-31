@@ -51,53 +51,53 @@ namespace graphics
 			Options();
 			
 			//! Set the preferred presentation mode (defaults is vk::PresentModeKHR::eMailbox).
-			Options& presentMode(vk::PresentModeKHR tPresentMode) { mPresentMode = tPresentMode; return *this; }
+			Options& present_mode(vk::PresentModeKHR present_mode) { m_present_mode = present_mode; return *this; }
 
 			//! Set the preferred swapchain image format (defaults is vk::Format::eB8G8R8A8Unorm).
-			Options& format(vk::Format tFormat) { mFormat = tFormat; return *this; }
+			Options& format(vk::Format format) { m_format = format; return *this; }
 
 		private:
 
-			vk::PresentModeKHR mPresentMode;
-			vk::Format mFormat;
-			vk::ColorSpaceKHR mColorSpace;
+			vk::PresentModeKHR m_present_mode;
+			vk::Format m_format;
+			vk::ColorSpaceKHR m_color_space;
 
 			friend class Swapchain;
 		};
 
 		//! Factory method for returning a new SwapchainRef.
-		static SwapchainRef create(const DeviceRef &tDevice, const SurfaceRef &tSurface, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options())
+		static SwapchainRef create(const DeviceRef& device, const SurfaceRef& surface, uint32_t width, uint32_t height, const Options& options = Options())
 		{
-			return std::make_shared<Swapchain>(tDevice, tSurface, tWidth, tHeight, tOptions);
+			return std::make_shared<Swapchain>(device, surface, width, height, options);
 		}
 
-		Swapchain(const DeviceRef &tDevice, const SurfaceRef &tSurface, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options());
+		Swapchain(const DeviceRef& device, const SurfaceRef& surface, uint32_t width, uint32_t height, const Options& options = Options());
 		~Swapchain();
 
-		inline vk::SwapchainKHR getHandle() const { return mSwapchainHandle; };
-		inline const std::vector<vk::Image>& getImageHandles() const { return mImageHandles; }
-		inline const std::vector<vk::ImageView>& getImageViewHandles() const { return mImageViewHandles; }
-		inline size_t getImageCount() const { return mImageHandles.size(); }
-		inline vk::Extent2D getImageExtent() const { return mSwapchainImageExtent; }
-		inline vk::Format getImageFormat() const { return mSwapchainImageFormat; }
-		uint32_t acquireNextSwapchainImage(const SemaphoreRef &tSemaphore, uint32_t tNanosecondsTimeout = std::numeric_limits<uint64_t>::max());
+		inline vk::SwapchainKHR get_handle() const { return m_swapchain_handle; };
+		inline const std::vector<vk::Image>& get_image_handles() const { return m_image_handles; }
+		inline const std::vector<vk::ImageView>& get_image_view_handles() const { return m_image_view_handles; }
+		inline size_t get_image_count() const { return m_image_handles.size(); }
+		inline vk::Extent2D get_image_extent() const { return m_swapchain_image_extent; }
+		inline vk::Format get_image_format() const { return m_swapchain_image_format; }
+		uint32_t acquire_next_swapchain_image(const SemaphoreRef& semaphore, uint32_t timeout = std::numeric_limits<uint64_t>::max());
 
 	private:
 
-		vk::SurfaceFormatKHR selectSwapchainSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &tSurfaceFormats) const;
-		vk::PresentModeKHR selectSwapchainPresentMode(const std::vector<vk::PresentModeKHR> &tPresentModes) const;
-		vk::Extent2D selectSwapchainExtent(const vk::SurfaceCapabilitiesKHR &tSurfaceCapabilities) const;
-		void createImageViews();
+		vk::SurfaceFormatKHR select_swapchain_surface_format(const std::vector<vk::SurfaceFormatKHR>& surface_formats) const;
+		vk::PresentModeKHR select_swapchain_present_mode(const std::vector<vk::PresentModeKHR>& present_modes) const;
+		vk::Extent2D select_swapchain_extent(const vk::SurfaceCapabilitiesKHR& surface_capabilities) const;
+		void create_image_views();
 
-		DeviceRef mDevice;
-		SurfaceRef mSurface;
-		vk::SwapchainKHR mSwapchainHandle;
-		std::vector<vk::Image> mImageHandles;
-		std::vector<vk::ImageView> mImageViewHandles;
-		vk::Format mSwapchainImageFormat;
-		vk::Extent2D mSwapchainImageExtent;
-		uint32_t mWidth;
-		uint32_t mHeight;
+		DeviceRef m_device;
+		SurfaceRef m_surface;
+		vk::SwapchainKHR m_swapchain_handle;
+		std::vector<vk::Image> m_image_handles;
+		std::vector<vk::ImageView> m_image_view_handles;
+		vk::Format m_swapchain_image_format;
+		vk::Extent2D m_swapchain_image_extent;
+		uint32_t m_width;
+		uint32_t m_height;
 	};
 
 } // namespace graphics

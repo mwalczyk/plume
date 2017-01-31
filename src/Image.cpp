@@ -29,186 +29,184 @@
 namespace graphics
 {
 
-	bool ImageBase::isDepthFormat(vk::Format tFormat)
+	bool ImageBase::is_depth_format(vk::Format format)
 	{
-		return (tFormat == vk::Format::eD16Unorm ||
-			tFormat == vk::Format::eD16UnormS8Uint ||
-			tFormat == vk::Format::eD24UnormS8Uint ||
-			tFormat == vk::Format::eD32Sfloat ||
-			tFormat == vk::Format::eD32SfloatS8Uint);
+		return (format == vk::Format::eD16Unorm ||
+			format == vk::Format::eD16UnormS8Uint ||
+			format == vk::Format::eD24UnormS8Uint ||
+			format == vk::Format::eD32Sfloat ||
+			format == vk::Format::eD32SfloatS8Uint);
 	}
 
-	bool ImageBase::isStencilFormat(vk::Format tFormat)
+	bool ImageBase::is_stencil_format(vk::Format format)
 	{
-		return (tFormat == vk::Format::eD16UnormS8Uint ||
-				tFormat == vk::Format::eD24UnormS8Uint ||
-				tFormat == vk::Format::eD32SfloatS8Uint);
+		return (format == vk::Format::eD16UnormS8Uint ||
+			format == vk::Format::eD24UnormS8Uint ||
+			format == vk::Format::eD32SfloatS8Uint);
 	}
 
-	vk::ImageAspectFlags ImageBase::formatToAspectMask(vk::Format tFormat)
+	vk::ImageAspectFlags ImageBase::format_to_aspect_mask(vk::Format format)
 	{
-		vk::ImageAspectFlags imageAspectFlags;
+		vk::ImageAspectFlags image_aspect_flags;
 
-		if (isDepthFormat(tFormat))
+		if (is_depth_format(format))
 		{
-			imageAspectFlags = vk::ImageAspectFlagBits::eDepth;
-			if (isStencilFormat(tFormat))
+			image_aspect_flags = vk::ImageAspectFlagBits::eDepth;
+			if (is_stencil_format(format))
 			{
-				imageAspectFlags |= vk::ImageAspectFlagBits::eStencil;
+				image_aspect_flags |= vk::ImageAspectFlagBits::eStencil;
 			}
 		}
 		else
 		{
-			imageAspectFlags = vk::ImageAspectFlagBits::eColor;
+			image_aspect_flags = vk::ImageAspectFlagBits::eColor;
 		}
 		
-		return imageAspectFlags;
+		return image_aspect_flags;
 	}
 
 	ImageBase::~ImageBase()
 	{
-		mDevice->getHandle().destroyImage(mImageHandle);
+		m_device->getHandle().destroyImage(m_image_handle);
 	}
 
-	vk::Sampler ImageBase::buildSampler() const
+	vk::Sampler ImageBase::build_sampler() const
 	{
-		vk::SamplerCreateInfo samplerCreateInfo;
-		samplerCreateInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
-		samplerCreateInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
-		samplerCreateInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
-		samplerCreateInfo.anisotropyEnable = VK_TRUE;
-		samplerCreateInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
-		samplerCreateInfo.compareEnable = VK_FALSE;
-		samplerCreateInfo.compareOp = vk::CompareOp::eAlways;
-		samplerCreateInfo.magFilter = vk::Filter::eLinear;
-		samplerCreateInfo.maxAnisotropy = 16;
-		samplerCreateInfo.maxLod = 0.0f;
-		samplerCreateInfo.minFilter = vk::Filter::eLinear;
-		samplerCreateInfo.minLod = 0.0f;
-		samplerCreateInfo.mipLodBias = 0.0f;
-		samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
-		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
+		vk::SamplerCreateInfo sampler_create_info;
+		sampler_create_info.addressModeU = vk::SamplerAddressMode::eRepeat;
+		sampler_create_info.addressModeV = vk::SamplerAddressMode::eRepeat;
+		sampler_create_info.addressModeW = vk::SamplerAddressMode::eRepeat;
+		sampler_create_info.anisotropyEnable = VK_TRUE;
+		sampler_create_info.borderColor = vk::BorderColor::eIntOpaqueBlack;
+		sampler_create_info.compareEnable = VK_FALSE;
+		sampler_create_info.compareOp = vk::CompareOp::eAlways;
+		sampler_create_info.magFilter = vk::Filter::eLinear;
+		sampler_create_info.maxAnisotropy = 16;
+		sampler_create_info.maxLod = 0.0f;
+		sampler_create_info.minFilter = vk::Filter::eLinear;
+		sampler_create_info.minLod = 0.0f;
+		sampler_create_info.mipLodBias = 0.0f;
+		sampler_create_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
+		sampler_create_info.unnormalizedCoordinates = VK_FALSE;
 
-		return mDevice->getHandle().createSampler(samplerCreateInfo);
+		return m_device->getHandle().createSampler(sampler_create_info);
 	}
 
-	void ImageBase::initializeDeviceMemoryWithFlags(vk::MemoryPropertyFlags tMemoryPropertyFlags)
+	void ImageBase::initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags)
 	{
 		// Retrieve the memory requirements for this image.
-		auto memoryRequirements = mDevice->getHandle().getImageMemoryRequirements(mImageHandle);
-		auto requiredMemoryProperties = tMemoryPropertyFlags;
+		auto memory_requirements = m_device->getHandle().getImageMemoryRequirements(m_image_handle);
+		auto required_memory_properties = memory_property_flags;
 
 		// Allocate device memory.
-		mDeviceMemory = DeviceMemory::create(mDevice, memoryRequirements, requiredMemoryProperties);
+		m_device_memory = DeviceMemory::create(m_device, memory_requirements, required_memory_properties);
 
 		// Associate the device memory with this image.
-		mDevice->getHandle().bindImageMemory(mImageHandle, mDeviceMemory->getHandle(), 0);
+		m_device->getHandle().bindImageMemory(m_image_handle, m_device_memory->get_handle(), 0);
 	}
 
 	Image2D::Options::Options()
 	{
-		mImageTiling = vk::ImageTiling::eLinear;
-		mSampleCountFlagBits = vk::SampleCountFlagBits::e1;
-		mMipLevels = 1;
+		m_image_tiling = vk::ImageTiling::eLinear;
+		m_sample_count_flag_bits = vk::SampleCountFlagBits::e1;
+		m_mip_levels = 1;
 	}
 
-	Image2D::Image2D(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, vk::Format tFormat, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
-		ImageBase(tDevice, tImageUsageFlags, tFormat, tWidth, tHeight, 1),
-		mMipLevels(tOptions.mMipLevels)
+	Image2D::Image2D(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, const Options& options) :
+		ImageBase(device, image_usage_flags, format, width, height, 1),
+		m_mip_levels(options.m_mip_levels)
 	{
-		mCurrentLayout = vk::ImageLayout::eUndefined;
+		m_current_layout = vk::ImageLayout::eUndefined;
 
-		vk::ImageCreateInfo imageCreateInfo;
-		imageCreateInfo.arrayLayers = 1;
-		imageCreateInfo.extent.width = mWidth;
-		imageCreateInfo.extent.height = mHeight;
-		imageCreateInfo.extent.depth = mDepth;
-		imageCreateInfo.format = mFormat;
-		imageCreateInfo.initialLayout = mCurrentLayout;
-		imageCreateInfo.imageType = vk::ImageType::e2D;
-		imageCreateInfo.mipLevels = mMipLevels;
-		imageCreateInfo.pQueueFamilyIndices = tOptions.mQueueFamilyIndices.data();
-		imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(tOptions.mQueueFamilyIndices.size());
-		imageCreateInfo.samples = tOptions.mSampleCountFlagBits;
-		imageCreateInfo.sharingMode = (imageCreateInfo.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
-		imageCreateInfo.tiling = tOptions.mImageTiling;
-		imageCreateInfo.usage = mImageUsageFlags;
+		vk::ImageCreateInfo image_create_info;
+		image_create_info.arrayLayers = 1;
+		image_create_info.extent.width = m_width;
+		image_create_info.extent.height = m_height;
+		image_create_info.extent.depth = m_depth;
+		image_create_info.format = m_format;
+		image_create_info.initialLayout = m_current_layout;
+		image_create_info.imageType = vk::ImageType::e2D;
+		image_create_info.mipLevels = m_mip_levels;
+		image_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();
+		image_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
+		image_create_info.samples = options.m_sample_count_flag_bits;
+		image_create_info.sharingMode = (image_create_info.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
+		image_create_info.tiling = options.m_image_tiling;
+		image_create_info.usage = m_image_usage_flags;
 
-		mImageHandle = mDevice->getHandle().createImage(imageCreateInfo);
+		m_image_handle = m_device->getHandle().createImage(image_create_info);
 
-		initializeDeviceMemoryWithFlags(vk::MemoryPropertyFlagBits::eDeviceLocal);
+		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eDeviceLocal);
 	}
 
-	Image2D::Image2D(const DeviceRef &tDevice, vk::ImageUsageFlags tImageUsageFlags, vk::Format tFormat, const ImageResource &tResource, const Options &tOptions) :
-		ImageBase(tDevice, tImageUsageFlags, tFormat, tResource.width, tResource.height, 1),
-		mMipLevels(tOptions.mMipLevels)
+	Image2D::Image2D(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options) :
+		ImageBase(device, image_usage_flags, format, resource.width, resource.height, 1),
+		m_mip_levels(options.m_mip_levels)
 	{	
-		mCurrentLayout = vk::ImageLayout::ePreinitialized;
+		m_current_layout = vk::ImageLayout::ePreinitialized;
 
-		vk::ImageCreateInfo imageCreateInfo;
-		imageCreateInfo.arrayLayers = 1;
-		imageCreateInfo.extent.width = mWidth;
-		imageCreateInfo.extent.height = mHeight;
-		imageCreateInfo.extent.depth = mDepth;
-		imageCreateInfo.format = mFormat;
-		imageCreateInfo.initialLayout = mCurrentLayout;
-		imageCreateInfo.imageType = vk::ImageType::e2D;
-		imageCreateInfo.mipLevels = mMipLevels;
-		imageCreateInfo.pQueueFamilyIndices = tOptions.mQueueFamilyIndices.data();
-		imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(tOptions.mQueueFamilyIndices.size());
-		imageCreateInfo.samples = tOptions.mSampleCountFlagBits;
-		imageCreateInfo.sharingMode = (imageCreateInfo.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
-		imageCreateInfo.tiling = tOptions.mImageTiling;
-		imageCreateInfo.usage = mImageUsageFlags; 
+		vk::ImageCreateInfo image_create_info;
+		image_create_info.arrayLayers = 1;
+		image_create_info.extent.width = m_width;
+		image_create_info.extent.height = m_height;
+		image_create_info.extent.depth = m_depth;
+		image_create_info.format = m_format;
+		image_create_info.initialLayout = m_current_layout;
+		image_create_info.imageType = vk::ImageType::e2D;
+		image_create_info.mipLevels = m_mip_levels;
+		image_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();
+		image_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
+		image_create_info.samples = options.m_sample_count_flag_bits;
+		image_create_info.sharingMode = (image_create_info.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
+		image_create_info.tiling = options.m_image_tiling;
+		image_create_info.usage = m_image_usage_flags; 
 
-		mImageHandle = mDevice->getHandle().createImage(imageCreateInfo);
+		m_image_handle = m_device->getHandle().createImage(image_create_info);
 		
-		initializeDeviceMemoryWithFlags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 	
 		// Fill the image with the provided data.
-		void* mappedPtr = mDeviceMemory->map(0, mDeviceMemory->getAllocationSize());	// Map
+		void* mapped_ptr = m_device_memory->map(0, m_device_memory->get_allocation_size());		// Map
 
-		vk::ImageSubresource imageSubresource;
-		imageSubresource.aspectMask = formatToAspectMask(mFormat);
-		imageSubresource.arrayLayer = 0;
-		imageSubresource.mipLevel = 0;
+		vk::ImageSubresource image_subresource;
+		image_subresource.aspectMask = format_to_aspect_mask(m_format);
+		image_subresource.arrayLayer = 0;
+		image_subresource.mipLevel = 0;
 
-		vk::SubresourceLayout subresourceLayout = mDevice->getHandle().getImageSubresourceLayout(mImageHandle, imageSubresource);
+		vk::SubresourceLayout subresource_layout = m_device->getHandle().getImageSubresourceLayout(m_image_handle, image_subresource);
 			
 		// The subresource has no additional padding, so we can directly copy the pixel data into the image.
 		// This usually happens when the requested image is a power-of-two texture.
-		VkDeviceSize imageSize = mWidth * mHeight * 4;
-		if (subresourceLayout.rowPitch == mWidth * 4)
+		VkDeviceSize image_size = m_width * m_height * 4;
+		if (subresource_layout.rowPitch == m_width * 4)
 		{
-			memcpy(mappedPtr, tResource.contents.data(), static_cast<size_t>(imageSize));
+			memcpy(mapped_ptr, resource.contents.data(), static_cast<size_t>(image_size));
 		}
 		else 
 		{
-			uint8_t* dataAsBytes = reinterpret_cast<uint8_t*>(mappedPtr);
-			for (size_t i = 0; i < mHeight; ++i)
+			uint8_t* data_as_bytes = reinterpret_cast<uint8_t*>(mapped_ptr);
+			for (size_t i = 0; i < m_height; ++i)
 			{
-				memcpy(&dataAsBytes[i * subresourceLayout.rowPitch],
-					   &tResource.contents[i * mWidth * 4],
-						mWidth * 4);
+				memcpy(&data_as_bytes[i * subresource_layout.rowPitch], &resource.contents[i * m_width * 4], m_width * 4);
 			}
 		}
 			
-		mDeviceMemory->unmap();															// Unmap
+		m_device_memory->unmap();																// Unmap
 	}
 
-	vk::ImageView Image2D::buildImageView() const
+	vk::ImageView Image2D::build_image_view() const
 	{
-		vk::ImageViewCreateInfo imageViewCreateInfo;
-		imageViewCreateInfo.format = mFormat;
-		imageViewCreateInfo.image = mImageHandle;
-		imageViewCreateInfo.subresourceRange.aspectMask = formatToAspectMask(mFormat);
-		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-		imageViewCreateInfo.subresourceRange.layerCount = 1;
-		imageViewCreateInfo.subresourceRange.levelCount = 1;
-		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
+		vk::ImageViewCreateInfo image_view_create_info;
+		image_view_create_info.format = m_format;
+		image_view_create_info.image = m_image_handle;
+		image_view_create_info.subresourceRange.aspectMask = format_to_aspect_mask(m_format);
+		image_view_create_info.subresourceRange.baseArrayLayer = 0;
+		image_view_create_info.subresourceRange.baseMipLevel = 0;
+		image_view_create_info.subresourceRange.layerCount = 1;
+		image_view_create_info.subresourceRange.levelCount = 1;
+		image_view_create_info.viewType = vk::ImageViewType::e2D;
 		
-		return mDevice->getHandle().createImageView(imageViewCreateInfo);
+		return m_device->getHandle().createImageView(image_view_create_info);
 	}
 
 } // namespace graphics

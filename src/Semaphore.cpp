@@ -29,19 +29,17 @@
 namespace graphics
 {
 
-	Semaphore::Semaphore(const DeviceRef &tDevice) :
-		mDevice(tDevice)
+	Semaphore::Semaphore(const DeviceRef& device) :
+		m_device(device)
 	{
-		VkSemaphoreCreateInfo semaphoreCreateInfo = {};
-		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		vk::SemaphoreCreateInfo semaphore_create_info;
 
-		auto result = vkCreateSemaphore(mDevice->getHandle(), &semaphoreCreateInfo, nullptr, &mSemaphoreHandle);
-		assert(result == VK_SUCCESS);
+		m_semaphore_handle = m_device->getHandle().createSemaphore(semaphore_create_info);
 	}
 
 	Semaphore::~Semaphore()
 	{
-		vkDestroySemaphore(mDevice->getHandle(), mSemaphoreHandle, nullptr);
+		m_device->getHandle().destroySemaphore(m_semaphore_handle);
 	}
 
 } // namespace graphics

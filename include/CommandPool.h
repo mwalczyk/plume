@@ -50,30 +50,30 @@ namespace graphics
 
 			//! Determines how and when individual command buffers allocated from this pool can be re-recorded. 
 			//! Possible flags are vk::CommandPoolCreateFlagBits::eTransient and vk::CommandPoolCreateFlagBits::eResetCommandBuffer.
-			Options& commandPoolCreateFlags(vk::CommandPoolCreateFlags tCommandPoolCreateFlags) { mCommandPoolCreateFlags = tCommandPoolCreateFlags; return *this; }
+			Options& command_pool_create_flags(vk::CommandPoolCreateFlags command_pool_create_flags) { m_command_pool_create_flags = command_pool_create_flags; return *this; }
 			
 		private:
 
-			vk::CommandPoolCreateFlags mCommandPoolCreateFlags;
+			vk::CommandPoolCreateFlags m_command_pool_create_flags;
 
 			friend class CommandPool;
 		};
 
 		//! Factory method for returning a new CommandPoolRef.
-		static CommandPoolRef create(const DeviceRef &tDevice, uint32_t tQueueFamilyIndex, const Options &tOptions = Options())
+		static CommandPoolRef create(const DeviceRef& device, uint32_t queue_family_index, const Options& options = Options())
 		{
-			return std::make_shared<CommandPool>(tDevice, tQueueFamilyIndex, tOptions);
+			return std::make_shared<CommandPool>(device, queue_family_index, options);
 		}
 
-		CommandPool(const DeviceRef &tDevice, uint32_t tQueueFamilyIndex, const Options &tOptions = Options());
+		CommandPool(const DeviceRef& device, uint32_t queue_family_index, const Options& options = Options());
 		~CommandPool();
 
-		inline vk::CommandPool getHandle() const { return mCommandPoolHandle; };
+		inline vk::CommandPool get_handle() const { return m_command_pool_handle; };
 
 	private:
 
-		DeviceRef mDevice;
-		vk::CommandPool mCommandPoolHandle;
+		DeviceRef m_device;
+		vk::CommandPool m_command_pool_handle;
 	};
 
 } // namespace graphics

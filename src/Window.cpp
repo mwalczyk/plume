@@ -31,17 +31,17 @@ namespace graphics
 
 	Window::Options::Options()
 	{
-		mTitle = "Spectra Application";
-		mResizeable = false;
-		mWindowMode = WindowMode::WINDOW_MODE_BORDERS;
+		m_title = "Spectrum Application";
+		m_resizeable = false;
+		m_mode = WindowMode::WINDOW_MODE_BORDERS;
 	}
 
-	Window::Window(const InstanceRef &tInstance, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
-		mInstance(tInstance),
-		mWidth(tWidth),
-		mHeight(tHeight),
-		mTitle(tOptions.mTitle),
-		mWindowMode(tOptions.mWindowMode)
+	Window::Window(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options) :
+		m_instance(instance),
+		m_width(width),
+		m_height(height),
+		m_title(options.m_title),
+		m_window_mode(options.m_mode)
 	{
 		glfwInit();
 
@@ -49,13 +49,13 @@ namespace graphics
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 		// Disable borders if requested.
-		if (tOptions.mWindowMode == WindowMode::WINDOW_MODE_BORDERLESS)
+		if (m_window_mode == WindowMode::WINDOW_MODE_BORDERLESS)
 		{
 			glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 		}
 
 		// Enable resizing if requested.
-		if (tOptions.mResizeable)
+		if (options.m_resizeable)
 		{
 			glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		}
@@ -64,139 +64,138 @@ namespace graphics
 			glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		}
 
-		mWindowHandle = glfwCreateWindow(mWidth, mHeight, mTitle.c_str(), nullptr, nullptr);
+		m_window_handle = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
 
 		// Set the GLFW window user pointer to 'this' so that a member function can be used for mouse callbacks. 
 		// See: http://stackoverflow.com/questions/7676971/pointing-to-a-function-that-is-a-class-member-glfw-setkeycallback
-		glfwSetWindowUserPointer(mWindowHandle, this);
+		glfwSetWindowUserPointer(m_window_handle, this);
 		
-		initializeCallbacks();
+		initialize_callbacks();
 	}
 
 	Window::~Window()
 	{
-		glfwDestroyWindow(mWindowHandle);
+		glfwDestroyWindow(m_window_handle);
 	}
 
-	SurfaceRef Window::createSurface()
+	SurfaceRef Window::create_surface()
 	{
-		auto surface = Surface::create(mInstance);
+		auto surface = Surface::create(m_instance);
 
 		// This class is a friend of the Surface class, so we can directly access the VkSurfaceKHR handle.
-		auto result = glfwCreateWindowSurface(mInstance->getHandle(), mWindowHandle, nullptr, &surface->mSurfaceHandle);
-		assert(result == VK_SUCCESS);
+		glfwCreateWindowSurface(m_instance->getHandle(), m_window_handle, nullptr, reinterpret_cast<VkSurfaceKHR*>(&surface->m_surface_handle));
 
 		return surface;
 	}
 
-	std::vector<const char*> Window::getRequiredInstanceExtensions() const
+	std::vector<const char*> Window::get_required_instance_extensions() const
 	{
-		uint32_t glfwRequiredExtensionCount = 0;
-		const char** glfwRequiredExtensionNames = glfwGetRequiredInstanceExtensions(&glfwRequiredExtensionCount);
+		uint32_t glfw_required_extension_count = 0;
+		const char** glfw_required_extension_names = glfwGetRequiredInstanceExtensions(&glfw_required_extension_count);
 		
 		// Convert to a vector
-		std::vector<const char*> requiredExtensionNames;
-		for (size_t i = 0; i < glfwRequiredExtensionCount; ++i)
+		std::vector<const char*> required_extension_names;
+		for (size_t i = 0; i < glfw_required_extension_count; ++i)
 		{
-			requiredExtensionNames.push_back(glfwRequiredExtensionNames[i]);
+			required_extension_names.push_back(glfw_required_extension_names[i]);
 		}
 
-		return requiredExtensionNames;
+		return required_extension_names;
 	}
 
-	VkViewport Window::getFullscreenViewport() const
+	vk::Viewport Window::get_fullscreen_viewport() const
 	{
-		VkViewport viewport = {};
+		vk::Viewport viewport;
 		viewport.x = 0;
 		viewport.y = 0;
-		viewport.width = static_cast<float>(mWidth);
-		viewport.height = static_cast<float>(mHeight);
+		viewport.width = static_cast<float>(m_width);
+		viewport.height = static_cast<float>(m_height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		return viewport;
 	}
 
-	VkRect2D Window::getFullscreenScissorRect2D() const
+	vk::Rect2D Window::get_fullscreen_scissor_rect2d() const
 	{
-		VkRect2D scissor = {};
-		scissor.extent = { mWidth, mHeight };
+		vk::Rect2D scissor;
+		scissor.extent = { m_width, m_height };
 		scissor.offset = { 0, 0 };
 
 		return scissor;
 	}
 
-	void Window::onMouseMoved(double tX, double tY)
+	void Window::on_mouse_moved(double x, double y)
 	{
-		for (const auto &connection : mMouseMovedConnections)
+		for (const auto &connection : m_mouse_moved_connections)
 		{
-			connection(tX, tY);
+			connection(x, y);
 		}
 	}
 
-	void Window::onMousePressed(int tButton, int tAction, int tMods)
+	void Window::on_mouse_pressed(int button, int action, int mods)
 	{
-		if (tAction == GLFW_REPEAT)
+		if (action == GLFW_REPEAT)
 		{
 			return;
 		}
 
-		bool pressed = (tAction == GLFW_PRESS) ? true : false;
+		bool pressed = (action == GLFW_PRESS) ? true : false;
 
-		for (const auto &connection : mMousePressedConnections)
+		for (const auto &connection : m_mouse_pressed_connections)
 		{
-			connection(tButton, pressed, tMods);
+			connection(button, pressed, mods);
 		}
 	}
 
-	void Window::onKeyPressed(int tKey, int tScancode, int tAction, int tMods)
+	void Window::on_key_pressed(int key, int scancode, int action, int mods)
 	{
-		if (tAction == GLFW_REPEAT)
+		if (action == GLFW_REPEAT)
 		{
 			return;
 		}
 
-		bool pressed = (tAction == GLFW_PRESS) ? true : false;
+		bool pressed = (action == GLFW_PRESS) ? true : false;
 
-		for (const auto &connection : mKeyPressedConnections)
+		for (const auto &connection : m_key_pressed_connections)
 		{
-			connection(tKey, tScancode, pressed, tMods);
+			connection(key, scancode, pressed, mods);
 		}
 	}
 
-	void Window::onScroll(double tXOffset, double tYOffset)
+	void Window::on_scroll(double x_offset, double y_offset)
 	{
-		for (const auto &connection : mScrollConnections)
+		for (const auto &connection : m_scroll_connections)
 		{
-			connection(tXOffset, tYOffset);
+			connection(x_offset, y_offset);
 		}
 	}
 
-	void Window::initializeCallbacks()
+	void Window::initialize_callbacks()
 	{
-		auto mouseMovedProxy = [](GLFWwindow* tWindowHandle, double tX, double tY)
+		auto mouse_moved_proxy = [](GLFWwindow* handle, double x, double y)
 		{
-			static_cast<Window*>(glfwGetWindowUserPointer(tWindowHandle))->onMouseMoved(tX, tY);
+			static_cast<Window*>(glfwGetWindowUserPointer(handle))->on_mouse_moved(x, y);
 		};
-		glfwSetCursorPosCallback(mWindowHandle, mouseMovedProxy);
+		glfwSetCursorPosCallback(m_window_handle, mouse_moved_proxy);
 
-		auto mousePressedProxy = [](GLFWwindow* tWindowHandle, int tButton, int tAction, int tMods)
+		auto mouse_pressed_proxy = [](GLFWwindow* handle, int button, int action, int mods)
 		{
-			static_cast<Window*>(glfwGetWindowUserPointer(tWindowHandle))->onMousePressed(tButton, tAction, tMods);
+			static_cast<Window*>(glfwGetWindowUserPointer(handle))->on_mouse_pressed(button, action, mods);
 		};
-		glfwSetMouseButtonCallback(mWindowHandle, mousePressedProxy);
+		glfwSetMouseButtonCallback(m_window_handle, mouse_pressed_proxy);
 
-		auto keyPressedProxy = [](GLFWwindow* tWindowHandle, int tKey, int tScancode, int tAction, int tMods)
+		auto key_pressed_proxy = [](GLFWwindow* handle, int key, int scancode, int action, int mods)
 		{
-			static_cast<Window*>(glfwGetWindowUserPointer(tWindowHandle))->onKeyPressed(tKey, tScancode, tAction, tMods);
+			static_cast<Window*>(glfwGetWindowUserPointer(handle))->on_key_pressed(key, scancode, action, mods);
 		};
-		glfwSetKeyCallback(mWindowHandle, keyPressedProxy);
+		glfwSetKeyCallback(m_window_handle, key_pressed_proxy);
 
-		auto scrollProxy = [](GLFWwindow* tWindowHandle, double tXOffset, double tYOffset)
+		auto scroll_proxy = [](GLFWwindow* handle, double x_offset, double y_offset)
 		{
-			static_cast<Window*>(glfwGetWindowUserPointer(tWindowHandle))->onScroll(tXOffset, tYOffset);
+			static_cast<Window*>(glfwGetWindowUserPointer(handle))->on_scroll(x_offset, y_offset);
 		};
-		glfwSetScrollCallback(mWindowHandle, scrollProxy);
+		glfwSetScrollCallback(m_window_handle, scroll_proxy);
 	}
 
 } // namespace graphics

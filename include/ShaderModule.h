@@ -63,7 +63,7 @@ namespace graphics
 		//! layout (location = 0) in vec3 inPosition;
 		struct StageInput
 		{
-			uint32_t layoutLocation;
+			uint32_t layout_location;
 			uint32_t size;
 			std::string name;
 		};
@@ -77,50 +77,50 @@ namespace graphics
 		//! } ubo;
 		struct Descriptor
 		{
-			uint32_t layoutSet;
-			uint32_t layoutBinding;
-			uint32_t descriptorCount;
-			vk::DescriptorType descriptorType;
+			uint32_t layout_set;
+			uint32_t layout_binding;
+			uint32_t descriptor_count;
+			vk::DescriptorType descriptor_type;
 			std::string name;
 		};
 
 		//! Factory method for returning a new ShaderModuleRef.
-		static ShaderModuleRef create(const DeviceRef &tDevice, const FileResource &tResource)
+		static ShaderModuleRef create(const DeviceRef& device, const FileResource& resouce)
 		{
-			return std::make_shared<ShaderModule>(tDevice, tResource);
+			return std::make_shared<ShaderModule>(device, resouce);
 		}
 
-		ShaderModule(const DeviceRef &tDevice, const FileResource &tResource);
+		ShaderModule(const DeviceRef& device, const FileResource& resouce);
 		~ShaderModule();
 
-		inline vk::ShaderModule getHandle() const { return mShaderModuleHandle; }
+		inline vk::ShaderModule get_handle() const { return m_shader_module_handle; }
 
 		//! Retrieve the binary SPIR-V shader code that is held by this shader.
-		inline const std::vector<uint32_t>& getShaderCode() const { return mShaderCode; }
+		inline const std::vector<uint32_t>& get_shader_code() const { return m_shader_code; }
 
 		//! Retrieve a list of available entry points within this GLSL shader (usually "main").
-		inline const std::vector<std::string>& getEntryPoints() const { return mEntryPoints; }
+		inline const std::vector<std::string>& get_entry_points() const { return m_entry_points; }
 
 		//! Retrieve a list of low-level details about the push constants contained within this GLSL shader.
-		inline const std::vector<PushConstant> getPushConstants() const { return mPushConstants; }
+		inline const std::vector<PushConstant> get_push_constants() const { return m_push_constants; }
 
 		//! Retrieve a list of low-level details about the descriptors contained within this GLSL shader.
-		inline const std::vector<Descriptor>& getDescriptors() const { return mDescriptors; }
+		inline const std::vector<Descriptor>& get_descriptors() const { return m_descriptors; }
 
 	private:
 
-		void performReflection();
+		void perform_reflection();
 
 		//! Used during reflection to convert a shader resource into a descriptor struct.
-		void resourceToDescriptor(const spirv_cross::CompilerGLSL &tCompiler, const spirv_cross::Resource &tResource, vk::DescriptorType tDescriptorType);
+		void resource_to_descriptor(const spirv_cross::CompilerGLSL& compiler, const spirv_cross::Resource& resource, vk::DescriptorType descriptor_type);
 
-		DeviceRef mDevice;
-		vk::ShaderModule mShaderModuleHandle;
-		std::vector<uint32_t> mShaderCode;
-		std::vector<std::string> mEntryPoints;
-		std::vector<StageInput> mStageInputs;
-		std::vector<PushConstant> mPushConstants;
-		std::vector<Descriptor> mDescriptors;
+		DeviceRef m_device;
+		vk::ShaderModule m_shader_module_handle;
+		std::vector<uint32_t> m_shader_code;
+		std::vector<std::string> m_entry_points;
+		std::vector<StageInput> m_stage_inputs;
+		std::vector<PushConstant> m_push_constants;
+		std::vector<Descriptor> m_descriptors;
 	};
 
 } // namespace graphics

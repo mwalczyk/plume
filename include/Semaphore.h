@@ -43,21 +43,20 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new SemaphoreRef.
-		static SemaphoreRef create(const DeviceRef &tDevice)
+		static SemaphoreRef create(const DeviceRef& device)
 		{
-			return std::make_shared<Semaphore>(tDevice);
+			return std::make_shared<Semaphore>(device);
 		}
 
-		Semaphore(const DeviceRef &tDevice);
+		Semaphore(const DeviceRef& device);
 		~Semaphore();
 
-		inline VkSemaphore getHandle() const { return mSemaphoreHandle; };
+		inline vk::Semaphore get_handle() const { return m_semaphore_handle; };
 
 	private:
 
-		VkSemaphore mSemaphoreHandle;
-
-		DeviceRef mDevice;
+		DeviceRef m_device;
+		vk::Semaphore m_semaphore_handle;
 	};
 
 } // namespace graphics

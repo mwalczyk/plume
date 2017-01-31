@@ -70,78 +70,78 @@ namespace graphics
 
 			Options();
 
-			Options& title(const std::string &tTitle) { mTitle = tTitle; return *this; }
-			Options& resizeable(bool tResizeable) { mResizeable = tResizeable; return *this; }
-			Options& mode(WindowMode tWindowMode) { mWindowMode = tWindowMode; return *this; }
+			Options& title(const std::string &tTitle) { m_title = tTitle; return *this; }
+			Options& resizeable(bool resizeable) { m_resizeable = resizeable; return *this; }
+			Options& mode(WindowMode mode) { m_mode = mode; return *this; }
 
 		private:
 
-			std::string mTitle;
-			bool mResizeable;
-			WindowMode mWindowMode;
+			std::string m_title;
+			bool m_resizeable;
+			WindowMode m_mode;
 
 			friend class Window;
 		};
 
 		//! Factory method for returning a new WindowRef
-		static WindowRef create(const InstanceRef &tInstance, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options())
+		static WindowRef create(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options = Options())
 		{
-			return std::make_shared<Window>(tInstance, tWidth, tHeight, tOptions);
+			return std::make_shared<Window>(instance, width, height, options);
 		}
 
-		Window(const InstanceRef &tInstance, uint32_t tWidth, uint32_t tHeight, const Options &tOptions = Options());
+		Window(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options = Options());
 		~Window();
 
-		SurfaceRef createSurface();
-		inline GLFWwindow* getWindowHandle() const { return mWindowHandle; }
-		inline uint32_t getWidth() const { return mWidth; }
-		inline uint32_t getHeight() const { return mHeight; }
-		inline const std::string& getTitle() const { return mTitle; }
-		inline void setTitle(const std::string &tTitle) { glfwSetWindowTitle(mWindowHandle, tTitle.c_str()); }
+		SurfaceRef create_surface();
+		inline GLFWwindow* getWindowHandle() const { return m_window_handle; }
+		inline uint32_t get_width() const { return m_width; }
+		inline uint32_t get_height() const { return m_height; }
+		inline const std::string& get_title() const { return m_title; }
+		inline void set_title(const std::string& title) { glfwSetWindowTitle(m_window_handle, title.c_str()); }
 
 		//! Returns the instance extensions required by the windowing system
-		std::vector<const char*> getRequiredInstanceExtensions() const;
+		std::vector<const char*> get_required_instance_extensions() const;
 
-		//! Returns a VkViewport structure that corresponds to the full extents of this window.
-		VkViewport getFullscreenViewport() const;
+		//! Returns a viewport that corresponds to the full extents of this window.
+		vk::Viewport get_fullscreen_viewport() const;
 
-		//! Returns a VkRect2D structure (scissor region) that corresponds to the full extents of this window.
-		VkRect2D getFullscreenScissorRect2D() const;
+		//! Returns a rect (scissor region) that corresponds to the full extents of this window.
+		vk::Rect2D get_fullscreen_scissor_rect2d() const;
 
-		inline int shouldWindowClose() const { return glfwWindowShouldClose(mWindowHandle); }
-		inline void pollEvents() const { glfwPollEvents(); }
-		inline glm::vec2 getMousePosition() const { double x, y; glfwGetCursorPos(mWindowHandle, &x, &y); return { x, y }; }
+		inline int should_close() const { return glfwWindowShouldClose(m_window_handle); }
+		inline void poll_events() const { glfwPollEvents(); }
+		inline glm::vec2 get_mouse_position() const { double x, y; glfwGetCursorPos(m_window_handle, &x, &y); return { x, y }; }
 
 		//! Add a callback function to this window's mouse moved event.
-		inline void connectToMouseMoved(const MouseMovedFuncType &tConnection) { mMouseMovedConnections.push_back(tConnection); }
+		inline void connect_to_mouse_moved(const MouseMovedFuncType& connection) { m_mouse_moved_connections.push_back(connection); }
 		
 		//! Add a callback function to this window's mouse pressed event.
-		inline void connectToMousePressed(const MousePressedFuncType &tConnection) { mMousePressedConnections.push_back(tConnection); }
+		inline void connect_to_mouse_pressed(const MousePressedFuncType& connection) { m_mouse_pressed_connections.push_back(connection); }
 		
 		//! Add a callback function to this window's key pressed event.
-		inline void connectToKeyPressed(const KeyPressedFuncType &tConnection) { mKeyPressedConnections.push_back(tConnection); }
+		inline void connect_to_key_pressed(const KeyPressedFuncType& connection) { m_key_pressed_connections.push_back(connection); }
 
 		//! Add a callback function to this window's scroll event.
-		inline void connectToScroll(const ScrollFuncType &tConnection) { mScrollConnections.push_back(tConnection); }
+		inline void connect_to_scroll(const ScrollFuncType& connection) { m_scroll_connections.push_back(connection); }
 
 	private:
 
-		void initializeCallbacks();
-		void onMouseMoved(double tX, double tY);
-		void onMousePressed(int tButton, int tAction, int tMods);
-		void onKeyPressed(int tKey, int tScancode, int tAction, int tMods);
-		void onScroll(double tXOffset, double tYOffset);
+		void initialize_callbacks();
+		void on_mouse_moved(double x, double y);
+		void on_mouse_pressed(int button, int action, int mods);
+		void on_key_pressed(int key, int scancode, int action, int mods);
+		void on_scroll(double x_offset, double y_offset);
 
-		InstanceRef mInstance;
-		GLFWwindow *mWindowHandle;
-		uint32_t mWidth;
-		uint32_t mHeight;
-		std::string mTitle;
-		WindowMode mWindowMode;
-		std::vector<MouseMovedFuncType> mMouseMovedConnections;
-		std::vector<MousePressedFuncType> mMousePressedConnections;
-		std::vector<KeyPressedFuncType> mKeyPressedConnections;
-		std::vector<ScrollFuncType> mScrollConnections;
+		InstanceRef m_instance;
+		GLFWwindow* m_window_handle;
+		uint32_t m_width;
+		uint32_t m_height;
+		std::string m_title;
+		WindowMode m_window_mode;
+		std::vector<MouseMovedFuncType> m_mouse_moved_connections;
+		std::vector<MousePressedFuncType> m_mouse_pressed_connections;
+		std::vector<KeyPressedFuncType> m_key_pressed_connections;
+		std::vector<ScrollFuncType> m_scroll_connections;
 	};
 
 } // namespace graphics

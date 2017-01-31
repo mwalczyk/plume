@@ -29,15 +29,15 @@
 namespace graphics
 {
 
-	Surface::Surface(const InstanceRef &tInstance) :
-		mInstance(tInstance)
+	Surface::Surface(const InstanceRef& instance) :
+		m_instance(instance)
 	{
 
 	}
 
 	Surface::~Surface()
 	{
-		vkDestroySurfaceKHR(mInstance->getHandle(), mSurfaceHandle, nullptr);
+		m_instance->getHandle().destroySurfaceKHR(m_surface_handle);
 	}
 
 } // namespace graphics

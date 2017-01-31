@@ -29,21 +29,21 @@
 namespace graphics
 {
 
-	static uint32_t getSizeFromType(spirv_cross::SPIRType tBaseType, uint32_t tRows, uint32_t tColumns)
+	static uint32_t get_size_from_type(spirv_cross::SPIRType base_type, uint32_t rows, uint32_t cols)
 	{
 		uint32_t size = 0;
-		switch (tBaseType.basetype)
+		switch (base_type.basetype)
 		{
 		case spirv_cross::SPIRType::Float:
-			size = tRows * tColumns * sizeof(float);
+			size = rows * cols * sizeof(float);
 			break;
 		case spirv_cross::SPIRType::Double:
 			break;
 		case spirv_cross::SPIRType::Int:
-			size = tRows * tColumns * sizeof(int);
+			size = rows * cols * sizeof(int);
 			break;
 		case spirv_cross::SPIRType::Int64:
-			size = tRows * tColumns * sizeof(uint64_t);
+			size = rows * cols * sizeof(uint64_t);
 			break;
 		case spirv_cross::SPIRType::UInt:
 			break;
@@ -69,133 +69,133 @@ namespace graphics
 		return size;
 	}
 
-	ShaderModule::ShaderModule(const DeviceRef &tDevice, const FileResource &tResource) :
-		mDevice(tDevice)
+	ShaderModule::ShaderModule(const DeviceRef& device, const FileResource& resource) :
+		m_device(device)
 	{
-		auto shaderSrc = tResource.contents;
-		if (shaderSrc.size() % 4)
+		auto shader_src = resource.contents;
+		if (shader_src.size() % 4)
 		{
 			throw std::runtime_error("Shader source code is an invalid size");
 		}
 
 		// Store the SPIR-V code for reflection.
-		auto pCode = reinterpret_cast<const uint32_t*>(shaderSrc.data());
-		mShaderCode = std::vector<uint32_t>(pCode, pCode + shaderSrc.size() / sizeof(uint32_t));
+		auto p_code = reinterpret_cast<const uint32_t*>(shader_src.data());
+		m_shader_code = std::vector<uint32_t>(p_code, p_code + shader_src.size() / sizeof(uint32_t));
 
 		// Create the actual shader module.
-		vk::ShaderModuleCreateInfo shaderModuleCreateInfo;
-		shaderModuleCreateInfo.codeSize = shaderSrc.size();
-		shaderModuleCreateInfo.pCode = pCode;
+		vk::ShaderModuleCreateInfo shader_module_create_info;
+		shader_module_create_info.codeSize = shader_src.size();
+		shader_module_create_info.pCode = p_code;
 		
-		mShaderModuleHandle = mDevice->getHandle().createShaderModule(shaderModuleCreateInfo);
+		m_shader_module_handle = m_device->getHandle().createShaderModule(shader_module_create_info);
 
-		performReflection();
+		perform_reflection();
 	}
 
 	ShaderModule::~ShaderModule()
 	{
-		mDevice->getHandle().destroyShaderModule(mShaderModuleHandle);
+		m_device->getHandle().destroyShaderModule(m_shader_module_handle);
 	}
 
-	void ShaderModule::performReflection()
+	void ShaderModule::perform_reflection()
 	{
 		// Parse the shader resources.
-		spirv_cross::CompilerGLSL compilerGlsl = spirv_cross::CompilerGLSL(mShaderCode);
-		spirv_cross::ShaderResources shaderResources = compilerGlsl.get_shader_resources();
+		spirv_cross::CompilerGLSL compiler_glsl = spirv_cross::CompilerGLSL(m_shader_code);
+		spirv_cross::ShaderResources shader_resources = compiler_glsl.get_shader_resources();
 
-		mEntryPoints = compilerGlsl.get_entry_points();
+		m_entry_points = compiler_glsl.get_entry_points();
 
 		// Get all of the push constants (currently, Vulkan only supports one block).
-		for (const auto &resource : shaderResources.push_constant_buffers)
+		for (const auto &resource : shader_resources.push_constant_buffers)
 		{
-			auto ranges = compilerGlsl.get_active_buffer_ranges(resource.id);
-			for (auto &range : ranges)
+			auto ranges = compiler_glsl.get_active_buffer_ranges(resource.id);
+			for (auto& range : ranges)
 			{
-				PushConstant pushConstant;
-				pushConstant.index = range.index;
-				pushConstant.name = compilerGlsl.get_member_name(resource.base_type_id, range.index);
-				pushConstant.offset = range.offset;
-				pushConstant.size = range.range;
+				PushConstant push_constant;
+				push_constant.index = range.index;
+				push_constant.name = compiler_glsl.get_member_name(resource.base_type_id, range.index);
+				push_constant.offset = range.offset;
+				push_constant.size = range.range;
 
-				mPushConstants.emplace_back(pushConstant);
+				m_push_constants.emplace_back(push_constant);
 			}
 		}
 
 		// Stage inputs
-		for (const auto &resource : shaderResources.stage_inputs)
+		for (const auto& resource : shader_resources.stage_inputs)
 		{
-			auto type = compilerGlsl.get_type(resource.type_id);
+			auto type = compiler_glsl.get_type(resource.type_id);
 
-			StageInput stageInput;
-			stageInput.layoutLocation = compilerGlsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
-			stageInput.name = resource.name;
-			stageInput.size = getSizeFromType(type, type.vecsize, 1);
+			StageInput input;
+			input.layout_location = compiler_glsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
+			input.name = resource.name;
+			input.size = get_size_from_type(type, type.vecsize, 1);
 
-			mStageInputs.emplace_back(stageInput);
+			m_stage_inputs.emplace_back(input);
 		}
 
 		// Stage outputs
-		for (const auto &resource : shaderResources.stage_outputs)
+		for (const auto &resource : shader_resources.stage_outputs)
 		{
 		}
 
 		// Sampled images
-		for (const auto &resource : shaderResources.sampled_images)
+		for (const auto &resource : shader_resources.sampled_images)
 		{
-			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eCombinedImageSampler);
+			resource_to_descriptor(compiler_glsl, resource, vk::DescriptorType::eCombinedImageSampler);
 		}
 
 		// Seperate samplers
-		for (const auto &resource : shaderResources.separate_samplers)
+		for (const auto &resource : shader_resources.separate_samplers)
 		{
-			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eSampler);
+			resource_to_descriptor(compiler_glsl, resource, vk::DescriptorType::eSampler);
 		}
 
 		// Separate images
-		for (const auto &resource : shaderResources.separate_images)
+		for (const auto &resource : shader_resources.separate_images)
 		{
-			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eSampledImage);
+			resource_to_descriptor(compiler_glsl, resource, vk::DescriptorType::eSampledImage);
 		}
 
 		// Atomic counters
-		for (const auto &resource : shaderResources.atomic_counters)
+		for (const auto &resource : shader_resources.atomic_counters)
 		{
 		}
 
 		// Subpass inputs
-		for (const auto &resource : shaderResources.subpass_inputs)
+		for (const auto &resource : shader_resources.subpass_inputs)
 		{
 		}
 
 		// Storage buffers (SSBOs)
-		for (const auto &resource : shaderResources.storage_buffers)
+		for (const auto &resource : shader_resources.storage_buffers)
 		{
-			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eStorageBuffer);
+			resource_to_descriptor(compiler_glsl, resource, vk::DescriptorType::eStorageBuffer);
 		}
 
 		// Storage images
-		for (const auto &resource : shaderResources.storage_images)
+		for (const auto &resource : shader_resources.storage_images)
 		{
-			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eStorageImage);
+			resource_to_descriptor(compiler_glsl, resource, vk::DescriptorType::eStorageImage);
 		}
 
 		// Uniform buffers (UBOs)
-		for (const auto &resource : shaderResources.uniform_buffers)
+		for (const auto &resource : shader_resources.uniform_buffers)
 		{
-			resourceToDescriptor(compilerGlsl, resource, vk::DescriptorType::eUniformBuffer);
+			resource_to_descriptor(compiler_glsl, resource, vk::DescriptorType::eUniformBuffer);
 		}
 	}
 
-	void ShaderModule::resourceToDescriptor(const spirv_cross::CompilerGLSL &tCompiler, const spirv_cross::Resource &tResource, vk::DescriptorType tDescriptorType)
+	void ShaderModule::resource_to_descriptor(const spirv_cross::CompilerGLSL& compiler, const spirv_cross::Resource& resource, vk::DescriptorType descriptor_type)
 	{
 		Descriptor descriptor;
-		descriptor.layoutSet = tCompiler.get_decoration(tResource.id, spv::Decoration::DecorationDescriptorSet);
-		descriptor.layoutBinding = tCompiler.get_decoration(tResource.id, spv::Decoration::DecorationBinding);
-		descriptor.descriptorCount = 1;
-		descriptor.descriptorType = tDescriptorType;
-		descriptor.name = tResource.name;
+		descriptor.layout_set = compiler.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
+		descriptor.layout_binding = compiler.get_decoration(resource.id, spv::Decoration::DecorationBinding);
+		descriptor.descriptor_count = 1;
+		descriptor.descriptor_type = descriptor_type;
+		descriptor.name = resource.name;
 
-		mDescriptors.push_back(descriptor);
+		m_descriptors.push_back(descriptor);
 	}
 
 } // namespace graphics

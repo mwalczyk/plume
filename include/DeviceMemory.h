@@ -43,28 +43,28 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new DeviceMemoryRef.
-		static DeviceMemoryRef create(const DeviceRef &tDevice, const vk::MemoryRequirements &tMemoryRequirements, vk::MemoryPropertyFlags tRequiredMemoryProperties)
+		static DeviceMemoryRef create(const DeviceRef& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties)
 		{
-			return std::make_shared<DeviceMemory>(tDevice, tMemoryRequirements, tRequiredMemoryProperties);
+			return std::make_shared<DeviceMemory>(device, memory_requirements, required_memory_properties);
 		}
 
 		//! Construct a stack allocated, non-copyable container that manages a device memory allocation.
-		DeviceMemory(const DeviceRef &tDevice, const vk::MemoryRequirements &tMemoryRequirements, vk::MemoryPropertyFlags tRequiredMemoryProperties);
+		DeviceMemory(const DeviceRef& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties);
 		~DeviceMemory();
 
-		inline vk::DeviceMemory getHandle() const { return mDeviceMemoryHandle; }
-		inline vk::DeviceSize getAllocationSize() const { return mAllocationSize; }
-		inline uint32_t getSelectedMemoryIndex() const { return mSelectedMemoryIndex; }
-		void* map(size_t tOffset, size_t tSize);
+		inline vk::DeviceMemory get_handle() const { return m_device_memory_handle; }
+		inline vk::DeviceSize get_allocation_size() const { return m_allocation_size; }
+		inline uint32_t get_selected_memory_index() const { return m_selected_memory_index; }
+		void* map(size_t offset, size_t size);
 		void unmap();
 
 	private:
 
-		DeviceRef mDevice;
-		vk::DeviceMemory mDeviceMemoryHandle;
-		vk::DeviceSize mAllocationSize;
-		uint32_t mSelectedMemoryIndex;
-		bool mInUse;
+		DeviceRef m_device;
+		vk::DeviceMemory m_device_memory_handle;
+		vk::DeviceSize m_allocation_size;
+		uint32_t m_selected_memory_index;
+		bool m_in_use;
 	};
 
 } // namespace graphics

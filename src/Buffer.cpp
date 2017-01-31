@@ -31,29 +31,29 @@ namespace graphics
 	
 	Buffer::Options::Options()
 	{
-		mUseStagingBuffer = false;
+		m_use_staging_buffer = false;
 	}
 
-	Buffer::Buffer(const DeviceRef &tDevice, vk::BufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions) :
-		mDevice(tDevice),
-		mBufferUsageFlags(tBufferUsageFlags),
-		mRequestedSize(tSize)
+	Buffer::Buffer(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const Options& options) :
+		m_device(device),
+		m_buffer_usage_flags(buffer_usage_flags),
+		m_requested_size(size)
 	{
-		vk::SharingMode sharingMode = vk::SharingMode::eExclusive;
-		if (tOptions.mQueueFamilyIndices.size())
+		vk::SharingMode sharing_mode = vk::SharingMode::eExclusive;
+		if (options.m_queue_family_indices.size())
 		{
 			std::cout << "This buffer is used by multiple queue families: setting its share mode to VK_SHARING_MODE_CONCURRENT\n";
-			sharingMode = vk::SharingMode::eConcurrent;
+			sharing_mode = vk::SharingMode::eConcurrent;
 		}
 
-		vk::BufferCreateInfo bufferCreateInfo;
-		bufferCreateInfo.pQueueFamilyIndices = tOptions.mQueueFamilyIndices.data();	// Ignored if the sharing mode is exclusive.
-		bufferCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(tOptions.mQueueFamilyIndices.size());
-		bufferCreateInfo.sharingMode = sharingMode;
-		bufferCreateInfo.size = mRequestedSize;
-		bufferCreateInfo.usage = mBufferUsageFlags;
+		vk::BufferCreateInfo buffer_create_info;
+		buffer_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();	// Ignored if the sharing mode is exclusive.
+		buffer_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
+		buffer_create_info.sharingMode = sharing_mode;
+		buffer_create_info.size = m_requested_size;
+		buffer_create_info.usage = m_buffer_usage_flags;
 
-		if (tOptions.mUseStagingBuffer)
+		if (options.m_use_staging_buffer)
 		{
 			// Steps:
 			// Create a second command pool for command buffers that are submitted on the transfer queue family.
@@ -63,41 +63,41 @@ namespace graphics
 			// If there is a separate transfer queue available on this device, use it for setting up the staging buffer. The buffer needs to be
 			// created with this in mind. First, see if it was already included in the list of queue family indices that was passed to the constructor.
 			// If it wasn't, add it to the new list below, which will be used to create both buffers.
-			auto transferIndex = mDevice->getQueueFamiliesMapping().transfer().second;
-			std::vector<uint32_t> stagedQueueFamilyIndices(tOptions.mQueueFamilyIndices.begin(), tOptions.mQueueFamilyIndices.end());
+			auto transfer_index = m_device->getQueueFamiliesMapping().transfer().second;
+			std::vector<uint32_t> staged_queue_family_indices(options.m_queue_family_indices.begin(), options.m_queue_family_indices.end());
 
-			if (std::find(stagedQueueFamilyIndices.begin(), stagedQueueFamilyIndices.end(), transferIndex) == stagedQueueFamilyIndices.end())
+			if (std::find(staged_queue_family_indices.begin(), staged_queue_family_indices.end(), transfer_index) == staged_queue_family_indices.end())
 			{
-				stagedQueueFamilyIndices.push_back(transferIndex);
+				staged_queue_family_indices.push_back(transfer_index);
 			}
 		}
 		else
 		{
-			mBufferHandle = mDevice->getHandle().createBuffer(bufferCreateInfo);
+			m_buffer_handle = m_device->getHandle().createBuffer(buffer_create_info);
 		}
 
 		// Store the memory requirements for this buffer object.
-		auto memoryRequirements = mDevice->getHandle().getBufferMemoryRequirements(mBufferHandle);
-		auto requiredMemoryProperties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+		auto memory_requirements = m_device->getHandle().getBufferMemoryRequirements(m_buffer_handle);
+		auto required_memory_properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
 		// Allocate device memory.
-		mDeviceMemory = DeviceMemory::create(mDevice, memoryRequirements, requiredMemoryProperties);
+		m_device_memory = DeviceMemory::create(m_device, memory_requirements, required_memory_properties);
 
 		// Fill the buffer with the data that was passed into the constructor.
-		if (tData)
+		if (data)
 		{
-			void* mappedPtr = mDeviceMemory->map(0, mDeviceMemory->getAllocationSize());
-			memcpy(mappedPtr, tData, static_cast<size_t>(mRequestedSize));
-			mDeviceMemory->unmap();
+			void* mapped_ptr = m_device_memory->map(0, m_device_memory->get_allocation_size());
+			memcpy(mapped_ptr, data, static_cast<size_t>(m_requested_size));
+			m_device_memory->unmap();
 		}
 
 		// Associate the device memory with this buffer object.
-		mDevice->getHandle().bindBufferMemory(mBufferHandle, mDeviceMemory->getHandle(), 0);
+		m_device->getHandle().bindBufferMemory(m_buffer_handle, m_device_memory->get_handle(), 0);
 	}
 
 	Buffer::~Buffer()
 	{
-		mDevice->getHandle().destroyBuffer(mBufferHandle);
+		m_device->getHandle().destroyBuffer(m_buffer_handle);
 	}
 
 } // namespace graphics

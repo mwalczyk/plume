@@ -44,48 +44,53 @@ namespace graphics
 	{
 	public:
 
-		struct Options
+		class Options
 		{
+		public:
 			Options();
 
-			Options& queueFamilyIndices(const std::vector<uint32_t> tQueueFamilyIndices) { mQueueFamilyIndices = tQueueFamilyIndices; return *this; }
-			Options& useStagingBuffer(bool tUseStagingBuffer) { mUseStagingBuffer = tUseStagingBuffer; return *this; }
+			Options& queue_family_indices(const std::vector<uint32_t> queue_family_indices) {  m_queue_family_indices = queue_family_indices; return *this; }
+			Options& use_staging_buffer(bool use_staging_buffer) { m_use_staging_buffer = use_staging_buffer; return *this; }
 
-			std::vector<uint32_t> mQueueFamilyIndices;
-			bool mUseStagingBuffer;
+		private:
+
+			std::vector<uint32_t> m_queue_family_indices;
+			bool m_use_staging_buffer;
+
+			friend class Buffer;
 		};
 
 		//! Factory method for returning a new BufferRef.
 		template<class T>
-		static BufferRef create(const DeviceRef &tDevice, vk::BufferUsageFlags tBufferUsageFlags, const std::vector<T> &tData, const Options &tOptions = Options())
+		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const Options& options = Options())
 		{
-			return std::make_shared<Buffer>(tDevice, tBufferUsageFlags, sizeof(T) * tData.size(), tData.data());
+			return std::make_shared<Buffer>(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), options);
 		}
 
-		static BufferRef create(const DeviceRef &tDevice, vk::BufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options())
+		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const Options& options = Options())
 		{
-			return std::make_shared<Buffer>(tDevice, tBufferUsageFlags, tSize, tData, tOptions);
+			return std::make_shared<Buffer>(device, buffer_usage_flags, size, data, options);
 		}
 
-		Buffer(const DeviceRef &tDevice, vk::BufferUsageFlags tBufferUsageFlags, size_t tSize, const void *tData, const Options &tOptions = Options());
+		Buffer(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const Options& options = Options());
 		~Buffer();
 
-		inline vk::Buffer getHandle() const { return mBufferHandle; }
-		inline DeviceMemoryRef getDeviceMemory() const { return mDeviceMemory; }
-		inline vk::BufferUsageFlags getBufferUsageFlags() const { return mBufferUsageFlags; }
-		inline vk::DescriptorBufferInfo buildDescriptorInfo(vk::DeviceSize tOffset = 0, vk::DeviceSize tRange = VK_WHOLE_SIZE) const { return { mBufferHandle, tOffset, tRange };  }
+		inline vk::Buffer get_handle() const { return m_buffer_handle; }
+		inline DeviceMemoryRef get_device_memory() const { return m_device_memory; }
+		inline vk::BufferUsageFlags get_buffer_usage_flags() const { return m_buffer_usage_flags; }
+		inline vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const { return { m_buffer_handle, offset, range };  }
 
 		//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
 		//! allocation size, which can be queried from the buffer's device memory reference.
-		inline size_t getRequestedSize() const { return mRequestedSize; }
+		inline size_t get_requested_size() const { return m_requested_size; }
 
 	private:
 
-		DeviceRef mDevice;
-		DeviceMemoryRef mDeviceMemory;
-		vk::Buffer mBufferHandle;
-		vk::BufferUsageFlags mBufferUsageFlags;
-		size_t mRequestedSize;
+		DeviceRef m_device;
+		DeviceMemoryRef m_device_memory;
+		vk::Buffer m_buffer_handle;
+		vk::BufferUsageFlags m_buffer_usage_flags;
+		size_t m_requested_size;
 	};
 
 } // namespace graphics

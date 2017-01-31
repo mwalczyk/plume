@@ -29,53 +29,53 @@
 namespace graphics
 {
 
-	DeviceMemory::DeviceMemory(const DeviceRef &tDevice, const vk::MemoryRequirements &tMemoryRequirements, vk::MemoryPropertyFlags tRequiredMemoryProperties) :
-		mDevice(tDevice),
-		mSelectedMemoryIndex(0),
-		mAllocationSize(tMemoryRequirements.size)
+	DeviceMemory::DeviceMemory(const DeviceRef& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties) :
+		m_device(device),
+		m_selected_memory_index(0),
+		m_allocation_size(memory_requirements.size)
 	{
-		auto &physicalDeviceMemoryProperties = mDevice->getPhysicalDeviceMemoryProperties();
+		auto& physical_device_memory_properties = m_device->getPhysicalDeviceMemoryProperties();
 
 		// Based on the memory requirements, find the index of the memory heap that should be used to allocate memory.
-		for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; ++i)
+		for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount; ++i)
 		{
-			if ((tMemoryRequirements.memoryTypeBits & (1 << i)) &&
-				physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & tRequiredMemoryProperties)
+			if ((memory_requirements.memoryTypeBits & (1 << i)) &&
+				physical_device_memory_properties.memoryTypes[i].propertyFlags & required_memory_properties)
 			{
-				mSelectedMemoryIndex = i;
+				m_selected_memory_index = i;
 				break;
 			}
 		}
 
-		vk::MemoryAllocateInfo memoryAllocateInfo{ tMemoryRequirements.size, mSelectedMemoryIndex };
+		vk::MemoryAllocateInfo memory_allocate_info{ memory_requirements.size, m_selected_memory_index };
 		
-		mDeviceMemoryHandle = mDevice->getHandle().allocateMemory(memoryAllocateInfo);
+		m_device_memory_handle = m_device->getHandle().allocateMemory(memory_allocate_info);
 	}
 
 	DeviceMemory::~DeviceMemory()
 	{
-		if (mInUse)
+		if (m_in_use)
 		{
 			unmap();
 		}
-		mDevice->getHandle().freeMemory(mDeviceMemoryHandle);
+		m_device->getHandle().freeMemory(m_device_memory_handle);
 	}
 
-	void* DeviceMemory::map(size_t tOffset, size_t tSize)
+	void* DeviceMemory::map(size_t offset, size_t size)
 	{
-		if (tOffset > mAllocationSize && tSize <= mAllocationSize)
+		if (offset > m_allocation_size && size <= m_allocation_size)
 		{
 			return nullptr;
 		}
-		void* mappedPtr = mDevice->getHandle().mapMemory(mDeviceMemoryHandle, tOffset, tSize);
-		mInUse = true;
-		return mappedPtr;
+		void* mapped_ptr = m_device->getHandle().mapMemory(m_device_memory_handle, offset, size);
+		m_in_use = true;
+		return mapped_ptr;
 	}
 
 	void DeviceMemory::unmap()
 	{
-		mDevice->getHandle().unmapMemory(mDeviceMemoryHandle);
-		mInUse = false;
+		m_device->getHandle().unmapMemory(m_device_memory_handle);
+		m_in_use = false;
 	}
 
 } // namespace graphics

@@ -54,51 +54,51 @@ namespace graphics
 
 			Options();
 			
-			Options& commandBufferLevel(vk::CommandBufferLevel tCommandBufferLevel) { mCommandBufferLevel = tCommandBufferLevel; return *this; }
+			Options& command_buffer_level(vk::CommandBufferLevel command_buffer_level) { m_command_buffer_level = command_buffer_level; return *this; }
 		
 		private:
 
-			vk::CommandBufferLevel mCommandBufferLevel;
+			vk::CommandBufferLevel m_command_buffer_level;
 
 			friend class CommandBuffer;
 		};
 
 		//! Factory method for returning a new CommandBufferRef.
-		static CommandBufferRef create(const DeviceRef &tDevice, const CommandPoolRef &tCommandPool, const Options &tOptions = Options())
+		static CommandBufferRef create(const DeviceRef& device, const CommandPoolRef& command_pool, const Options& options = Options())
 		{
-			return std::make_shared<CommandBuffer>(tDevice, tCommandPool, tOptions);
+			return std::make_shared<CommandBuffer>(device, command_pool, options);
 		}
 
-		CommandBuffer(const DeviceRef &tDevice, const CommandPoolRef &tCommandPool, const Options &tOptions = Options());
+		CommandBuffer(const DeviceRef& device, const CommandPoolRef& command_pool, const Options& options = Options());
 		~CommandBuffer();
 
-		inline vk::CommandBuffer getHandle() const { return mCommandBufferHandle; };
-		inline bool isPrimary() const { return mCommandBufferLevel == vk::CommandBufferLevel::ePrimary; }
+		inline vk::CommandBuffer get_handle() const { return m_command_buffer_handle; };
+		inline bool is_primary() const { return m_command_buffer_level == vk::CommandBufferLevel::ePrimary; }
 
 		//! Start recording into the command buffer.
 		void begin();
-		void beginRenderPass(const RenderPassRef &tRenderPass, const FramebufferRef &tFramebuffer, const std::vector<vk::ClearValue> &tClearValues = { vk::ClearColorValue(std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }) });
-		void bindPipeline(const PipelineRef &tPipeline);
-		void bindVertexBuffers(const std::vector<BufferRef> &tBuffers);
-		void bindIndexBuffer(const BufferRef &tBuffer);
-		void updatePushConstantRanges(const PipelineRef &tPipeline, vk::ShaderStageFlags tStageFlags, uint32_t tOffset, uint32_t tSize, const void* tData);
-		void updatePushConstantRanges(const PipelineRef &tPipeline, const std::string &tMemberName, const void* tData);
-		void draw(uint32_t tVertexCount, uint32_t tInstanceCount, uint32_t tFirstVertex, uint32_t tFirstInstance);
-		void drawIndexed(uint32_t tIndexCount, uint32_t tInstanceCount, uint32_t tFirstIndex, uint32_t tVertexOffset, uint32_t tFirstInstance);
-		void endRenderPass();
+		void begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values = { vk::ClearColorValue(std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }) });
+		void bind_pipeline(const PipelineRef& pipeline);
+		void bind_vertex_buffers(const std::vector<BufferRef>& buffers);
+		void bind_index_buffer(const BufferRef& buffer);
+		void update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const void* data);
+		void update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const void* data);
+		void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
+		void draw_indexed(uint32_t tIndexCount, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance);
+		void end_render_pass();
 
 		//! Use an image memory barrier to transition an image from one layout to another.
-		void transitionImageLayout(const ImageRef &tImage, vk::ImageLayout tFromLayout, vk::ImageLayout tToLayout);
+		void transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to);
 
 		//! Stop recording into the command buffer.
 		void end();
 
 	private:
 
-		DeviceRef mDevice;
-		CommandPoolRef mCommandPool;
-		vk::CommandBuffer mCommandBufferHandle;
-		vk::CommandBufferLevel mCommandBufferLevel;
+		DeviceRef m_device;
+		CommandPoolRef m_command_pool;
+		vk::CommandBuffer m_command_buffer_handle;
+		vk::CommandBufferLevel m_command_buffer_level;
 	};
 
 } // namespace graphics

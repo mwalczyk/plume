@@ -225,13 +225,13 @@ namespace graphics
 		SwapchainSupportDetails swapchainSupportDetails;
 
 		// Return the basic surface capabilities, i.e. min/max number of images, min/max width and height, etc.
-		swapchainSupportDetails.mCapabilities = mPhysicalDeviceHandle.getSurfaceCapabilitiesKHR(tSurface->getHandle());
+		swapchainSupportDetails.mCapabilities = mPhysicalDeviceHandle.getSurfaceCapabilitiesKHR(tSurface->get_handle());
 
 		// Retrieve the available surface formats, i.e. pixel formats and color spaces.
-		swapchainSupportDetails.mFormats = mPhysicalDeviceHandle.getSurfaceFormatsKHR(tSurface->getHandle());
+		swapchainSupportDetails.mFormats = mPhysicalDeviceHandle.getSurfaceFormatsKHR(tSurface->get_handle());
 
 		// Retrieve the surface presentation modes, i.e. VK_PRESENT_MODE_MAILBOX_KHR.
-		swapchainSupportDetails.mPresentModes = mPhysicalDeviceHandle.getSurfacePresentModesKHR(tSurface->getHandle());
+		swapchainSupportDetails.mPresentModes = mPhysicalDeviceHandle.getSurfacePresentModesKHR(tSurface->get_handle());
 
 		if (swapchainSupportDetails.mFormats.size() == 0 || swapchainSupportDetails.mPresentModes.size() == 0)
 		{

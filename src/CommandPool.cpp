@@ -31,22 +31,22 @@ namespace graphics
 	
 	CommandPool::Options::Options()
 	{
-		mCommandPoolCreateFlags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+		m_command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 	}
 
-	CommandPool::CommandPool(const DeviceRef &tDevice, uint32_t tQueueFamilyIndex, const Options &tOptions) :
-		mDevice(tDevice)
+	CommandPool::CommandPool(const DeviceRef& device, uint32_t queue_family_index, const Options& options) :
+		m_device(device)
 	{
-		vk::CommandPoolCreateInfo commandPoolCreateInfo;
-		commandPoolCreateInfo.flags = tOptions.mCommandPoolCreateFlags;
-		commandPoolCreateInfo.queueFamilyIndex = tQueueFamilyIndex;
+		vk::CommandPoolCreateInfo command_pool_create_info;
+		command_pool_create_info.flags = options.m_command_pool_create_flags;
+		command_pool_create_info.queueFamilyIndex = queue_family_index;
 
-		mCommandPoolHandle = mDevice->getHandle().createCommandPool(commandPoolCreateInfo);
+		m_command_pool_handle = m_device->getHandle().createCommandPool(command_pool_create_info);
 	}
 
 	CommandPool::~CommandPool()
 	{
-		mDevice->getHandle().destroyCommandPool(mCommandPoolHandle);
+		m_device->getHandle().destroyCommandPool(m_command_pool_handle);
 	}
 
 } // namespace graphics

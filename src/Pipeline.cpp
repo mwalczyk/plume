@@ -28,14 +28,14 @@
 
 namespace graphics
 {
-	static const std::string spectraUniformNames[] =
+	static const std::string spectrumUniformNames[] =
 	{
 		"spTime",
 		"spResolution",
 		"spMouse"
 	};
 
-	static const std::string spectraInputNames[] =
+	static const std::string spectrumInputNames[] =
 	{
 		"spPosition",
 		"spColor",
@@ -299,7 +299,7 @@ namespace graphics
 		graphicsPipelineCreateInfo.pTessellationState = nullptr;
 		graphicsPipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
 		graphicsPipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
-		graphicsPipelineCreateInfo.renderPass = mRenderPass->getHandle();
+		graphicsPipelineCreateInfo.renderPass = mRenderPass->get_handle();
 		graphicsPipelineCreateInfo.stageCount = static_cast<uint32_t>(pipelineShaderStageCreateInfos.size());
 		graphicsPipelineCreateInfo.subpass = 0;
 
@@ -371,8 +371,8 @@ namespace graphics
 	vk::PipelineShaderStageCreateInfo Pipeline::buildPipelineShaderStageCreateInfo(const ShaderModuleRef &tShaderModule, vk::ShaderStageFlagBits tShaderStageFlagBits)
 	{
 		vk::PipelineShaderStageCreateInfo pipelineShaderStageCreateInfo;
-		pipelineShaderStageCreateInfo.module = tShaderModule->getHandle();
-		pipelineShaderStageCreateInfo.pName = tShaderModule->getEntryPoints()[0].c_str();
+		pipelineShaderStageCreateInfo.module = tShaderModule->get_handle();
+		pipelineShaderStageCreateInfo.pName = tShaderModule->get_entry_points()[0].c_str();
 		pipelineShaderStageCreateInfo.pSpecializationInfo = nullptr;
 		pipelineShaderStageCreateInfo.stage = tShaderStageFlagBits;
 
@@ -383,7 +383,7 @@ namespace graphics
 	{
 		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
 
-		for (const auto &pushConstant : tShaderModule->getPushConstants())
+		for (const auto &pushConstant : tShaderModule->get_push_constants())
 		{
 			// If this push constant already exists in the mapping, simply update its stage flags.
 			auto it = mPushConstantsMapping.find(pushConstant.name);
@@ -407,15 +407,15 @@ namespace graphics
 
 	void Pipeline::addDescriptorsToGlobalMap(const ShaderModuleRef &tShaderModule, vk::ShaderStageFlagBits tShaderStageFlagBits)
 	{
-		for (const auto &descriptor : tShaderModule->getDescriptors())
+		for (const auto &descriptor : tShaderModule->get_descriptors())
 		{
 			// for every descriptor found in this shader stage
-			uint32_t set = descriptor.layoutSet;
+			uint32_t set = descriptor.layout_set;
 
 			vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding;
-			descriptorSetLayoutBinding.binding = descriptor.layoutBinding;
-			descriptorSetLayoutBinding.descriptorCount = descriptor.descriptorCount;
-			descriptorSetLayoutBinding.descriptorType = descriptor.descriptorType;
+			descriptorSetLayoutBinding.binding = descriptor.layout_binding;
+			descriptorSetLayoutBinding.descriptorCount = descriptor.descriptor_count;
+			descriptorSetLayoutBinding.descriptorType = descriptor.descriptor_type;
 			descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
 			descriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eAll;
 

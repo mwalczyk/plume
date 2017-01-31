@@ -38,8 +38,8 @@ namespace graphics
 		mApplicationInfo.apiVersion = VK_API_VERSION_1_0;
 		mApplicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		mApplicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		mApplicationInfo.pApplicationName = "Spectra Application";
-		mApplicationInfo.pEngineName = "Spectra Engine";
+		mApplicationInfo.pApplicationName = "Spectrum Application";
+		mApplicationInfo.pEngineName = "Spectrum Engine";
 	}
 
 	//! Proxy function for creating a debug callback object
@@ -84,9 +84,9 @@ namespace graphics
 		}
 
 		// Append the instance extensions required by the windowing system
-#if defined(SPECTRA_MSW)
+#if defined(SPECTRUM_MSW)
 		mRequiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#elif defined(SPECTRA_LINUX)
+#elif defined(SPECTRUM_LINUX)
 		mRequiredExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 #endif
 		mRequiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);

@@ -29,28 +29,28 @@
 namespace graphics
 {
 
-	Framebuffer::Framebuffer(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const std::vector<vk::ImageView> &tImageViews, uint32_t tWidth, uint32_t tHeight, uint32_t tLayers) :
-		mDevice(tDevice),
-		mRenderPass(tRenderPass),
-		mImageViews(tImageViews),
-		mWidth(tWidth),
-		mHeight(tHeight),
-		mLayers(tLayers)
+	Framebuffer::Framebuffer(const DeviceRef& device, const RenderPassRef& render_pass, const std::vector<vk::ImageView>& image_views, uint32_t width, uint32_t height, uint32_t layers) :
+		m_device(device),
+		m_render_pass(render_pass),
+		m_image_views(image_views),
+		m_width(width),
+		m_height(height),
+		m_layers(layers)
 	{
-		vk::FramebufferCreateInfo framebufferCreateInfo;
-		framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(mImageViews.size());
-		framebufferCreateInfo.height = mHeight;
-		framebufferCreateInfo.layers = mLayers;
-		framebufferCreateInfo.pAttachments = mImageViews.data();
-		framebufferCreateInfo.renderPass = mRenderPass->getHandle();		
-		framebufferCreateInfo.width = mWidth;
+		vk::FramebufferCreateInfo framebuffer_create_info;
+		framebuffer_create_info.attachmentCount = static_cast<uint32_t>(m_image_views.size());
+		framebuffer_create_info.height = m_height;
+		framebuffer_create_info.layers = m_layers;
+		framebuffer_create_info.pAttachments = m_image_views.data();
+		framebuffer_create_info.renderPass = m_render_pass->get_handle();
+		framebuffer_create_info.width = m_width;
 
-		mFramebufferHandle = mDevice->getHandle().createFramebuffer(framebufferCreateInfo);
+		m_framebuffer_handle = m_device->getHandle().createFramebuffer(framebuffer_create_info);
 	}
 
 	Framebuffer::~Framebuffer()
 	{
-		mDevice->getHandle().destroyFramebuffer(mFramebufferHandle);
+		m_device->getHandle().destroyFramebuffer(m_framebuffer_handle);
 	}
 
 } // namespace graphics
