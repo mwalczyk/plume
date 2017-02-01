@@ -70,7 +70,7 @@ namespace geo
 		inline const std::vector<uint32_t>& get_indices() const { return m_indices; }
 		inline VertexAttributeSet get_active_vertex_attributes() const { return m_attribute_set; }
 
-		float* getVertexAttribute(VertexAttribute tAttribute);
+		float* get_vertex_attribute(VertexAttribute attribute);
 
 
 		inline void set_colors(const std::vector<glm::vec3>& colors) { m_colors = colors; }

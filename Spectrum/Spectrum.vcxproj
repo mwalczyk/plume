@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3C8CE711-3F86-4597-9FCA-704CF86DCD89}</ProjectGuid>
+    <ProjectGuid>{DD397825-3856-4A1D-BCBB-10A127704727}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>VulkanToolkit</RootNamespace>
+    <RootNamespace>Spectrum</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

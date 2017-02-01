@@ -1,12 +1,13 @@
-# VulkanToolkit
+# Spectrum
 
 ![IcoSphere](https://github.com/mwalczyk/VulkanToolkit/blob/master/icosphere.PNG)
 
-A WIP framework and abstraction layer around the Vulkan graphics API. Only tested with version 1.0.30.0.
+A WIP framework and abstraction layer around the Vulkan graphics API. Currently being developed with
+version 1.0.39.1.
 
 ## Cloning
 
-VulkanToolkit uses several submodules (GLM, SPIRV-Cross, Vulkan-HPP, etc.). After cloning the main
+VulkanToolkit uses several submodules (GLM, SPIRV-Cross, STB, etc.). After cloning the main
 repository, make sure to initialize submodules by executing the following command from the top-level
 directory:
 

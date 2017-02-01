@@ -29,9 +29,9 @@
 namespace geo
 {
 
-	float* Geometry::getVertexAttribute(VertexAttribute tAttribute) 
+	float* Geometry::get_vertex_attribute(VertexAttribute attribute) 
 	{
-		switch (tAttribute)
+		switch (attribute)
 		{
 		case geo::VertexAttribute::ATTRIBUTE_POSITION: return reinterpret_cast<float*>(m_positions.data());
 		case geo::VertexAttribute::ATTRIBUTE_COLOR: return reinterpret_cast<float*>(m_colors.data());
