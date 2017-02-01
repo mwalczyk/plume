@@ -37,7 +37,7 @@ namespace graphics
 
 	Surface::~Surface()
 	{
-		m_instance->getHandle().destroySurfaceKHR(m_surface_handle);
+		m_instance->get_handle().destroySurfaceKHR(m_surface_handle);
 	}
 
 } // namespace graphics

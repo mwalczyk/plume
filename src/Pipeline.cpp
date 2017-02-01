@@ -28,25 +28,25 @@
 
 namespace graphics
 {
-	static const std::string spectrumUniformNames[] =
+	static const std::string spectrum_uniform_names[] =
 	{
-		"spTime",
-		"spResolution",
-		"spMouse"
+		"sp_time",
+		"sp_resolution",
+		"sp_mouse"
 	};
 
-	static const std::string spectrumInputNames[] =
+	static const std::string spectrum_input_names[] =
 	{
-		"spPosition",
-		"spColor",
-		"spNormal",
-		"spTexcoord"
+		"sp_position",
+		"sp_color",
+		"sp_normal",
+		"sp_texcoord"
 	};
 
-	static std::string descriptorTypeAsString(vk::DescriptorType tDescriptorType)
+	static std::string descriptor_type_as_string(vk::DescriptorType descriptor_type)
 	{
 		std::string output = "";
-		switch (tDescriptorType)
+		switch (descriptor_type)
 		{
 		case vk::DescriptorType::eSampler: output = "SAMPLER"; break;
 		case vk::DescriptorType::eCombinedImageSampler: output = "COMBINED IMAGE SAMPLER"; break;
@@ -65,39 +65,39 @@ namespace graphics
 		return output;
 	}
 
-	static std::string shaderStageAsString(vk::ShaderStageFlags tShaderStageFlags)
+	static std::string shader_stage_as_string(vk::ShaderStageFlags shader_stage_flags)
 	{
-		if (tShaderStageFlags == vk::ShaderStageFlagBits::eAll)
+		if (shader_stage_flags == vk::ShaderStageFlagBits::eAll)
 		{
 			return "ALL";
 		}
-		if (tShaderStageFlags == vk::ShaderStageFlagBits::eAllGraphics)
+		if (shader_stage_flags == vk::ShaderStageFlagBits::eAllGraphics)
 		{
 			return "ALL GRAPHICS";
 		}
 		
 		std::vector<std::string> matches;
-		if (tShaderStageFlags & vk::ShaderStageFlagBits::eVertex)
+		if (shader_stage_flags & vk::ShaderStageFlagBits::eVertex)
 		{
 			matches.push_back("VERTEX");
 		}
-		if (tShaderStageFlags & vk::ShaderStageFlagBits::eTessellationControl)
+		if (shader_stage_flags & vk::ShaderStageFlagBits::eTessellationControl)
 		{
 			matches.push_back("TESSELLATION CONTROL");
 		}
-		if (tShaderStageFlags & vk::ShaderStageFlagBits::eTessellationEvaluation)
+		if (shader_stage_flags & vk::ShaderStageFlagBits::eTessellationEvaluation)
 		{
 			matches.push_back("TESSELLATION EVALUATION");
 		}
-		if (tShaderStageFlags & vk::ShaderStageFlagBits::eGeometry)
+		if (shader_stage_flags & vk::ShaderStageFlagBits::eGeometry)
 		{
 			matches.push_back("GEOMETRY");
 		}
-		if (tShaderStageFlags & vk::ShaderStageFlagBits::eFragment)
+		if (shader_stage_flags & vk::ShaderStageFlagBits::eFragment)
 		{
 			matches.push_back("FRAGMENT");
 		}
-		if (tShaderStageFlags & vk::ShaderStageFlagBits::eCompute)
+		if (shader_stage_flags & vk::ShaderStageFlagBits::eCompute)
 		{
 			matches.push_back("COMPUTE");
 		}
@@ -111,378 +111,380 @@ namespace graphics
 	Pipeline::Options::Options()
 	{
 		// Set up the default viewport.
-		mViewport = {};
-		mViewport.x = 0;
-		mViewport.y = 0;
-		mViewport.width = 640;
-		mViewport.height = 480;
-		mViewport.minDepth = 0.0f;
-		mViewport.maxDepth = 1.0f;
+		m_viewport = {};
+		m_viewport.x = 0;
+		m_viewport.y = 0;
+		m_viewport.width = 640;
+		m_viewport.height = 480;
+		m_viewport.minDepth = 0.0f;
+		m_viewport.maxDepth = 1.0f;
 
 		// Set up the default scissor region.
-		mScissor = {};
-		mScissor.extent = { static_cast<uint32_t>(mViewport.width), static_cast<uint32_t>(mViewport.height) };
-		mScissor.offset = { 0, 0 };
+		m_scissor = {};
+		m_scissor.extent = { static_cast<uint32_t>(m_viewport.width), static_cast<uint32_t>(m_viewport.height) };
+		m_scissor.offset = { 0, 0 };
 
 		// Set up parameters for the default rasterization state.
-		mCullModeFlags = vk::CullModeFlagBits::eBack;
-		mPolygonMode = vk::PolygonMode::eFill;
-		mLineWidth = 1.0f;
+		m_polygon_mode = vk::PolygonMode::eFill;
+		m_line_width = 1.0f;
+		m_cull_mode_flags = vk::CullModeFlagBits::eBack;
 
 		// Set up the default input assembly.
-		mPrimitiveRestart = VK_FALSE;
-		mPrimitiveTopology = vk::PrimitiveTopology::eTriangleList; 
+		m_primitive_restart = VK_FALSE;
+		m_primitive_topology = vk::PrimitiveTopology::eTriangleList;
 
 		// Set up the default pipeline color blend attachment state (no blending).
-		mPipelineColorBlendAttachmentState = {};
-		mPipelineColorBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-		mPipelineColorBlendAttachmentState.blendEnable = VK_FALSE;	
+		m_color_blend_attachment_state = {};
+		m_color_blend_attachment_state.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+		m_color_blend_attachment_state.blendEnable = VK_FALSE;
 		
 		// Turn off depth and stencil testing by default.
-		mDepthTestEnabled = VK_FALSE;
-		mStencilTestEnabled = VK_FALSE;
+		m_depth_test_enabled = VK_FALSE;
+		m_stencil_test_enabled = VK_FALSE;
 	}
    
-	vk::VertexInputBindingDescription Pipeline::createVertexInputBindingDescription(uint32_t tBinding, uint32_t tStride, vk::VertexInputRate tVertexInputRate)
+	vk::VertexInputBindingDescription Pipeline::create_vertex_input_binding_description(uint32_t binding, uint32_t stride, vk::VertexInputRate input_rate)
 	{
-		vk::VertexInputBindingDescription vertexInputBindingDescription;
-		vertexInputBindingDescription.binding = tBinding;
-		vertexInputBindingDescription.inputRate = tVertexInputRate;
-		vertexInputBindingDescription.stride = tStride;
+		vk::VertexInputBindingDescription vertex_input_binding_description;
+		vertex_input_binding_description.binding = binding;
+		vertex_input_binding_description.inputRate = input_rate;
+		vertex_input_binding_description.stride = stride;
 
-		return vertexInputBindingDescription;
+		return vertex_input_binding_description;
 	}
 
-	vk::VertexInputAttributeDescription Pipeline::createVertexInputAttributeDescription(uint32_t tBinding, vk::Format tFormat, uint32_t tLocation, uint32_t tOffset)
+	vk::VertexInputAttributeDescription Pipeline::create_vertex_input_attribute_description(uint32_t binding, vk::Format format, uint32_t location, uint32_t offset)
 	{
-		vk::VertexInputAttributeDescription vertexInputAttributeDescription;
-		vertexInputAttributeDescription.binding = tBinding;
-		vertexInputAttributeDescription.format = tFormat;
-		vertexInputAttributeDescription.location = tLocation;
-		vertexInputAttributeDescription.offset = tOffset;
+		vk::VertexInputAttributeDescription vertex_input_attribute_description;
+		vertex_input_attribute_description.binding = binding;
+		vertex_input_attribute_description.format = format;
+		vertex_input_attribute_description.location = location;
+		vertex_input_attribute_description.offset = offset;
 
-		return vertexInputAttributeDescription;
+		return vertex_input_attribute_description;
 	}
 
-	vk::PipelineColorBlendAttachmentState Pipeline::createAlphaBlendingAttachmentState()
+	vk::PipelineColorBlendAttachmentState Pipeline::create_alpha_blending_attachment_state()
 	{
-		vk::PipelineColorBlendAttachmentState pipelineColorBlendAttachmentState;
-		pipelineColorBlendAttachmentState.alphaBlendOp = vk::BlendOp::eAdd;
-		pipelineColorBlendAttachmentState.blendEnable = VK_TRUE;
-		pipelineColorBlendAttachmentState.colorBlendOp = vk::BlendOp::eAdd;
-		pipelineColorBlendAttachmentState.dstAlphaBlendFactor = vk::BlendFactor::eZero; 
-		pipelineColorBlendAttachmentState.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;  
-		pipelineColorBlendAttachmentState.srcAlphaBlendFactor = vk::BlendFactor::eOne; 
-		pipelineColorBlendAttachmentState.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+		vk::PipelineColorBlendAttachmentState color_blend_attachment_state;
+		color_blend_attachment_state.alphaBlendOp = vk::BlendOp::eAdd;
+		color_blend_attachment_state.blendEnable = VK_TRUE;
+		color_blend_attachment_state.colorBlendOp = vk::BlendOp::eAdd;
+		color_blend_attachment_state.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+		color_blend_attachment_state.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+		color_blend_attachment_state.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+		color_blend_attachment_state.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
 	
-		return pipelineColorBlendAttachmentState;
+		return color_blend_attachment_state;
 	}
 
-	Pipeline::Pipeline(const DeviceRef &tDevice, const RenderPassRef &tRenderPass, const Options &tOptions) :
-		mDevice(tDevice),
-		mRenderPass(tRenderPass)
+	Pipeline::Pipeline(const DeviceRef& device, const RenderPassRef& render_pass, const Options& options) :
+		m_device(device),
+		m_render_pass(render_pass)
 	{		
 		// Group the create info structures together.
-		std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
+		std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos;
 
-		bool foundVertexShader = false;
-		bool foundFragmentShader = false;
-		for (const auto &shaderStage : tOptions.mShaderStages)
+		bool found_vertex_shader = false;
+		bool found_fragment_shader = false;
+		for (const auto& stage : options.m_shader_stages)
 		{
-			if (shaderStage.second == vk::ShaderStageFlagBits::eVertex) foundVertexShader = true;
-			if (shaderStage.second == vk::ShaderStageFlagBits::eFragment) foundFragmentShader = true;
-			auto shaderStageInfo = buildPipelineShaderStageCreateInfo(shaderStage.first, shaderStage.second);
-			pipelineShaderStageCreateInfos.push_back(shaderStageInfo);
-			addPushConstantsToGlobalMap(shaderStage.first, shaderStage.second);
-			addDescriptorsToGlobalMap(shaderStage.first, shaderStage.second);
+			if (stage.second == vk::ShaderStageFlagBits::eVertex) found_vertex_shader = true;
+			if (stage.second == vk::ShaderStageFlagBits::eFragment) found_fragment_shader = true;
+			auto shader_stage_info = build_shader_stage_create_info(stage.first, stage.second);
+			shader_stage_create_infos.push_back(shader_stage_info);
+			
+			add_push_constants_to_global_map(stage.first, stage.second);
+			add_descriptors_to_global_map(stage.first, stage.second);
 		}
-		if (!foundVertexShader|| !foundFragmentShader)
+		if (!found_vertex_shader || !found_fragment_shader)
 		{
 			throw std::runtime_error("At least one vertex and one fragment shader stage are required to build a graphics pipeline");
 		}
 
 		// Describe the format of the vertex data that will be passed to the vertex shader.
-		vk::PipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
-		vertexInputStateCreateInfo.pVertexAttributeDescriptions = tOptions.mVertexInputAttributeDescriptions.data();
-		vertexInputStateCreateInfo.pVertexBindingDescriptions = tOptions.mVertexInputBindingDescriptions.data();
-		vertexInputStateCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(tOptions.mVertexInputAttributeDescriptions.size());
-		vertexInputStateCreateInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(tOptions.mVertexInputBindingDescriptions.size());
+		vk::PipelineVertexInputStateCreateInfo vertex_input_state_create_info;
+		vertex_input_state_create_info.pVertexAttributeDescriptions = options.m_vertex_input_attribute_descriptions.data();
+		vertex_input_state_create_info.pVertexBindingDescriptions = options.m_vertex_input_binding_descriptions.data();
+		vertex_input_state_create_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(options.m_vertex_input_attribute_descriptions.size());
+		vertex_input_state_create_info.vertexBindingDescriptionCount = static_cast<uint32_t>(options.m_vertex_input_binding_descriptions.size());
 
 		// Describe the type of geometry that will be drawn and if primitive restart should be enabled.
-		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo;
-		inputAssemblyStateCreateInfo.primitiveRestartEnable = tOptions.mPrimitiveRestart;
-		inputAssemblyStateCreateInfo.topology = tOptions.mPrimitiveTopology;
+		vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_create_info;
+		input_assembly_state_create_info.primitiveRestartEnable = options.m_primitive_restart;
+		input_assembly_state_create_info.topology = options.m_primitive_topology;
 
 		// Combine the viewport and scissor settings into a viewport state structure.
-		vk::PipelineViewportStateCreateInfo viewportStateCreateInfo;
-		viewportStateCreateInfo.pScissors = &tOptions.mScissor;
-		viewportStateCreateInfo.pViewports = &tOptions.mViewport;
-		viewportStateCreateInfo.scissorCount = 1;
-		viewportStateCreateInfo.viewportCount = 1;
+		vk::PipelineViewportStateCreateInfo viewport_state_create_info;
+		viewport_state_create_info.pScissors = &options.m_scissor;
+		viewport_state_create_info.pViewports = &options.m_viewport;
+		viewport_state_create_info.scissorCount = 1;
+		viewport_state_create_info.viewportCount = 1;
 
 		// Configure the rasterizer.
-		vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo;
-		rasterizationStateCreateInfo.cullMode = tOptions.mCullModeFlags;
-		rasterizationStateCreateInfo.depthBiasClamp = 0.0f;
-		rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
-		rasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
-		rasterizationStateCreateInfo.depthBiasSlopeFactor = 0.0f;
-		rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
-		rasterizationStateCreateInfo.frontFace = vk::FrontFace::eClockwise;
-		rasterizationStateCreateInfo.lineWidth = tOptions.mLineWidth;
-		rasterizationStateCreateInfo.polygonMode = tOptions.mPolygonMode;
-		rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
+		vk::PipelineRasterizationStateCreateInfo rasterization_state_create_info;
+		rasterization_state_create_info.cullMode = options.m_cull_mode_flags;
+		rasterization_state_create_info.depthBiasClamp = 0.0f;
+		rasterization_state_create_info.depthBiasConstantFactor = 0.0f;
+		rasterization_state_create_info.depthBiasEnable = VK_FALSE;
+		rasterization_state_create_info.depthBiasSlopeFactor = 0.0f;
+		rasterization_state_create_info.depthClampEnable = VK_FALSE;
+		rasterization_state_create_info.frontFace = vk::FrontFace::eClockwise;
+		rasterization_state_create_info.lineWidth = options.m_line_width;
+		rasterization_state_create_info.polygonMode = options.m_polygon_mode;
+		rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
 
 		// Configure multisampling (anti-aliasing): for now, disable this feature.
-		vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo;
-		multisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
-		multisampleStateCreateInfo.alphaToOneEnable = VK_FALSE;
-		multisampleStateCreateInfo.minSampleShading = 1.0f;
-		multisampleStateCreateInfo.pSampleMask = nullptr;
-		multisampleStateCreateInfo.rasterizationSamples = vk::SampleCountFlagBits::e1;
-		multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
+		vk::PipelineMultisampleStateCreateInfo multisample_state_create_info;
+		multisample_state_create_info.alphaToCoverageEnable = VK_FALSE;
+		multisample_state_create_info.alphaToOneEnable = VK_FALSE;
+		multisample_state_create_info.minSampleShading = 1.0f;
+		multisample_state_create_info.pSampleMask = nullptr;
+		multisample_state_create_info.rasterizationSamples = vk::SampleCountFlagBits::e1;
+		multisample_state_create_info.sampleShadingEnable = VK_FALSE;
 
 		// Configure depth stencil testing.
-		vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo;
-		depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
-		depthStencilStateCreateInfo.depthCompareOp = vk::CompareOp::eLessOrEqual;
-		depthStencilStateCreateInfo.depthTestEnable = tOptions.mDepthTestEnabled;
-		depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
-		depthStencilStateCreateInfo.maxDepthBounds = 1.0f;	// This is optional, since the depth bounds test is disabled.
-		depthStencilStateCreateInfo.minDepthBounds = 0.0f;  // This is optional, since the depth bounds test is disabled.
-		depthStencilStateCreateInfo.stencilTestEnable = tOptions.mStencilTestEnabled;
+		vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_create_info;
+		depth_stencil_state_create_info.depthBoundsTestEnable = VK_FALSE;
+		depth_stencil_state_create_info.depthCompareOp = vk::CompareOp::eLessOrEqual;
+		depth_stencil_state_create_info.depthTestEnable = options.m_depth_test_enabled;
+		depth_stencil_state_create_info.depthWriteEnable = VK_TRUE;
+		depth_stencil_state_create_info.maxDepthBounds = 1.0f;	// This is optional, since the depth bounds test is disabled.
+		depth_stencil_state_create_info.minDepthBounds = 0.0f;  // This is optional, since the depth bounds test is disabled.
+		depth_stencil_state_create_info.stencilTestEnable = options.m_stencil_test_enabled;
 		
 		// Configure color blending properties.
-		vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo;
-		colorBlendStateCreateInfo.attachmentCount = 1;
-		colorBlendStateCreateInfo.blendConstants[0] = 0.0f;
-		colorBlendStateCreateInfo.blendConstants[1] = 0.0f;
-		colorBlendStateCreateInfo.blendConstants[2] = 0.0f;
-		colorBlendStateCreateInfo.blendConstants[3] = 0.0f;
-		colorBlendStateCreateInfo.logicOp = vk::LogicOp::eCopy;
-		colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;		// If true, the logic op described here will override the blend modes for every attached framebuffer.
-		colorBlendStateCreateInfo.pAttachments = &tOptions.mPipelineColorBlendAttachmentState;
+		vk::PipelineColorBlendStateCreateInfo color_blend_state_create_info;
+		color_blend_state_create_info.attachmentCount = 1;
+		color_blend_state_create_info.blendConstants[0] = 0.0f;
+		color_blend_state_create_info.blendConstants[1] = 0.0f;
+		color_blend_state_create_info.blendConstants[2] = 0.0f;
+		color_blend_state_create_info.blendConstants[3] = 0.0f;
+		color_blend_state_create_info.logicOp = vk::LogicOp::eCopy;
+		color_blend_state_create_info.logicOpEnable = VK_FALSE;		// If true, the logic op described here will override the blend modes for every attached framebuffer.
+		color_blend_state_create_info.pAttachments = &options.m_color_blend_attachment_state;
 
 		// A limited amount of the pipeline state can be changed without recreating the entire pipeline - see VkPipelineDynamicStateCreateInfo.
 
-		buildDescriptorSetLayouts();
+		build_descriptor_set_layouts();
 
 		// Get all of the values in the push constant ranges map. 
-		std::vector<vk::PushConstantRange> pushConstantRanges;
-		std::transform(mPushConstantsMapping.begin(), mPushConstantsMapping.end(), std::back_inserter(pushConstantRanges), [](const auto& val) {return val.second; });
+		std::vector<vk::PushConstantRange> push_constant_ranges;
+		std::transform(m_push_constants_mapping.begin(), m_push_constants_mapping.end(), std::back_inserter(push_constant_ranges), [](const auto& val) {return val.second; });
 
 		// Get all of the values in the descriptor set layouts map.
-		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
-		std::transform(mDescriptorSetLayoutsMapping.begin(), mDescriptorSetLayoutsMapping.end(), std::back_inserter(descriptorSetLayouts), [](const auto& val) {return val.second; });
+		std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
+		std::transform(m_descriptor_set_layouts_mapping.begin(), m_descriptor_set_layouts_mapping.end(), std::back_inserter(descriptor_set_layouts), [](const auto& val) {return val.second; });
 
 		// Encapsulate any descriptor sets and push constant ranges into a pipeline layout.
-		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo;
-		pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
-		pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts.data();
-		pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
-		pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());;
+		vk::PipelineLayoutCreateInfo pipeline_layout_create_info;
+		pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
+		pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts.data();
+		pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
+		pipeline_layout_create_info.setLayoutCount = static_cast<uint32_t>(descriptor_set_layouts.size());;
 
-		mPipelineLayoutHandle = mDevice->getHandle().createPipelineLayout(pipelineLayoutCreateInfo);
+		m_pipeline_layout_handle = m_device->get_handle().createPipelineLayout(pipeline_layout_create_info);
 
 		// Aggregate all of the structures above to create a graphics pipeline.
-		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo;
-		graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;	
-		graphicsPipelineCreateInfo.basePipelineIndex = -1;
-		graphicsPipelineCreateInfo.layout = mPipelineLayoutHandle;
-		graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
-		graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
-		graphicsPipelineCreateInfo.pDynamicState = nullptr;
-		graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
-		graphicsPipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
-		graphicsPipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
-		graphicsPipelineCreateInfo.pStages = pipelineShaderStageCreateInfos.data();
-		graphicsPipelineCreateInfo.pTessellationState = nullptr;
-		graphicsPipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
-		graphicsPipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
-		graphicsPipelineCreateInfo.renderPass = mRenderPass->get_handle();
-		graphicsPipelineCreateInfo.stageCount = static_cast<uint32_t>(pipelineShaderStageCreateInfos.size());
-		graphicsPipelineCreateInfo.subpass = 0;
+		vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info;
+		graphics_pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;
+		graphics_pipeline_create_info.basePipelineIndex = -1;
+		graphics_pipeline_create_info.layout = m_pipeline_layout_handle;
+		graphics_pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
+		graphics_pipeline_create_info.pDepthStencilState = &depth_stencil_state_create_info;
+		graphics_pipeline_create_info.pDynamicState = nullptr;
+		graphics_pipeline_create_info.pInputAssemblyState = &input_assembly_state_create_info;
+		graphics_pipeline_create_info.pMultisampleState = &multisample_state_create_info;
+		graphics_pipeline_create_info.pRasterizationState = &rasterization_state_create_info;
+		graphics_pipeline_create_info.pStages = shader_stage_create_infos.data();
+		graphics_pipeline_create_info.pTessellationState = nullptr;
+		graphics_pipeline_create_info.pVertexInputState = &vertex_input_state_create_info;
+		graphics_pipeline_create_info.pViewportState = &viewport_state_create_info;
+		graphics_pipeline_create_info.renderPass = m_render_pass->get_handle();
+		graphics_pipeline_create_info.stageCount = static_cast<uint32_t>(shader_stage_create_infos.size());
+		graphics_pipeline_create_info.subpass = 0;
 
-		mPipelineHandle = mDevice->getHandle().createGraphicsPipeline({}, graphicsPipelineCreateInfo);
+		m_pipeline_handle = m_device->get_handle().createGraphicsPipeline({}, graphics_pipeline_create_info);
 	}
 
 	Pipeline::~Pipeline()
 	{
-		mDevice->getHandle().destroyPipeline(mPipelineHandle);
-		mDevice->getHandle().destroyPipelineLayout(mPipelineLayoutHandle);
+		m_device->get_handle().destroyPipeline(m_pipeline_handle);
+		m_device->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
 	}
 
-	vk::PushConstantRange Pipeline::getPushConstantsMember(const std::string &tMemberName) const
+	vk::PushConstantRange Pipeline::get_push_constants_member(const std::string& name) const
 	{
-		auto it = mPushConstantsMapping.find(tMemberName);
+		auto it = m_push_constants_mapping.find(name);
 
-		if (it == mPushConstantsMapping.end())
+		if (it == m_push_constants_mapping.end())
 		{
-			throw std::runtime_error("Push constant with name " + tMemberName + " not found");
+			throw std::runtime_error("Push constant with name " + name + " not found");
 		}
 
 		return it->second;
 	}
 
-	vk::DescriptorSetLayout Pipeline::getDescriptorSetLayout(uint32_t tSet) const
+	vk::DescriptorSetLayout Pipeline::get_descriptor_set_layout(uint32_t set) const
 	{
-		auto it = mDescriptorSetLayoutsMapping.find(tSet);
+		auto it = m_descriptor_set_layouts_mapping.find(set);
 
-		if (it == mDescriptorSetLayoutsMapping.end())
+		if (it == m_descriptor_set_layouts_mapping.end())
 		{
 			std::ostringstream os;
-			os << "Descriptor set layout at set " << tSet << " not found";
+			os << "Descriptor set layout at set " << set << " not found";
 			throw std::runtime_error(os.str());
 		}
 
 		return it->second;
 	}
 
-	vk::DescriptorPool Pipeline::createCompatibleDescriptorPool(uint32_t tSet, uint32_t tMaxSets)
+	vk::DescriptorPool Pipeline::create_compatible_descriptor_pool(uint32_t set, uint32_t max_sets)
 	{
 		// First, make sure that a descriptor set with this index has been recorded.
-		if (mDescriptorsMapping.find(tSet) == mDescriptorsMapping.end())
+		if (m_descriptors_mapping.find(set) == m_descriptors_mapping.end())
 		{
 			return VK_NULL_HANDLE;
 		}
 
 		// Create a descriptor pool size structure for each of the descriptors in this set.
-		std::vector<vk::DescriptorPoolSize> descriptorPoolSizes;
-		for (const auto &descriptorSetLayoutBinding : mDescriptorsMapping[tSet])
+		std::vector<vk::DescriptorPoolSize> descriptor_pool_sizes;
+		for (const auto& descriptor_set_layout_binding : m_descriptors_mapping[set])
 		{
-			vk::DescriptorPoolSize descriptorPoolSize;
-			descriptorPoolSize.descriptorCount = descriptorSetLayoutBinding.descriptorCount;
-			descriptorPoolSize.type = descriptorSetLayoutBinding.descriptorType;
+			vk::DescriptorPoolSize descriptor_pool_size;
+			descriptor_pool_size.descriptorCount = descriptor_set_layout_binding.descriptorCount;
+			descriptor_pool_size.type = descriptor_set_layout_binding.descriptorType;
 
-			descriptorPoolSizes.push_back(descriptorPoolSize);
+			descriptor_pool_sizes.push_back(descriptor_pool_size);
 		}
 
 		// Finally, create the descriptor pool from the list of descriptor pool size structures above.
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo;
-		descriptorPoolCreateInfo.maxSets = tMaxSets;
-		descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
-		descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
+		vk::DescriptorPoolCreateInfo descriptor_pool_create_info;
+		descriptor_pool_create_info.maxSets = max_sets;
+		descriptor_pool_create_info.poolSizeCount = static_cast<uint32_t>(descriptor_pool_sizes.size());
+		descriptor_pool_create_info.pPoolSizes = descriptor_pool_sizes.data();
 
-		vk::DescriptorPool descriptorPoolHandle = mDevice->getHandle().createDescriptorPool(descriptorPoolCreateInfo);
+		vk::DescriptorPool descriptor_pool_handle = m_device->get_handle().createDescriptorPool(descriptor_pool_create_info);
 
-		return descriptorPoolHandle;
+		return descriptor_pool_handle;
 	}
 
-	vk::PipelineShaderStageCreateInfo Pipeline::buildPipelineShaderStageCreateInfo(const ShaderModuleRef &tShaderModule, vk::ShaderStageFlagBits tShaderStageFlagBits)
+	vk::PipelineShaderStageCreateInfo Pipeline::build_shader_stage_create_info(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits)
 	{
-		vk::PipelineShaderStageCreateInfo pipelineShaderStageCreateInfo;
-		pipelineShaderStageCreateInfo.module = tShaderModule->get_handle();
-		pipelineShaderStageCreateInfo.pName = tShaderModule->get_entry_points()[0].c_str();
-		pipelineShaderStageCreateInfo.pSpecializationInfo = nullptr;
-		pipelineShaderStageCreateInfo.stage = tShaderStageFlagBits;
+		vk::PipelineShaderStageCreateInfo shader_stage_create_info;
+		shader_stage_create_info.module = module->get_handle();
+		shader_stage_create_info.pName = module->get_entry_points()[0].c_str();
+		shader_stage_create_info.pSpecializationInfo = nullptr;
+		shader_stage_create_info.stage = shader_stage_flag_bits;
 
-		return pipelineShaderStageCreateInfo;
+		return shader_stage_create_info;
 	}
 
-	void Pipeline::addPushConstantsToGlobalMap(const ShaderModuleRef &tShaderModule, vk::ShaderStageFlagBits tShaderStageFlagBits)
+	void Pipeline::add_push_constants_to_global_map(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits)
 	{
-		uint32_t maxPushConstantsSize = mDevice->getPhysicalDeviceProperties().limits.maxPushConstantsSize;
+		uint32_t max_push_constants_size = m_device->get_physical_device_properties().limits.maxPushConstantsSize;
 
-		for (const auto &pushConstant : tShaderModule->get_push_constants())
+		for (const auto& push_constant : module->get_push_constants())
 		{
 			// If this push constant already exists in the mapping, simply update its stage flags.
-			auto it = mPushConstantsMapping.find(pushConstant.name);
-			if (it != mPushConstantsMapping.end() &&
-				it->second.offset == pushConstant.offset &&
-				it->second.size == pushConstant.size)
+			auto it = m_push_constants_mapping.find(push_constant.name);
+			if (it != m_push_constants_mapping.end() &&
+				it->second.offset == push_constant.offset &&
+				it->second.size == push_constant.size)
 			{
-				it->second.stageFlags |= tShaderStageFlagBits;
+				it->second.stageFlags |= shader_stage_flag_bits;
 				continue;
 			}
 
 			// Otherwise, create a new entry for this push constant.
-			vk::PushConstantRange pushConstantRange;
-			pushConstantRange.offset = pushConstant.offset;
-			pushConstantRange.size = pushConstant.size;
-			pushConstantRange.stageFlags = tShaderStageFlagBits;
+			vk::PushConstantRange push_constant_range;
+			push_constant_range.offset = push_constant.offset;
+			push_constant_range.size = push_constant.size;
+			push_constant_range.stageFlags = shader_stage_flag_bits;
 
-			mPushConstantsMapping.insert({ pushConstant.name, pushConstantRange });
+			m_push_constants_mapping.insert({ push_constant.name, push_constant_range });
 		}
 	}
 
-	void Pipeline::addDescriptorsToGlobalMap(const ShaderModuleRef &tShaderModule, vk::ShaderStageFlagBits tShaderStageFlagBits)
+	void Pipeline::add_descriptors_to_global_map(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits)
 	{
-		for (const auto &descriptor : tShaderModule->get_descriptors())
+		for (const auto& descriptor : module->get_descriptors())
 		{
 			// for every descriptor found in this shader stage
 			uint32_t set = descriptor.layout_set;
 
-			vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding;
-			descriptorSetLayoutBinding.binding = descriptor.layout_binding;
-			descriptorSetLayoutBinding.descriptorCount = descriptor.descriptor_count;
-			descriptorSetLayoutBinding.descriptorType = descriptor.descriptor_type;
-			descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
-			descriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eAll;
+			vk::DescriptorSetLayoutBinding descriptor_set_layout_binding;
+			descriptor_set_layout_binding.binding = descriptor.layout_binding;
+			descriptor_set_layout_binding.descriptorCount = descriptor.descriptor_count;
+			descriptor_set_layout_binding.descriptorType = descriptor.descriptor_type;
+			descriptor_set_layout_binding.pImmutableSamplers = nullptr;
+			descriptor_set_layout_binding.stageFlags = vk::ShaderStageFlagBits::eAll;
 
-			auto it = mDescriptorsMapping.find(set);
-			if (it == mDescriptorsMapping.end())
+			auto it = m_descriptors_mapping.find(set);
+			if (it == m_descriptors_mapping.end())
 			{
-				std::vector<vk::DescriptorSetLayoutBinding> freshDescriptorSetLayoutBindings = { descriptorSetLayoutBinding };
-				mDescriptorsMapping.insert(std::make_pair(set, freshDescriptorSetLayoutBindings));
+				std::vector<vk::DescriptorSetLayoutBinding> fresh_descriptor_set_layout_bindings = { descriptor_set_layout_binding };
+				m_descriptors_mapping.insert(std::make_pair(set, fresh_descriptor_set_layout_bindings));
 			}
 			else
 			{
 				// Only add this entry if it doesn't already exist in this set's list of descriptors.
-				auto &existingDescriptorSetLayoutBindings = (*it).second;
-				auto it = std::find_if(existingDescriptorSetLayoutBindings.begin(), existingDescriptorSetLayoutBindings.end(), 
-					[&](const vk::DescriptorSetLayoutBinding &tDescriptorSetLayoutBinding) {
-						return tDescriptorSetLayoutBinding.binding == descriptorSetLayoutBinding.binding;
+				auto& existing_descriptor_set_layout_bindings = (*it).second;
+				auto it = std::find_if(existing_descriptor_set_layout_bindings.begin(), existing_descriptor_set_layout_bindings.end(),
+					[&](const vk::DescriptorSetLayoutBinding &tDescriptorSetLayoutBinding) 
+					{
+						return tDescriptorSetLayoutBinding.binding == descriptor_set_layout_binding.binding;
 					});
 
-				if (it == existingDescriptorSetLayoutBindings.end())
+				if (it == existing_descriptor_set_layout_bindings.end())
 				{
-					existingDescriptorSetLayoutBindings.push_back(descriptorSetLayoutBinding);
+					existing_descriptor_set_layout_bindings.push_back(descriptor_set_layout_binding);
 				}
 			}
 		}			
 	}
 
-	void Pipeline::buildDescriptorSetLayouts()
+	void Pipeline::build_descriptor_set_layouts()
 	{
-		for (const auto &mapping : mDescriptorsMapping)
+		for (const auto& mapping : m_descriptors_mapping)
 		{
-			vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
-			descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(mDescriptorsMapping[mapping.first].size());
-			descriptorSetLayoutCreateInfo.pBindings = mDescriptorsMapping[mapping.first].data();
+			vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
+			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(m_descriptors_mapping[mapping.first].size());
+			descriptor_set_layout_create_info.pBindings = m_descriptors_mapping[mapping.first].data();
 
-			vk::DescriptorSetLayout descriptorSetLayout = mDevice->getHandle().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+			vk::DescriptorSetLayout descriptorSetLayout = m_device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 
-			mDescriptorSetLayoutsMapping.insert(std::make_pair(mapping.first, descriptorSetLayout));
+			m_descriptor_set_layouts_mapping.insert(std::make_pair(mapping.first, descriptorSetLayout));
 		}
 	}
 
-	std::ostream& operator<<(std::ostream &tStream, const PipelineRef &tPipeline)
+	std::ostream& operator<<(std::ostream& stream, const PipelineRef& pipeline)
 	{
-		tStream << "Pipeline object: " << tPipeline->mPipelineHandle << std::endl;
+		stream << "Pipeline object: " << pipeline->m_pipeline_handle << std::endl;
 
-		tStream << "Push constants details:" << std::endl;
-		for (const auto &mapping : tPipeline->mPushConstantsMapping)
+		stream << "Push constants details:" << std::endl;
+		for (const auto& mapping : pipeline->m_push_constants_mapping)
 		{
-			tStream << "\tPush constant named: " << mapping.first << ":" << std::endl;
-			tStream << "\t\tOffset: " << mapping.second.offset << std::endl;
-			tStream << "\t\tSize: " << mapping.second.size << std::endl;
-			tStream << "\t\tShader stage flags: " << shaderStageAsString(mapping.second.stageFlags) << std::endl;
+			stream << "\tPush constant named: " << mapping.first << ":" << std::endl;
+			stream << "\t\tOffset: " << mapping.second.offset << std::endl;
+			stream << "\t\tSize: " << mapping.second.size << std::endl;
+			stream << "\t\tShader stage flags: " << shader_stage_as_string(mapping.second.stageFlags) << std::endl;
 		}
 
-		tStream << "Descriptor set details:" << std::endl;
-		for (const auto &mapping : tPipeline->mDescriptorsMapping)
+		stream << "Descriptor set details:" << std::endl;
+		for (const auto& mapping : pipeline->m_descriptors_mapping)
 		{
-			tStream << "\tDescriptor set #" << mapping.first << ":" << std::endl;
-			for (const auto &descriptorSetLayoutBinding : mapping.second)
+			stream << "\tDescriptor set #" << mapping.first << ":" << std::endl;
+			for (const auto& descriptor_set_layout_binding : mapping.second)
 			{
-				tStream << "\t\tDescriptor at binding: " << descriptorSetLayoutBinding.binding << std::endl;
-				tStream << "\t\t\tDescriptor count: " << descriptorSetLayoutBinding.descriptorCount << std::endl;
-				tStream << "\t\t\tDescriptor type: " << descriptorTypeAsString(descriptorSetLayoutBinding.descriptorType) << std::endl;
-				tStream << "\t\t\tShader stage flags: " << shaderStageAsString(descriptorSetLayoutBinding.stageFlags) << std::endl;
+				stream << "\t\tDescriptor at binding: " << descriptor_set_layout_binding.binding << std::endl;
+				stream << "\t\t\tDescriptor count: " << descriptor_set_layout_binding.descriptorCount << std::endl;
+				stream << "\t\t\tDescriptor type: " << descriptor_type_as_string(descriptor_set_layout_binding.descriptorType) << std::endl;
+				stream << "\t\t\tShader stage flags: " << shader_stage_as_string(descriptor_set_layout_binding.stageFlags) << std::endl;
 			}
 		}
 
-		return tStream;
+		return stream;
 	}
 	
 } // namespace graphics

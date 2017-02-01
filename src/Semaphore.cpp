@@ -34,12 +34,12 @@ namespace graphics
 	{
 		vk::SemaphoreCreateInfo semaphore_create_info;
 
-		m_semaphore_handle = m_device->getHandle().createSemaphore(semaphore_create_info);
+		m_semaphore_handle = m_device->get_handle().createSemaphore(semaphore_create_info);
 	}
 
 	Semaphore::~Semaphore()
 	{
-		m_device->getHandle().destroySemaphore(m_semaphore_handle);
+		m_device->get_handle().destroySemaphore(m_semaphore_handle);
 	}
 
 } // namespace graphics

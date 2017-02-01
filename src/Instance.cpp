@@ -31,25 +31,24 @@ namespace graphics
 
 	Instance::Options::Options()
 	{
-		mRequiredLayers = { "VK_LAYER_LUNARG_standard_validation" };
-		mRequiredExtensions = { "VK_EXT_debug_report" };
+		m_required_layers = { "VK_LAYER_LUNARG_standard_validation" };
+		m_required_extensions = { "VK_EXT_debug_report" };
 		
-		mApplicationInfo = {};
-		mApplicationInfo.apiVersion = VK_API_VERSION_1_0;
-		mApplicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		mApplicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		mApplicationInfo.pApplicationName = "Spectrum Application";
-		mApplicationInfo.pEngineName = "Spectrum Engine";
+		m_application_info.apiVersion = VK_API_VERSION_1_0;
+		m_application_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+		m_application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		m_application_info.pApplicationName = "Spectrum Application";
+		m_application_info.pEngineName = "Spectrum Engine";
 	}
 
 	//! Proxy function for creating a debug callback object
-	vk::Result createDebugReportCallbackEXT(VkInstance tInstance, const VkDebugReportCallbackCreateInfoEXT* tCreateInfo, const VkAllocationCallbacks* tAllocator, VkDebugReportCallbackEXT* tCallback)
+	vk::Result create_debug_report_callback(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* create_info, const VkAllocationCallbacks* allocator, VkDebugReportCallbackEXT* call_back)
 	{
-		auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(tInstance, "vkCreateDebugReportCallbackEXT");
+		auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
 
 		if (func != nullptr)
 		{
-			return static_cast<vk::Result>(func(tInstance, tCreateInfo, tAllocator, tCallback));
+			return static_cast<vk::Result>(func(instance, create_info, allocator, call_back));
 		}
 		else
 		{
@@ -58,87 +57,87 @@ namespace graphics
 	}
 
 	//! Proxy function for destroying a debug callback object
-	void destroyDebugReportCallbackEXT(vk::Instance tInstance, VkDebugReportCallbackEXT tCallback, const VkAllocationCallbacks* tAllocator)
+	void destroy_debug_report_callback(vk::Instance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* allocator)
 	{
-		auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(tInstance, "vkDestroyDebugReportCallbackEXT");
+		auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
 
 		if (func != nullptr)
 		{
-			func(static_cast<VkInstance>(tInstance), tCallback, tAllocator);
+			func(static_cast<VkInstance>(instance), callback, allocator);
 		}
 	}
 
-	Instance::Instance(const Options &tOptions) :
-		mRequiredLayers(tOptions.mRequiredLayers),
-		mRequiredExtensions(tOptions.mRequiredExtensions)
+	Instance::Instance(const Options& options) :
+		m_required_layers(options.m_required_layers),
+		m_required_extensions(options.m_required_extensions)
 	{
 		// Store the instance extension properties.
-		mInstanceExtensionProperties = vk::enumerateInstanceExtensionProperties();
+		m_instance_extension_properties = vk::enumerateInstanceExtensionProperties();
 
 		// Store the instance layer properties.
-		mInstanceLayerProperties = vk::enumerateInstanceLayerProperties();
+		m_instance_layer_properties = vk::enumerateInstanceLayerProperties();
 
-		if (!checkInstanceLayerSupport())
+		if (!check_instance_layer_support())
 		{
 			throw std::runtime_error("One or more of the requested validation layers are not supported on this platform");
 		}
 
 		// Append the instance extensions required by the windowing system
 #if defined(SPECTRUM_MSW)
-		mRequiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+		m_required_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #elif defined(SPECTRUM_LINUX)
-		mRequiredExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+		m_required_extensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 #endif
-		mRequiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+		m_required_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
 		// Create the instance.
-		vk::InstanceCreateInfo instanceCreateInfo;
-		instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(mRequiredExtensions.size());
-		instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mRequiredLayers.size());
-		instanceCreateInfo.pApplicationInfo = &tOptions.mApplicationInfo;
-		instanceCreateInfo.ppEnabledExtensionNames = mRequiredExtensions.data();
-		instanceCreateInfo.ppEnabledLayerNames = mRequiredLayers.data();
+		vk::InstanceCreateInfo instance_create_info;
+		instance_create_info.enabledExtensionCount = static_cast<uint32_t>(m_required_extensions.size());
+		instance_create_info.enabledLayerCount = static_cast<uint32_t>(m_required_layers.size());
+		instance_create_info.pApplicationInfo = &options.m_application_info;
+		instance_create_info.ppEnabledExtensionNames = m_required_extensions.data();
+		instance_create_info.ppEnabledLayerNames = m_required_layers.data();
 
-		mInstanceHandle = vk::createInstance(instanceCreateInfo);
+		m_instance_handle = vk::createInstance(instance_create_info);
 
 		// Only set up the debug callback object if the VK_EXT_debug_report extension is present.
-		if (std::find(mRequiredExtensions.begin(), mRequiredExtensions.end(), "VK_EXT_debug_report") != mRequiredExtensions.end())
+		if (std::find(m_required_extensions.begin(), m_required_extensions.end(), "VK_EXT_debug_report") != m_required_extensions.end())
 		{
-			setupDebugReportCallback();
+			setup_debug_report_callback();
 		}
 
 		// Store the handles to each of the present physical devices (note that this needs to happen after initialization).
-		mPhysicalDevices = mInstanceHandle.enumeratePhysicalDevices();
+		m_physical_devices = m_instance_handle.enumeratePhysicalDevices();
 	}
 
 	Instance::~Instance()
 	{
-		destroyDebugReportCallbackEXT(mInstanceHandle, mDebugReportCallback, nullptr);
+		destroy_debug_report_callback(m_instance_handle, m_debug_report_callback, nullptr);
 		
-		mInstanceHandle.destroy();
+		m_instance_handle.destroy();
 	}
 
-	vk::PhysicalDevice Instance::pickPhysicalDevice(const std::function<bool(vk::PhysicalDevice)> &tCandidacyFunc)
+	vk::PhysicalDevice Instance::pick_physical_device(const std::function<bool(vk::PhysicalDevice)>& func)
 	{
-		for (const auto &physicalDevice : mPhysicalDevices)
+		for (const auto& physical_device : m_physical_devices)
 		{
-			if (tCandidacyFunc(physicalDevice))
+			if (func(physical_device))
 			{
-				return physicalDevice;
+				return physical_device;
 			}
 		}
 		
 		return VK_NULL_HANDLE;
 	}
 
-	bool Instance::checkInstanceLayerSupport()
+	bool Instance::check_instance_layer_support()
 	{
-		for (const auto& requiredLayerName: mRequiredLayers)
+		for (const auto& required_layer_name : m_required_layers)
 		{
-			auto predicate = [&](const vk::LayerProperties &layerProperty) { return strcmp(requiredLayerName, layerProperty.layerName) == 0; };
-			if (std::find_if(mInstanceLayerProperties.begin(), mInstanceLayerProperties.end(), predicate) == mInstanceLayerProperties.end())
+			auto predicate = [&](const vk::LayerProperties &layerProperty) { return strcmp(required_layer_name, layerProperty.layerName) == 0; };
+			if (std::find_if(m_instance_layer_properties.begin(), m_instance_layer_properties.end(), predicate) == m_instance_layer_properties.end())
 			{
-				std::cerr << "Required layer " << requiredLayerName << " is not supported\n";
+				std::cerr << "Required layer " << required_layer_name << " is not supported\n";
 				return false;
 			}
 		}
@@ -146,15 +145,15 @@ namespace graphics
 		return true;
 	}
 
-	void Instance::setupDebugReportCallback()
+	void Instance::setup_debug_report_callback()
 	{
-		VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = {};
-		debugReportCallbackCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-		debugReportCallbackCreateInfo.pfnCallback = debugCallback;
-		debugReportCallbackCreateInfo.pUserData = nullptr;
-		debugReportCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+		VkDebugReportCallbackCreateInfoEXT debug_report_callback_create_info = {};
+		debug_report_callback_create_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+		debug_report_callback_create_info.pfnCallback = debug_callback;
+		debug_report_callback_create_info.pUserData = nullptr;
+		debug_report_callback_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 		
-		createDebugReportCallbackEXT(mInstanceHandle, &debugReportCallbackCreateInfo, nullptr, &mDebugReportCallback);
+		create_debug_report_callback(m_instance_handle, &debug_report_callback_create_info, nullptr, &m_debug_report_callback);
 	}
 
 } // namespace graphics

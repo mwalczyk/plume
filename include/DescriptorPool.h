@@ -56,20 +56,20 @@ namespace graphics
 		//!															  { vk::DescriptorType::eCombinedImageSampler, 4},
 		//!															  { vk::DescriptorType::eStorageBuffer, 1}});
 		//!
-		static DescriptorPoolRef create(const DeviceRef &tDevice, const std::vector<vk::DescriptorPoolSize> &tDescriptorPoolSizes, uint32_t tMaxSets = 1)
+		static DescriptorPoolRef create(const DeviceRef& device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1)
 		{
 
-			return std::make_shared<DescriptorPool>(tDevice, tDescriptorPoolSizes, tMaxSets);
+			return std::make_shared<DescriptorPool>(device, descriptor_pool_sizes, max_sets);
 		}
 
-		DescriptorPool(const DeviceRef &tDevice, const std::vector<vk::DescriptorPoolSize> &tDescriptorPoolSizes, uint32_t tMaxSets = 1);
+		DescriptorPool(const DeviceRef& device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1);
 
-		inline vk::DescriptorPool getHandle() const { return mDescriptorPoolHandle; }
+		inline vk::DescriptorPool get_handle() const { return m_descriptor_pool_handle; }
 
 	public:
 
-		DeviceRef mDevice;
-		vk::DescriptorPool mDescriptorPoolHandle;
+		DeviceRef m_device;
+		vk::DescriptorPool m_descriptor_pool_handle;
 	};
 
 } // namespace graphics

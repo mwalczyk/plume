@@ -54,65 +54,68 @@ namespace graphics
 
 			//! Specify the names of all instance layers that should be enabled. By default,
 			//! only the VK_LAYER_LUNARG_standard_validation layer is enabled.
-			Options& requiredLayers(const std::vector<const char*> tRequiredLayers) { mRequiredLayers = tRequiredLayers; return *this; }
+			Options& required_layers(const std::vector<const char*>& required_layers) { m_required_layers = required_layers; return *this; }
 
 			//! Add a single name to the list of instance layers that should be enabled.
-			Options& appendRequiredLayer(const char* tLayerName) { mRequiredLayers.push_back(tLayerName); return *this; }
+			Options& append_required_ayer(const char* layer) { m_required_layers.push_back(layer); return *this; }
 
 			//! Specify the names of all instance extensions that should be enabled.
-			Options& requiredExtensions(const std::vector<const char*> tRequiredExtensions) { mRequiredExtensions = tRequiredExtensions; return *this; }
+			Options& required_extensions(const std::vector<const char*>& required_extensions) { m_required_extensions = required_extensions; return *this; }
 			
 			//! Add a single name to the list of instance extensions that should be enabled. By default,
 			//! only the VK_EXT_debug_report instance extension is enabled.
-			Options& appendRequiredExtensions(const char* tExtensionName) { mRequiredExtensions.push_back(tExtensionName); return *this; }
+			Options& append_required_extensions(const char* extension) { m_required_extensions.push_back(extension); return *this; }
 			
 			//! Specify a complete VkApplicationInfo structure that will be used to create this instance.
-			Options& applicationInfo(const vk::ApplicationInfo &tApplicationInfo) { mApplicationInfo = tApplicationInfo; return *this; }
+			Options& application_info(const vk::ApplicationInfo& application_info) { m_application_info = application_info; return *this; }
 			
 		private:
 
-			std::vector<const char*> mRequiredLayers;
-			std::vector<const char*> mRequiredExtensions;
-			vk::ApplicationInfo mApplicationInfo;
+			std::vector<const char*> m_required_layers;
+			std::vector<const char*> m_required_extensions;
+			vk::ApplicationInfo m_application_info;
 
 			friend class Instance;
 		};
 
 		//! Factory method for returning a new InstanceRef.
-		static InstanceRef create(const Options &tOptions = Options()) { return std::make_shared<Instance>(tOptions); }
+		static InstanceRef create(const Options& options = Options()) 
+		{ 
+			return std::make_shared<Instance>(options); 
+		}
 
-		Instance(const Options &tOptions = Options());
+		Instance(const Options& options = Options());
 		~Instance();
 
-		inline vk::Instance getHandle() const { return mInstanceHandle; }
-		inline const std::vector<vk::ExtensionProperties>& getInstanceExtensionProperties() const { return mInstanceExtensionProperties; }
-		inline const std::vector<vk::LayerProperties>& getInstanceLayerProperties() const { return mInstanceLayerProperties; }
-		inline const std::vector<vk::PhysicalDevice>& getPhysicalDevices() const { return mPhysicalDevices; }
-		vk::PhysicalDevice pickPhysicalDevice(const std::function<bool(vk::PhysicalDevice)> &tCandidacyFunc);
+		inline vk::Instance get_handle() const { return m_instance_handle; }
+		inline const std::vector<vk::ExtensionProperties>& get_instance_extension_properties() const { return m_instance_extension_properties; }
+		inline const std::vector<vk::LayerProperties>& get_instance_layer_properties() const { return m_instance_layer_properties; }
+		inline const std::vector<vk::PhysicalDevice>& get_physical_devices() const { return m_physical_devices; }
+		vk::PhysicalDevice pick_physical_device(const std::function<bool(vk::PhysicalDevice)>& func);
 
 	private:
 
-		bool checkInstanceLayerSupport();
-		void setupDebugReportCallback();
+		bool check_instance_layer_support();
+		void setup_debug_report_callback();
 
-		vk::Instance mInstanceHandle;
-		VkDebugReportCallbackEXT mDebugReportCallback;
-		std::vector<vk::ExtensionProperties> mInstanceExtensionProperties;
-		std::vector<vk::LayerProperties> mInstanceLayerProperties;
-		std::vector<vk::PhysicalDevice> mPhysicalDevices;
-		std::vector<const char*> mRequiredLayers;
-		std::vector<const char*> mRequiredExtensions;
+		vk::Instance m_instance_handle;
+		VkDebugReportCallbackEXT m_debug_report_callback;
+		std::vector<vk::ExtensionProperties> m_instance_extension_properties;
+		std::vector<vk::LayerProperties> m_instance_layer_properties;
+		std::vector<vk::PhysicalDevice> m_physical_devices;
+		std::vector<const char*> m_required_layers;
+		std::vector<const char*> m_required_extensions;
 
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags,
-															VkDebugReportObjectTypeEXT objType,
-															uint64_t obj,
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugReportFlagsEXT flags,
+															VkDebugReportObjectTypeEXT object_type,
+															uint64_t object,
 															size_t location,
 															int32_t code,
-															const char* layerPrefix,
-															const char* msg,
-															void* userData)
+															const char* layer_prefix,
+															const char* message,
+															void* data)
 		{
-			std::cerr << "VALIDATION LAYER: " << msg << std::endl;
+			std::cerr << "VALIDATION LAYER: " << message << std::endl;
 			return VK_FALSE;
 		}
 	};

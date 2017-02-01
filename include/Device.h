@@ -48,9 +48,9 @@ namespace graphics
 
 		struct SwapchainSupportDetails
 		{
-			vk::SurfaceCapabilitiesKHR mCapabilities;
-			std::vector<vk::SurfaceFormatKHR> mFormats;
-			std::vector<vk::PresentModeKHR> mPresentModes;
+			vk::SurfaceCapabilitiesKHR m_capabilities;
+			std::vector<vk::SurfaceFormatKHR> m_formats;
+			std::vector<vk::PresentModeKHR> m_present_modes;
 		};
 
 		class QueueFamiliesMapping
@@ -58,19 +58,19 @@ namespace graphics
 		public:
 			QueueFamiliesMapping() = default;		
 
-			std::pair<vk::Queue, uint32_t> graphics() const { return mGraphicsQueue; }
-			std::pair<vk::Queue, uint32_t> compute() const { return mComputeQueue; }
-			std::pair<vk::Queue, uint32_t> transfer() const { return mTransferQueue; }
-			std::pair<vk::Queue, uint32_t> sparseBinding() const { return mSparseBindingQueue; }
-			std::pair<vk::Queue, uint32_t> presentation() const { return mPresentationQueue; }
+			std::pair<vk::Queue, uint32_t> graphics() const { return m_graphics_queue; }
+			std::pair<vk::Queue, uint32_t> compute() const { return m_compute_queue; }
+			std::pair<vk::Queue, uint32_t> transfer() const { return m_transfer_queue; }
+			std::pair<vk::Queue, uint32_t> sparse_binding() const { return m_sparse_binding_queue; }
+			std::pair<vk::Queue, uint32_t> presentation() const { return m_presentation_queue; }
 
 		private:
 
-			std::pair<vk::Queue, uint32_t> mGraphicsQueue = { VK_NULL_HANDLE, 0 };
-			std::pair<vk::Queue, uint32_t> mComputeQueue = { VK_NULL_HANDLE, 0 };
-			std::pair<vk::Queue, uint32_t> mTransferQueue = { VK_NULL_HANDLE, 0 };
-			std::pair<vk::Queue, uint32_t> mSparseBindingQueue = { VK_NULL_HANDLE, 0 };
-			std::pair<vk::Queue, uint32_t> mPresentationQueue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> m_graphics_queue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> m_compute_queue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> m_transfer_queue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> m_sparse_binding_queue = { VK_NULL_HANDLE, 0 };
+			std::pair<vk::Queue, uint32_t> m_presentation_queue = { VK_NULL_HANDLE, 0 };
 
 			friend class Device;
 		};
@@ -81,62 +81,62 @@ namespace graphics
 
 			Options();
 
-			Options& requiredQueueFlags(vk::QueueFlags tRequiredQueueFlags) { mRequiredQueueFlags = tRequiredQueueFlags; return *this; }
-			Options& requiredDeviceExtensions(const std::vector<const char*> &tRequiredDeviceExtensions) { mRequiredDeviceExtensions = tRequiredDeviceExtensions; return *this; }
-			Options& useSwapchain(bool tUseSwapchain) { mUseSwapchain = tUseSwapchain; return *this; }
+			Options& required_queue_flags(vk::QueueFlags required_queue_flags) { m_required_queue_flags = required_queue_flags; return *this; }
+			Options& required_device_extensions(const std::vector<const char*>& required_device_extensions) { m_required_device_extensions = required_device_extensions; return *this; }
+			Options& use_swapchain(bool use_swapchain) { m_use_swapchain = use_swapchain; return *this; }
 
 		private:
 
-			vk::QueueFlags mRequiredQueueFlags;
-			std::vector<const char*> mRequiredDeviceExtensions;
-			bool mUseSwapchain;
+			vk::QueueFlags m_required_queue_flags;
+			std::vector<const char*> m_required_device_extensions;
+			bool m_use_swapchain;
 
 			friend class Device;
 		};
 
 		//! Factory method for returning a new DeviceRef.
-		static DeviceRef create(vk::PhysicalDevice tPhysicalDevice, const Options &tOptions = Options())
+		static DeviceRef create(vk::PhysicalDevice physical_device, const Options& options = Options())
 		{
-			return std::make_shared<Device>(tPhysicalDevice, tOptions);
+			return std::make_shared<Device>(physical_device, options);
 		}
 
 		//! Construct a logical device around a physical device (GPU).
-		Device(vk::PhysicalDevice tPhysicalDevice, const Options &tOptions = Options());
+		Device(vk::PhysicalDevice physical_device, const Options& options = Options());
 		~Device();
 
-		inline vk::Device getHandle() const { return mDeviceHandle; };
-		inline vk::PhysicalDevice getPhysicalDeviceHandle() const { return mPhysicalDeviceHandle; }
-		inline vk::PhysicalDeviceProperties getPhysicalDeviceProperties() const { return mPhysicalDeviceProperties; }
-		inline vk::PhysicalDeviceFeatures getPhysicalDeviceFeatures() const { return mPhysicalDeviceFeatures;  }
-		inline vk::PhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties() const { return mPhysicalDeviceMemoryProperties; }
-		inline const QueueFamiliesMapping& getQueueFamiliesMapping() const { return mQueueFamiliesMapping; }
-		inline const std::vector<vk::QueueFamilyProperties>& getPhysicalDeviceQueueFamilyProperties() const { return mPhysicalDeviceQueueFamilyProperties; }
-		inline const std::vector<vk::ExtensionProperties>& getPhysicalDeviceExtensionProperties() const { return mPhysicalDeviceExtensionProperties; }
+		inline vk::Device get_handle() const { return m_device_handle; };
+		inline vk::PhysicalDevice get_physical_device_handle() const { return m_physical_device_handle; }
+		inline vk::PhysicalDeviceProperties get_physical_device_properties() const { return m_physical_device_properties; }
+		inline vk::PhysicalDeviceFeatures get_physical_device_features() const { return m_physical_device_features;  }
+		inline vk::PhysicalDeviceMemoryProperties get_physical_device_memory_properties() const { return m_physical_device_memory_properties; }
+		inline const QueueFamiliesMapping& get_queue_families_mapping() const { return m_queue_families_mapping; }
+		inline const std::vector<vk::QueueFamilyProperties>& get_physical_device_queue_family_properties() const { return m_physical_device_queue_family_properties; }
+		inline const std::vector<vk::ExtensionProperties>& get_physical_device_extension_properties() const { return m_physical_device_extension_properties; }
 		
 		//! Format features are properties of the physical device.
-		inline vk::FormatProperties getPhysicalDeviceFormatProperties(vk::Format tFormat) const { return mPhysicalDeviceHandle.getFormatProperties(tFormat); }
+		inline vk::FormatProperties get_physical_device_format_properties(vk::Format format) const { return m_physical_device_handle.getFormatProperties(format); }
 		
 		//! Depth formats are not necessarily supported by the system. Retrieve the highest precision format available.
-		vk::Format getSupportedDepthFormat() const;
+		vk::Format get_supported_depth_format() const;
 
 		//! Returns a structure that contains information related to the chosen physical device's swapchain support.
-		SwapchainSupportDetails getSwapchainSupportDetails(const SurfaceRef &tSurface) const;
+		SwapchainSupportDetails get_swapchain_support_details(const SurfaceRef& surface) const;
 
-		friend std::ostream& operator<<(std::ostream &tStream, const DeviceRef &tDevice);
+		friend std::ostream& operator<<(std::ostream& stream, const DeviceRef& device);
 
 	private:
 
-		uint32_t findQueueFamilyIndex(vk::QueueFlagBits tQueueFlagBits) const;
+		uint32_t find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const;
 
-		vk::Device mDeviceHandle;
-		vk::PhysicalDevice mPhysicalDeviceHandle;
-		vk::PhysicalDeviceProperties mPhysicalDeviceProperties;
-		vk::PhysicalDeviceFeatures mPhysicalDeviceFeatures;
-		vk::PhysicalDeviceMemoryProperties mPhysicalDeviceMemoryProperties;
-		std::vector<vk::QueueFamilyProperties> mPhysicalDeviceQueueFamilyProperties;
-		std::vector<vk::ExtensionProperties> mPhysicalDeviceExtensionProperties;
-		QueueFamiliesMapping mQueueFamiliesMapping;
-		std::vector<const char*> mRequiredDeviceExtensions;
+		vk::Device m_device_handle;
+		vk::PhysicalDevice m_physical_device_handle;
+		vk::PhysicalDeviceProperties m_physical_device_properties;
+		vk::PhysicalDeviceFeatures m_physical_device_features;
+		vk::PhysicalDeviceMemoryProperties m_physical_device_memory_properties;
+		std::vector<vk::QueueFamilyProperties> m_physical_device_queue_family_properties;
+		std::vector<vk::ExtensionProperties> m_physical_device_extension_properties;
+		QueueFamiliesMapping m_queue_families_mapping;
+		std::vector<const char*> m_required_device_extensions;
 	};
 
 } // namespace graphics

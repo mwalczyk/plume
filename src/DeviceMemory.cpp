@@ -34,7 +34,7 @@ namespace graphics
 		m_selected_memory_index(0),
 		m_allocation_size(memory_requirements.size)
 	{
-		auto& physical_device_memory_properties = m_device->getPhysicalDeviceMemoryProperties();
+		auto& physical_device_memory_properties = m_device->get_physical_device_memory_properties();
 
 		// Based on the memory requirements, find the index of the memory heap that should be used to allocate memory.
 		for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount; ++i)
@@ -49,7 +49,7 @@ namespace graphics
 
 		vk::MemoryAllocateInfo memory_allocate_info{ memory_requirements.size, m_selected_memory_index };
 		
-		m_device_memory_handle = m_device->getHandle().allocateMemory(memory_allocate_info);
+		m_device_memory_handle = m_device->get_handle().allocateMemory(memory_allocate_info);
 	}
 
 	DeviceMemory::~DeviceMemory()
@@ -58,7 +58,7 @@ namespace graphics
 		{
 			unmap();
 		}
-		m_device->getHandle().freeMemory(m_device_memory_handle);
+		m_device->get_handle().freeMemory(m_device_memory_handle);
 	}
 
 	void* DeviceMemory::map(size_t offset, size_t size)
@@ -67,14 +67,14 @@ namespace graphics
 		{
 			return nullptr;
 		}
-		void* mapped_ptr = m_device->getHandle().mapMemory(m_device_memory_handle, offset, size);
+		void* mapped_ptr = m_device->get_handle().mapMemory(m_device_memory_handle, offset, size);
 		m_in_use = true;
 		return mapped_ptr;
 	}
 
 	void DeviceMemory::unmap()
 	{
-		m_device->getHandle().unmapMemory(m_device_memory_handle);
+		m_device->get_handle().unmapMemory(m_device_memory_handle);
 		m_in_use = false;
 	}
 

@@ -138,12 +138,12 @@ namespace graphics
 		render_pass_create_info.pSubpasses = m_subpass_descriptions.data();
 		render_pass_create_info.subpassCount = static_cast<uint32_t>(m_subpass_descriptions.size());
 
-		m_render_pass_handle = m_device->getHandle().createRenderPass(render_pass_create_info);
+		m_render_pass_handle = m_device->get_handle().createRenderPass(render_pass_create_info);
 	}
 
 	RenderPass::~RenderPass()
 	{
-		m_device->getHandle().destroyRenderPass(m_render_pass_handle);
+		m_device->get_handle().destroyRenderPass(m_render_pass_handle);
 	}
 
 } // namespace graphics

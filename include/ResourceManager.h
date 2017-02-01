@@ -47,17 +47,17 @@ class ResourceManager
 {
 public:
 
-	static ResourceManager& resourceManager()
+	static ResourceManager& resource_manager()
 	{
 		static ResourceManager manager;
 		return manager;
 	}
 
-	static FileResource loadFile(const std::string &tFileName);
-	static ImageResource loadImage(const std::string &tFileName, bool tForceChannels = true);
+	static FileResource load_file(const std::string& file_name);
+	static ImageResource load_image(const std::string& file_name, bool force_channels = true);
 
-	ResourceManager(const ResourceManager &tOther) = delete;
-	ResourceManager& operator=(const ResourceManager &tOther) = delete;
+	ResourceManager(const ResourceManager& other) = delete;
+	ResourceManager& operator=(const ResourceManager& other) = delete;
 
 private:
 

@@ -87,14 +87,14 @@ namespace graphics
 		shader_module_create_info.codeSize = shader_src.size();
 		shader_module_create_info.pCode = p_code;
 		
-		m_shader_module_handle = m_device->getHandle().createShaderModule(shader_module_create_info);
+		m_shader_module_handle = m_device->get_handle().createShaderModule(shader_module_create_info);
 
 		perform_reflection();
 	}
 
 	ShaderModule::~ShaderModule()
 	{
-		m_device->getHandle().destroyShaderModule(m_shader_module_handle);
+		m_device->get_handle().destroyShaderModule(m_shader_module_handle);
 	}
 
 	void ShaderModule::perform_reflection()

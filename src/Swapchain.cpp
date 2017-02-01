@@ -40,18 +40,18 @@ namespace graphics
 		m_width(width),
 		m_height(height)
 	{
-		auto support_details = m_device->getSwapchainSupportDetails(m_surface);
+		auto support_details = m_device->get_swapchain_support_details(m_surface);
 
 		// From the structure above, determine an optimal surface format, presentation mode, and size for the swapchain.
-		auto surface_format = select_swapchain_surface_format(support_details.mFormats);
-		auto present_mode = select_swapchain_present_mode(support_details.mPresentModes);
-		auto extent = select_swapchain_extent(support_details.mCapabilities);
+		auto surface_format = select_swapchain_surface_format(support_details.m_formats);
+		auto present_mode = select_swapchain_present_mode(support_details.m_present_modes);
+		auto extent = select_swapchain_extent(support_details.m_capabilities);
 
 		// If the maxImageCount field is 0, this indicates that there is no limit (besides memory requirements) to the number of images in the swapchain.
-		uint32_t image_count = support_details.mCapabilities.minImageCount + 1;
-		if (support_details.mCapabilities.maxImageCount > 0 && image_count > support_details.mCapabilities.maxImageCount)
+		uint32_t image_count = support_details.m_capabilities.minImageCount + 1;
+		if (support_details.m_capabilities.maxImageCount > 0 && image_count > support_details.m_capabilities.maxImageCount)
 		{
-			image_count = support_details.mCapabilities.maxImageCount;
+			image_count = support_details.m_capabilities.maxImageCount;
 		}
 
 		// For now, we assume that the graphics and presentation queues are the same - this is indicated by the VK_SHARING_MODE_EXCLUSIVE flag.
@@ -69,14 +69,14 @@ namespace graphics
 		swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 		swapchain_create_info.pQueueFamilyIndices = nullptr;								// If the sharing mode is exlusive, we don't need to specify this.
 		swapchain_create_info.presentMode = present_mode;
-		swapchain_create_info.preTransform = support_details.mCapabilities.currentTransform;
+		swapchain_create_info.preTransform = support_details.m_capabilities.currentTransform;
 		swapchain_create_info.queueFamilyIndexCount = 0;									// Again, if the sharing mode is exlusive, we don't need to specify this.
 		swapchain_create_info.surface = m_surface->get_handle();
 
-		m_swapchain_handle = m_device->getHandle().createSwapchainKHR(swapchain_create_info);
+		m_swapchain_handle = m_device->get_handle().createSwapchainKHR(swapchain_create_info);
 
 		// Note that the Vulkan implementation may create more swapchain images than requested above - this is why we query the number of images again.
-		m_image_handles = m_device->getHandle().getSwapchainImagesKHR(m_swapchain_handle);
+		m_image_handles = m_device->get_handle().getSwapchainImagesKHR(m_swapchain_handle);
 	
 		// Store the image format and extent for later use.
 		m_swapchain_image_format = surface_format.format;
@@ -87,12 +87,12 @@ namespace graphics
 
 	Swapchain::~Swapchain()
 	{
-		m_device->getHandle().destroySwapchainKHR(m_swapchain_handle);
+		m_device->get_handle().destroySwapchainKHR(m_swapchain_handle);
 	}
 
 	uint32_t Swapchain::acquire_next_swapchain_image(const SemaphoreRef& semaphore, uint32_t timeout)
 	{
-		auto result = m_device->getHandle().acquireNextImageKHR(m_swapchain_handle, timeout, semaphore->get_handle(), VK_NULL_HANDLE);
+		auto result = m_device->get_handle().acquireNextImageKHR(m_swapchain_handle, timeout, semaphore->get_handle(), VK_NULL_HANDLE);
 		return result.value;
 	}
 
@@ -175,7 +175,7 @@ namespace graphics
 			image_view_create_info.subresourceRange.levelCount = 1;
 			image_view_create_info.viewType = vk::ImageViewType::e2D;								// Treat the image as a standard 2D texture.
 
-			m_image_view_handles[i] = m_device->getHandle().createImageView(image_view_create_info);
+			m_image_view_handles[i] = m_device->get_handle().createImageView(image_view_create_info);
 		}
 	}
 

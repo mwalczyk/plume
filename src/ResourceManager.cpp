@@ -29,40 +29,40 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-FileResource ResourceManager::loadFile(const std::string &tFileName)
+FileResource ResourceManager::load_file(const std::string& file_name)
 {
 	// Start reading at the end of the file to determine file size.
-	std::ifstream file(tFileName, std::ios::ate | std::ios::binary);
+	std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
 	if (!file.is_open())
 	{
-		throw std::runtime_error("Failed to load file: " + tFileName);
+		throw std::runtime_error("Failed to load file: " + file_name);
 	}
 
 	// After recording the file size, go back to the beginning of the file.
-	size_t fileSize = static_cast<size_t>(file.tellg());
+	size_t total_size = static_cast<size_t>(file.tellg());
 	file.seekg(0);
 
 	// Read and close the file.
-	FileResource resource = { std::vector<uint8_t>(fileSize) };
+	FileResource resource = { std::vector<uint8_t>(total_size) };
 	auto data = reinterpret_cast<char*>(resource.contents.data());
-	file.read(data, fileSize);
+	file.read(data, total_size);
 	file.close();
 
 	return resource;
 }
 
-ImageResource ResourceManager::loadImage(const std::string &tFileName, bool tForceChannels)
+ImageResource ResourceManager::load_image(const std::string& file_name, bool force_channels)
 {
 	ImageResource resource;
 
 	// Read the image contents.
-	stbi_uc* pixels = stbi_load(tFileName.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(file_name.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
 	if (!pixels)
 	{
-		throw std::runtime_error("Failed to load image: " + tFileName);
+		throw std::runtime_error("Failed to load image: " + file_name);
 	}
-	if (tForceChannels)
+	if (force_channels)
 	{
 		resource.channels = 4;
 	}

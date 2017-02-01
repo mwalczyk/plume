@@ -33,28 +33,28 @@ namespace geo
 	{
 		switch (tAttribute)
 		{
-		case geo::VertexAttribute::ATTRIBUTE_POSITION: return reinterpret_cast<float*>(mPositions.data());
-		case geo::VertexAttribute::ATTRIBUTE_COLOR: return reinterpret_cast<float*>(mColors.data());
-		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return reinterpret_cast<float*>(mNormals.data());
-		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return reinterpret_cast<float*>(mTextureCoordinates.data());
+		case geo::VertexAttribute::ATTRIBUTE_POSITION: return reinterpret_cast<float*>(m_positions.data());
+		case geo::VertexAttribute::ATTRIBUTE_COLOR: return reinterpret_cast<float*>(m_colors.data());
+		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return reinterpret_cast<float*>(m_normals.data());
+		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return reinterpret_cast<float*>(m_texture_coordinates.data());
 		}
 	}
 
-	void Geometry::setRandomColors()
+	void Geometry::set_random_colors()
 	{
 		static std::random_device rand;
 		static std::mt19937 mersenne(rand());
 		static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 
-		mColors.clear();
-		mColors.resize(getVertexCount());
+		m_colors.clear();
+		m_colors.resize(get_vertex_count());
 
-		std::generate(mColors.begin(), mColors.end(), [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
+		std::generate(m_colors.begin(), m_colors.end(), [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
 	}
 
-	size_t Geometry::getVertexAttributeDimensions(VertexAttribute tAttribute) const
+	size_t Geometry::get_vertex_attribute_dimensions(VertexAttribute attribute) const
 	{
-		switch (tAttribute)
+		switch (attribute)
 		{
 		case geo::VertexAttribute::ATTRIBUTE_POSITION: return 3;
 		case geo::VertexAttribute::ATTRIBUTE_COLOR: return 3;
@@ -69,7 +69,7 @@ namespace geo
 		float t = (1.0f + sqrtf(5.0f)) / 2.0f;
 		
 		// Calculate positions.
-		mPositions = {
+		m_positions = {
 			{-1.0f,  t,     0.0f},
 			{ 1.0f,  t,     0.0f},
 			{-1.0f, -t,     0.0f},
@@ -84,16 +84,16 @@ namespace geo
 			{-t,     0.0f,  1.0f}
 		};
 
-		for (auto &position : mPositions)
+		for (auto &position : m_positions)
 		{
 			position = glm::normalize(position);
 		}
 
 		// Set the default color.
-		setSolidColor({ 1.0f, 1.0f, 1.0f });
+		set_solid({ 1.0f, 1.0f, 1.0f });
 
 		// Calculate indices.
-		mIndices = {
+		m_indices = {
 			0, 11, 5,
 			0, 5, 1,
 			0, 1, 7,
@@ -119,7 +119,7 @@ namespace geo
 
 	Grid::Grid()
 	{
-		mPositions = {
+		m_positions = {
 			{ -1.0f, -1.0f, 0.0f },
 			{  1.0f, -1.0f,	0.0f },
 			{  1.0f, 1.0f,	0.0f },
@@ -127,39 +127,39 @@ namespace geo
 		};
 
 		// Set the default color.
-		setSolidColor({ 1.0f, 1.0f, 1.0f });
+		set_solid({ 1.0f, 1.0f, 1.0f });
 
-		mTextureCoordinates = {
+		m_texture_coordinates = {
 			{ 0.0f, 1.0f },
 			{ 1.0f, 1.0f },
 			{ 1.0f, 0.0f },
 			{ 0.0f, 0.0f }
 		};
 
-		mIndices = {
+		m_indices = {
 			0, 1, 2, 
 			2, 3, 0
 		};
 	}
 
-	Circle::Circle(float tRadius, uint32_t tSubdivisions)
+	Circle::Circle(float radius, uint32_t subdivisions)
 	{
-		mPositions.push_back({ 0.0f, 0.0f, -2.0f });
-		mIndices.push_back(0);
+		m_positions.push_back({ 0.0f, 0.0f, -2.0f });
+		m_indices.push_back(0);
 
-		float angleDivisor = (2.0f * M_PI) / tSubdivisions;
-		for (size_t i = 0; i < tSubdivisions; ++i)
+		float div = (2.0f * M_PI) / subdivisions;
+		for (size_t i = 0; i < subdivisions; ++i)
 		{
-			float c = cosf(angleDivisor * i) * tRadius;
-			float s = sinf(angleDivisor * i) * tRadius;
-			mPositions.push_back({ c, s, -2.0f });
-			mIndices.push_back(i + 1);
+			float c = cosf(div * i) * radius;
+			float s = sinf(div * i) * radius;
+			m_positions.push_back({ c, s, -2.0f });
+			m_indices.push_back(i + 1);
 		}
 
-		mIndices.push_back(1);
+		m_indices.push_back(1);
 
 		// Set the default color.
-		setSolidColor({ 1.0f, 1.0f, 1.0f });
+		set_solid({ 1.0f, 1.0f, 1.0f });
 	}
 
 } // namespace geo

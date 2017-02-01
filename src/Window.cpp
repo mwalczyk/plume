@@ -83,7 +83,7 @@ namespace graphics
 		auto surface = Surface::create(m_instance);
 
 		// This class is a friend of the Surface class, so we can directly access the VkSurfaceKHR handle.
-		glfwCreateWindowSurface(m_instance->getHandle(), m_window_handle, nullptr, reinterpret_cast<VkSurfaceKHR*>(&surface->m_surface_handle));
+		glfwCreateWindowSurface(m_instance->get_handle(), m_window_handle, nullptr, reinterpret_cast<VkSurfaceKHR*>(&surface->m_surface_handle));
 
 		return surface;
 	}

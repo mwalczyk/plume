@@ -41,12 +41,12 @@ namespace graphics
 		command_pool_create_info.flags = options.m_command_pool_create_flags;
 		command_pool_create_info.queueFamilyIndex = queue_family_index;
 
-		m_command_pool_handle = m_device->getHandle().createCommandPool(command_pool_create_info);
+		m_command_pool_handle = m_device->get_handle().createCommandPool(command_pool_create_info);
 	}
 
 	CommandPool::~CommandPool()
 	{
-		m_device->getHandle().destroyCommandPool(m_command_pool_handle);
+		m_device->get_handle().destroyCommandPool(m_command_pool_handle);
 	}
 
 } // namespace graphics

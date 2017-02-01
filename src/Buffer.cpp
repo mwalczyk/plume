@@ -63,7 +63,7 @@ namespace graphics
 			// If there is a separate transfer queue available on this device, use it for setting up the staging buffer. The buffer needs to be
 			// created with this in mind. First, see if it was already included in the list of queue family indices that was passed to the constructor.
 			// If it wasn't, add it to the new list below, which will be used to create both buffers.
-			auto transfer_index = m_device->getQueueFamiliesMapping().transfer().second;
+			auto transfer_index = m_device->get_queue_families_mapping().transfer().second;
 			std::vector<uint32_t> staged_queue_family_indices(options.m_queue_family_indices.begin(), options.m_queue_family_indices.end());
 
 			if (std::find(staged_queue_family_indices.begin(), staged_queue_family_indices.end(), transfer_index) == staged_queue_family_indices.end())
@@ -73,11 +73,11 @@ namespace graphics
 		}
 		else
 		{
-			m_buffer_handle = m_device->getHandle().createBuffer(buffer_create_info);
+			m_buffer_handle = m_device->get_handle().createBuffer(buffer_create_info);
 		}
 
 		// Store the memory requirements for this buffer object.
-		auto memory_requirements = m_device->getHandle().getBufferMemoryRequirements(m_buffer_handle);
+		auto memory_requirements = m_device->get_handle().getBufferMemoryRequirements(m_buffer_handle);
 		auto required_memory_properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
 		// Allocate device memory.
@@ -92,12 +92,12 @@ namespace graphics
 		}
 
 		// Associate the device memory with this buffer object.
-		m_device->getHandle().bindBufferMemory(m_buffer_handle, m_device_memory->get_handle(), 0);
+		m_device->get_handle().bindBufferMemory(m_buffer_handle, m_device_memory->get_handle(), 0);
 	}
 
 	Buffer::~Buffer()
 	{
-		m_device->getHandle().destroyBuffer(m_buffer_handle);
+		m_device->get_handle().destroyBuffer(m_buffer_handle);
 	}
 
 } // namespace graphics

@@ -44,14 +44,14 @@ namespace graphics
 		commandBufferAllocateInfo.level = m_command_buffer_level;
 		commandBufferAllocateInfo.commandBufferCount = 1;
 
-		m_command_buffer_handle = m_device->getHandle().allocateCommandBuffers(commandBufferAllocateInfo)[0];
+		m_command_buffer_handle = m_device->get_handle().allocateCommandBuffers(commandBufferAllocateInfo)[0];
 
 	}
 
 	CommandBuffer::~CommandBuffer()
 	{
 		// Command buffers are automatically destroyed when the command pool from which they were allocated are destroyed.
-		m_device->getHandle().freeCommandBuffers(m_command_pool->get_handle(), m_command_buffer_handle);
+		m_device->get_handle().freeCommandBuffers(m_command_pool->get_handle(), m_command_buffer_handle);
 	}
 
 	void CommandBuffer::begin()
@@ -78,7 +78,7 @@ namespace graphics
 
 	void CommandBuffer::bind_pipeline(const PipelineRef& pipeline)
 	{
-		m_command_buffer_handle.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->getHandle());
+		m_command_buffer_handle.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->get_handle());
 	}
 
 	void CommandBuffer::bind_vertex_buffers(const std::vector<BufferRef>& buffers)
@@ -100,14 +100,14 @@ namespace graphics
 
 	void CommandBuffer::update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const void* data)
 	{
-		m_command_buffer_handle.pushConstants(pipeline->getPipelineLayoutHandle(), stage_flags, offset, size, data);
+		m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), stage_flags, offset, size, data);
 	}
 
 	void CommandBuffer::update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const void* data)
 	{
-		auto pushConstantsMember = pipeline->getPushConstantsMember(name);
+		auto pushConstantsMember = pipeline->get_push_constants_member(name);
 
-		m_command_buffer_handle.pushConstants(pipeline->getPipelineLayoutHandle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, data);
+		m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, data);
 	}
 
 	void CommandBuffer::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)

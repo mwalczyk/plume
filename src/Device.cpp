@@ -31,154 +31,154 @@ namespace graphics
 
 	Device::Options::Options()
 	{
-		mRequiredQueueFlags = vk::QueueFlagBits::eGraphics;
-		mUseSwapchain = true;
+		m_required_queue_flags = vk::QueueFlagBits::eGraphics;
+		m_use_swapchain = true;
 	}
 
-	Device::Device(vk::PhysicalDevice tPhysicalDevice, const Options &tOptions) :
-		mPhysicalDeviceHandle(tPhysicalDevice),
-		mRequiredDeviceExtensions(tOptions.mRequiredDeviceExtensions)
+	Device::Device(vk::PhysicalDevice physical_device, const Options& options) :
+		m_physical_device_handle(physical_device),
+		m_required_device_extensions(options.m_required_device_extensions)
 	{		
 		// Store the general properties, features, and memory properties of the chosen physical device.
-		mPhysicalDeviceProperties = mPhysicalDeviceHandle.getProperties();
-		mPhysicalDeviceFeatures = mPhysicalDeviceHandle.getFeatures();
-		mPhysicalDeviceMemoryProperties = mPhysicalDeviceHandle.getMemoryProperties();
+		m_physical_device_properties = m_physical_device_handle.getProperties();
+		m_physical_device_features = m_physical_device_handle.getFeatures();
+		m_physical_device_memory_properties = m_physical_device_handle.getMemoryProperties();
 		
 		// Store the queue family properties of the chosen physical device.
-		mPhysicalDeviceQueueFamilyProperties = mPhysicalDeviceHandle.getQueueFamilyProperties();
+		m_physical_device_queue_family_properties = m_physical_device_handle.getQueueFamilyProperties();
 
 		// Store the device extensions of the chosen physical device.
-		mPhysicalDeviceExtensionProperties = mPhysicalDeviceHandle.enumerateDeviceExtensionProperties();
+		m_physical_device_extension_properties = m_physical_device_handle.enumerateDeviceExtensionProperties();
 		
 		// Find the indicies of all of the requested queue families (inspired by Sascha Willems' codebase).
-		const float defaultQueuePriority = 0.0f;
-		const uint32_t defaultQueueCount = 1;
-		std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
-		if (tOptions.mRequiredQueueFlags & vk::QueueFlagBits::eGraphics)
+		const float default_queue_priority = 0.0f;
+		const uint32_t default_queue_count = 1;
+		std::vector<vk::DeviceQueueCreateInfo> device_queue_create_infos;
+		if (options.m_required_queue_flags & vk::QueueFlagBits::eGraphics)
 		{
-			mQueueFamiliesMapping.mGraphicsQueue.second = findQueueFamilyIndex(vk::QueueFlagBits::eGraphics);
+			m_queue_families_mapping.m_graphics_queue.second = find_queue_family_index(vk::QueueFlagBits::eGraphics);
 
-			vk::DeviceQueueCreateInfo deviceQueueCreateInfo = {};
-			deviceQueueCreateInfo.pQueuePriorities = &defaultQueuePriority;
-			deviceQueueCreateInfo.queueCount = defaultQueueCount;
-			deviceQueueCreateInfo.queueFamilyIndex = mQueueFamiliesMapping.mGraphicsQueue.second;
+			vk::DeviceQueueCreateInfo device_queue_create_info = {};
+			device_queue_create_info.pQueuePriorities = &default_queue_priority;
+			device_queue_create_info.queueCount = default_queue_count;
+			device_queue_create_info.queueFamilyIndex = m_queue_families_mapping.m_graphics_queue.second;
 
-			deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+			device_queue_create_infos.push_back(device_queue_create_info);
 
 			// For now, perform presentation with the same queue as graphics operations.
-			if (tOptions.mUseSwapchain)
+			if (options.m_use_swapchain)
 			{
-				mQueueFamiliesMapping.mPresentationQueue.second = mQueueFamiliesMapping.mGraphicsQueue.second;
+				m_queue_families_mapping.m_presentation_queue.second = m_queue_families_mapping.m_graphics_queue.second;
 			}
 		}
-		if (tOptions.mRequiredQueueFlags & vk::QueueFlagBits::eCompute)
+		if (options.m_required_queue_flags & vk::QueueFlagBits::eCompute)
 		{
-			mQueueFamiliesMapping.mComputeQueue.second = findQueueFamilyIndex(vk::QueueFlagBits::eCompute);
+			m_queue_families_mapping.m_compute_queue.second = find_queue_family_index(vk::QueueFlagBits::eCompute);
 
-			if (mQueueFamiliesMapping.mComputeQueue.second != mQueueFamiliesMapping.mGraphicsQueue.second)
+			if (m_queue_families_mapping.m_compute_queue.second != m_queue_families_mapping.m_graphics_queue.second)
 			{
 				// Create a dedicated queue for compute operations.
-				vk::DeviceQueueCreateInfo deviceQueueCreateInfo = {};
-				deviceQueueCreateInfo.pQueuePriorities = &defaultQueuePriority;
-				deviceQueueCreateInfo.queueCount = defaultQueueCount;
-				deviceQueueCreateInfo.queueFamilyIndex = mQueueFamiliesMapping.mComputeQueue.second;
+				vk::DeviceQueueCreateInfo device_queue_create_info = {};
+				device_queue_create_info.pQueuePriorities = &default_queue_priority;
+				device_queue_create_info.queueCount = default_queue_count;
+				device_queue_create_info.queueFamilyIndex = m_queue_families_mapping.m_compute_queue.second;
 
-				deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+				device_queue_create_infos.push_back(device_queue_create_info);
 			}
 			else
 			{
 				// Reuse the graphics queue for compute operations.
-				mQueueFamiliesMapping.mComputeQueue.second = mQueueFamiliesMapping.mGraphicsQueue.second;
+				m_queue_families_mapping.m_compute_queue.second = m_queue_families_mapping.m_graphics_queue.second;
 			}
 		}
-		if (tOptions.mRequiredQueueFlags & vk::QueueFlagBits::eTransfer)
+		if (options.m_required_queue_flags & vk::QueueFlagBits::eTransfer)
 		{
-			mQueueFamiliesMapping.mTransferQueue.second = findQueueFamilyIndex(vk::QueueFlagBits::eTransfer);
+			m_queue_families_mapping.m_transfer_queue.second = find_queue_family_index(vk::QueueFlagBits::eTransfer);
 
-			if (mQueueFamiliesMapping.mTransferQueue.second != mQueueFamiliesMapping.mGraphicsQueue.second &&
-				mQueueFamiliesMapping.mTransferQueue.second != mQueueFamiliesMapping.mComputeQueue.second)
+			if (m_queue_families_mapping.m_transfer_queue.second != m_queue_families_mapping.m_graphics_queue.second &&
+				m_queue_families_mapping.m_transfer_queue.second != m_queue_families_mapping.m_compute_queue.second)
 			{
 				// Create a dedicated queue for transfer operations.
-				vk::DeviceQueueCreateInfo deviceQueueCreateInfo = {};
-				deviceQueueCreateInfo.pQueuePriorities = &defaultQueuePriority;
-				deviceQueueCreateInfo.queueCount = defaultQueueCount;
-				deviceQueueCreateInfo.queueFamilyIndex = mQueueFamiliesMapping.mTransferQueue.second;
+				vk::DeviceQueueCreateInfo device_queue_create_info = {};
+				device_queue_create_info.pQueuePriorities = &default_queue_priority;
+				device_queue_create_info.queueCount = default_queue_count;
+				device_queue_create_info.queueFamilyIndex = m_queue_families_mapping.m_transfer_queue.second;
 
-				deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+				device_queue_create_infos.push_back(device_queue_create_info);
 			}
 			else
 			{
 				// Reuse the graphics queue for transfer operations.
-				mQueueFamiliesMapping.mTransferQueue.second = mQueueFamiliesMapping.mGraphicsQueue.second;
+				m_queue_families_mapping.m_transfer_queue.second = m_queue_families_mapping.m_graphics_queue.second;
 			}
 		}
-		if (tOptions.mRequiredQueueFlags & vk::QueueFlagBits::eSparseBinding)
+		if (options.m_required_queue_flags & vk::QueueFlagBits::eSparseBinding)
 		{
-			mQueueFamiliesMapping.mSparseBindingQueue.second = findQueueFamilyIndex(vk::QueueFlagBits::eSparseBinding);
+			m_queue_families_mapping.m_sparse_binding_queue.second = find_queue_family_index(vk::QueueFlagBits::eSparseBinding);
 
 			// TODO
 		}
 
 		// Automatically add the swapchain extension if needed.
-		if (tOptions.mUseSwapchain)
+		if (options.m_use_swapchain)
 		{
-			mRequiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+			m_required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		}
 
 		// Create the logical device: note that device layers were deprecated in Vulkan 1.0.13, and device layer 
 		// requests should be ignored by the driver.
-		vk::DeviceCreateInfo deviceCreateInfo = {};
-		deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(mRequiredDeviceExtensions.size());
-		deviceCreateInfo.pEnabledFeatures = &mPhysicalDeviceFeatures;
-		deviceCreateInfo.ppEnabledExtensionNames = mRequiredDeviceExtensions.data();
-		deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
-		deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
+		vk::DeviceCreateInfo device_create_info;
+		device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_required_device_extensions.size());
+		device_create_info.pEnabledFeatures = &m_physical_device_features;
+		device_create_info.ppEnabledExtensionNames = m_required_device_extensions.data();
+		device_create_info.pQueueCreateInfos = device_queue_create_infos.data();
+		device_create_info.queueCreateInfoCount = static_cast<uint32_t>(device_queue_create_infos.size());
 
-		mDeviceHandle = mPhysicalDeviceHandle.createDevice(deviceCreateInfo);
+		m_device_handle = m_physical_device_handle.createDevice(device_create_info);
 
 		// Store handles to each of the newly created queues.
-		mQueueFamiliesMapping.mGraphicsQueue.first = mDeviceHandle.getQueue(mQueueFamiliesMapping.mGraphicsQueue.second, 0);
-		mQueueFamiliesMapping.mComputeQueue.first = mDeviceHandle.getQueue(mQueueFamiliesMapping.mComputeQueue.second, 0);
-		mQueueFamiliesMapping.mTransferQueue.first = mDeviceHandle.getQueue(mQueueFamiliesMapping.mTransferQueue.second, 0);
-		mQueueFamiliesMapping.mSparseBindingQueue.first = mDeviceHandle.getQueue(mQueueFamiliesMapping.mSparseBindingQueue.second, 0);
-		mQueueFamiliesMapping.mPresentationQueue.first = mDeviceHandle.getQueue(mQueueFamiliesMapping.mPresentationQueue.second, 0);
+		m_queue_families_mapping.m_graphics_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_graphics_queue.second, 0);
+		m_queue_families_mapping.m_compute_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_compute_queue.second, 0);
+		m_queue_families_mapping.m_transfer_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_transfer_queue.second, 0);
+		m_queue_families_mapping.m_sparse_binding_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_sparse_binding_queue.second, 0);
+		m_queue_families_mapping.m_presentation_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_presentation_queue.second, 0);
 	}
 
 	Device::~Device()
 	{
 		// The logical device is likely to be the last object created (aside from objects used at
 		// runtime). Before destroying the device, ensure that it is not executing any work.
-		mDeviceHandle.waitIdle();
+		m_device_handle.waitIdle();
 		
 		// Note that queues are created along with the logical device. All queues associated with 
 		// this device will automatically be destroyed when vkDestroyDevice is called.
-		mDeviceHandle.destroy();
+		m_device_handle.destroy();
 	}
 
-	uint32_t Device::findQueueFamilyIndex(vk::QueueFlagBits tQueueFlagBits) const
+	uint32_t Device::find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const
 	{
 		// Try to find a dedicated queue for compute operations (without graphics).
-		if (tQueueFlagBits == vk::QueueFlagBits::eCompute)
+		if (queue_flag_bits == vk::QueueFlagBits::eCompute)
 		{
-			for (size_t i = 0; i < mPhysicalDeviceQueueFamilyProperties.size(); ++i)
+			for (size_t i = 0; i < m_physical_device_queue_family_properties.size(); ++i)
 			{
-				if (mPhysicalDeviceQueueFamilyProperties[i].queueCount > 0 && 
-					mPhysicalDeviceQueueFamilyProperties[i].queueFlags & tQueueFlagBits &&
-					(mPhysicalDeviceQueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits::eGraphics)
+				if (m_physical_device_queue_family_properties[i].queueCount > 0 &&
+					m_physical_device_queue_family_properties[i].queueFlags & queue_flag_bits &&
+					(m_physical_device_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits::eGraphics)
 				{
 					return static_cast<uint32_t>(i);
 				}
 			}
 		}
 		// Try to find a dedicated queue for transfer operations (without compute and graphics).
-		else if (tQueueFlagBits == vk::QueueFlagBits::eTransfer)
+		else if (queue_flag_bits == vk::QueueFlagBits::eTransfer)
 		{
-			for (size_t i = 0; i < mPhysicalDeviceQueueFamilyProperties.size(); ++i)
+			for (size_t i = 0; i < m_physical_device_queue_family_properties.size(); ++i)
 			{
-				if (mPhysicalDeviceQueueFamilyProperties[i].queueCount > 0 &&
-					mPhysicalDeviceQueueFamilyProperties[i].queueFlags & tQueueFlagBits &&
-					(mPhysicalDeviceQueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits::eGraphics &&
-					(mPhysicalDeviceQueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eCompute) != vk::QueueFlagBits::eCompute)
+				if (m_physical_device_queue_family_properties[i].queueCount > 0 &&
+					m_physical_device_queue_family_properties[i].queueFlags & queue_flag_bits &&
+					(m_physical_device_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits::eGraphics &&
+					(m_physical_device_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eCompute) != vk::QueueFlagBits::eCompute)
 				{
 					return static_cast<uint32_t>(i);
 				}
@@ -187,9 +187,9 @@ namespace graphics
 		
 		// For all other queue families (or if a dedicated queue was not found above), simply return the 
 		// index of the first queue family that supports the requested operations.
-		for (size_t i = 0; i < mPhysicalDeviceQueueFamilyProperties.size(); ++i)
+		for (size_t i = 0; i < m_physical_device_queue_family_properties.size(); ++i)
 		{
-			if (mPhysicalDeviceQueueFamilyProperties[i].queueCount > 0 && mPhysicalDeviceQueueFamilyProperties[i].queueFlags & tQueueFlagBits)
+			if (m_physical_device_queue_family_properties[i].queueCount > 0 && m_physical_device_queue_family_properties[i].queueFlags & queue_flag_bits)
 			{
 				return static_cast<uint32_t>(i);
 			}
@@ -198,9 +198,10 @@ namespace graphics
 		throw std::runtime_error("Could not find a matching queue family");
 	}
 
-	vk::Format Device::getSupportedDepthFormat() const
+	vk::Format Device::get_supported_depth_format() const
 	{
-		static const std::vector<vk::Format> depthFormats = {
+		static const std::vector<vk::Format> depth_formats = 
+		{
 			vk::Format::eD32SfloatS8Uint,
 			vk::Format::eD32Sfloat,
 			vk::Format::eD24UnormS8Uint,
@@ -208,10 +209,10 @@ namespace graphics
 			vk::Format::eD16Unorm
 		};
 
-		for (const auto &format : depthFormats)
+		for (const auto& format : depth_formats)
 		{
-			auto formatProperties = getPhysicalDeviceFormatProperties(format);
-			if (formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+			auto format_properties = get_physical_device_format_properties(format);
+			if (format_properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
 			{
 				return format;
 			}
@@ -220,44 +221,44 @@ namespace graphics
 		return vk::Format::eUndefined;
 	}
 
-	Device::SwapchainSupportDetails Device::getSwapchainSupportDetails(const SurfaceRef &tSurface) const
+	Device::SwapchainSupportDetails Device::get_swapchain_support_details(const SurfaceRef& surface) const
 	{
-		SwapchainSupportDetails swapchainSupportDetails;
+		SwapchainSupportDetails support_details;
 
 		// Return the basic surface capabilities, i.e. min/max number of images, min/max width and height, etc.
-		swapchainSupportDetails.mCapabilities = mPhysicalDeviceHandle.getSurfaceCapabilitiesKHR(tSurface->get_handle());
+		support_details.m_capabilities = m_physical_device_handle.getSurfaceCapabilitiesKHR(surface->get_handle());
 
 		// Retrieve the available surface formats, i.e. pixel formats and color spaces.
-		swapchainSupportDetails.mFormats = mPhysicalDeviceHandle.getSurfaceFormatsKHR(tSurface->get_handle());
+		support_details.m_formats = m_physical_device_handle.getSurfaceFormatsKHR(surface->get_handle());
 
 		// Retrieve the surface presentation modes, i.e. VK_PRESENT_MODE_MAILBOX_KHR.
-		swapchainSupportDetails.mPresentModes = mPhysicalDeviceHandle.getSurfacePresentModesKHR(tSurface->get_handle());
+		support_details.m_present_modes = m_physical_device_handle.getSurfacePresentModesKHR(surface->get_handle());
 
-		if (swapchainSupportDetails.mFormats.size() == 0 || swapchainSupportDetails.mPresentModes.size() == 0)
+		if (support_details.m_formats.size() == 0 || support_details.m_present_modes.size() == 0)
 		{
 			throw std::runtime_error("No available surface formats or present modes found");
 		}
 
-		return swapchainSupportDetails;
+		return support_details;
 	}
 
-	std::ostream& operator<<(std::ostream &tStream, const DeviceRef &tDevice)
+	std::ostream& operator<<(std::ostream& stream, const DeviceRef& device)
 	{
-		tStream << "Device object: " << tDevice->mDeviceHandle << std::endl;
+		stream << "Device object: " << device->m_device_handle << std::endl;
 		
-		tStream << "Chosen physical device object: " << tDevice->mPhysicalDeviceHandle << std::endl;
-		std::cout << "\tDevice ID: " << tDevice->mPhysicalDeviceProperties.deviceID << std::endl;
-		std::cout << "\tDevice name: " << tDevice->mPhysicalDeviceProperties.deviceName << std::endl;
-		std::cout << "\tVendor ID: " << tDevice->mPhysicalDeviceProperties.vendorID << std::endl;
+		stream << "Chosen physical device object: " << device->m_physical_device_handle << std::endl;
+		std::cout << "\tDevice ID: " << device->m_physical_device_properties.deviceID << std::endl;
+		std::cout << "\tDevice name: " << device->m_physical_device_properties.deviceName << std::endl;
+		std::cout << "\tVendor ID: " << device->m_physical_device_properties.vendorID << std::endl;
 
-		tStream << "Queue family details:" << std::endl;
-		tStream << "\tQueue family - graphics index: " << tDevice->mQueueFamiliesMapping.graphics().second << std::endl;
-		tStream << "\tQueue family - compute index: " << tDevice->mQueueFamiliesMapping.compute().second << std::endl;
-		tStream << "\tQueue family - transfer index: " << tDevice->mQueueFamiliesMapping.transfer().second << std::endl;
-		tStream << "\tQueue family - sparse binding index: " << tDevice->mQueueFamiliesMapping.sparseBinding().second << std::endl;
-		tStream << "\tQueue family - present index: " << tDevice->mQueueFamiliesMapping.presentation().second << std::endl;
+		stream << "Queue family details:" << std::endl;
+		stream << "\tQueue family - graphics index: " << device->m_queue_families_mapping.graphics().second << std::endl;
+		stream << "\tQueue family - compute index: " << device->m_queue_families_mapping.compute().second << std::endl;
+		stream << "\tQueue family - transfer index: " << device->m_queue_families_mapping.transfer().second << std::endl;
+		stream << "\tQueue family - sparse binding index: " << device->m_queue_families_mapping.sparse_binding().second << std::endl;
+		stream << "\tQueue family - present index: " << device->m_queue_families_mapping.presentation().second << std::endl;
 
-		return tStream;
+		return stream;
 	}
 
 } // namespace graphics

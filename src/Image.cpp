@@ -67,7 +67,7 @@ namespace graphics
 
 	ImageBase::~ImageBase()
 	{
-		m_device->getHandle().destroyImage(m_image_handle);
+		m_device->get_handle().destroyImage(m_image_handle);
 	}
 
 	vk::Sampler ImageBase::build_sampler() const
@@ -89,20 +89,20 @@ namespace graphics
 		sampler_create_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
 		sampler_create_info.unnormalizedCoordinates = VK_FALSE;
 
-		return m_device->getHandle().createSampler(sampler_create_info);
+		return m_device->get_handle().createSampler(sampler_create_info);
 	}
 
 	void ImageBase::initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags)
 	{
 		// Retrieve the memory requirements for this image.
-		auto memory_requirements = m_device->getHandle().getImageMemoryRequirements(m_image_handle);
+		auto memory_requirements = m_device->get_handle().getImageMemoryRequirements(m_image_handle);
 		auto required_memory_properties = memory_property_flags;
 
 		// Allocate device memory.
 		m_device_memory = DeviceMemory::create(m_device, memory_requirements, required_memory_properties);
 
 		// Associate the device memory with this image.
-		m_device->getHandle().bindImageMemory(m_image_handle, m_device_memory->get_handle(), 0);
+		m_device->get_handle().bindImageMemory(m_image_handle, m_device_memory->get_handle(), 0);
 	}
 
 	Image2D::Options::Options()
@@ -134,7 +134,7 @@ namespace graphics
 		image_create_info.tiling = options.m_image_tiling;
 		image_create_info.usage = m_image_usage_flags;
 
-		m_image_handle = m_device->getHandle().createImage(image_create_info);
+		m_image_handle = m_device->get_handle().createImage(image_create_info);
 
 		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eDeviceLocal);
 	}
@@ -161,7 +161,7 @@ namespace graphics
 		image_create_info.tiling = options.m_image_tiling;
 		image_create_info.usage = m_image_usage_flags; 
 
-		m_image_handle = m_device->getHandle().createImage(image_create_info);
+		m_image_handle = m_device->get_handle().createImage(image_create_info);
 		
 		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 	
@@ -173,7 +173,7 @@ namespace graphics
 		image_subresource.arrayLayer = 0;
 		image_subresource.mipLevel = 0;
 
-		vk::SubresourceLayout subresource_layout = m_device->getHandle().getImageSubresourceLayout(m_image_handle, image_subresource);
+		vk::SubresourceLayout subresource_layout = m_device->get_handle().getImageSubresourceLayout(m_image_handle, image_subresource);
 			
 		// The subresource has no additional padding, so we can directly copy the pixel data into the image.
 		// This usually happens when the requested image is a power-of-two texture.
@@ -206,7 +206,7 @@ namespace graphics
 		image_view_create_info.subresourceRange.levelCount = 1;
 		image_view_create_info.viewType = vk::ImageViewType::e2D;
 		
-		return m_device->getHandle().createImageView(image_view_create_info);
+		return m_device->get_handle().createImageView(image_view_create_info);
 	}
 
 } // namespace graphics

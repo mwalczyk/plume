@@ -45,12 +45,12 @@ namespace graphics
 		framebuffer_create_info.renderPass = m_render_pass->get_handle();
 		framebuffer_create_info.width = m_width;
 
-		m_framebuffer_handle = m_device->getHandle().createFramebuffer(framebuffer_create_info);
+		m_framebuffer_handle = m_device->get_handle().createFramebuffer(framebuffer_create_info);
 	}
 
 	Framebuffer::~Framebuffer()
 	{
-		m_device->getHandle().destroyFramebuffer(m_framebuffer_handle);
+		m_device->get_handle().destroyFramebuffer(m_framebuffer_handle);
 	}
 
 } // namespace graphics
