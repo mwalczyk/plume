@@ -195,11 +195,13 @@ int main()
 		mousePosition.y /= height;
 
 		// Get the index of the next available image.
+		uint32_t imageIndex = swapchain->acquireNextSwapchainImage(imageAvailableSemaphore);
+
+		// Set the clear values for each of this framebuffer's attachments, including the depth stencil attachment.
 		std::vector<vk::ClearValue> clearValues(2);
 		clearValues[0].color = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };
 		clearValues[1].depthStencil = {1, 0};
-	
-		uint32_t imageIndex = swapchain->acquireNextSwapchainImage(imageAvailableSemaphore);
+		
 		commandBuffers[imageIndex]->begin();
 		commandBuffers[imageIndex]->beginRenderPass(renderPass, framebuffers[imageIndex], clearValues);
 		commandBuffers[imageIndex]->bindPipeline(pipeline);

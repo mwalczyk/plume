@@ -64,6 +64,7 @@ namespace graphics
 		vk::DeviceMemory mDeviceMemoryHandle;
 		vk::DeviceSize mAllocationSize;
 		uint32_t mSelectedMemoryIndex;
+		bool mInUse;
 	};
 
 } // namespace graphics

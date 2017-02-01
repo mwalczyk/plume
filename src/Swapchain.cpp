@@ -31,6 +31,7 @@ namespace graphics
 	Swapchain::Options::Options()
 	{
 		mPresentMode = vk::PresentModeKHR::eMailbox;
+		mFormat = vk::Format::eB8G8R8A8Unorm;
 	}
 
 	Swapchain::Swapchain(const DeviceRef &tDevice, const SurfaceRef &tSurface, uint32_t tWidth, uint32_t tHeight, const Options &tOptions) :
@@ -56,20 +57,20 @@ namespace graphics
 		// For now, we assume that the graphics and presentation queues are the same - this is indicated by the VK_SHARING_MODE_EXCLUSIVE flag.
 		// In the future, we will need to account for the fact that these two operations may be a part of different queue families.
 		vk::SwapchainCreateInfoKHR swapchainCreateInfo;
-		swapchainCreateInfo.clipped = VK_TRUE;										// Make sure to ignore pixels that are obscured by other windows.
+		swapchainCreateInfo.clipped = VK_TRUE;											// Make sure to ignore pixels that are obscured by other windows.
 		swapchainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;	// This window should not blend with any other windows in the windowing system.
 		swapchainCreateInfo.imageArrayLayers = 1;									
 		swapchainCreateInfo.imageColorSpace = selectedSurfaceFormat.colorSpace;
 		swapchainCreateInfo.imageExtent = selectedExtent;
 		swapchainCreateInfo.imageFormat = selectedSurfaceFormat.format;
-		swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;			// This swapchain is only accessed by one queue family (see notes above).
+		swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;				// This swapchain is only accessed by one queue family (see notes above).
 		swapchainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 		swapchainCreateInfo.minImageCount = imageCount;
 		swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-		swapchainCreateInfo.pQueueFamilyIndices = nullptr;							// If the sharing mode is exlusive, we don't need to specify this.
+		swapchainCreateInfo.pQueueFamilyIndices = nullptr;								// If the sharing mode is exlusive, we don't need to specify this.
 		swapchainCreateInfo.presentMode = selectedPresentMode;
 		swapchainCreateInfo.preTransform = swapchainSupportDetails.mCapabilities.currentTransform;
-		swapchainCreateInfo.queueFamilyIndexCount = 0;								// Again, if the sharing mode is exlusive, we don't need to specify this.
+		swapchainCreateInfo.queueFamilyIndexCount = 0;									// Again, if the sharing mode is exlusive, we don't need to specify this.
 		swapchainCreateInfo.surface = mSurface->getHandle();
 
 		mSwapchainHandle = mDevice->getHandle().createSwapchainKHR(swapchainCreateInfo);

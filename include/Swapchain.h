@@ -53,9 +53,14 @@ namespace graphics
 			//! Set the preferred presentation mode (defaults is vk::PresentModeKHR::eMailbox).
 			Options& presentMode(vk::PresentModeKHR tPresentMode) { mPresentMode = tPresentMode; return *this; }
 
+			//! Set the preferred swapchain image format (defaults is vk::Format::eB8G8R8A8Unorm).
+			Options& format(vk::Format tFormat) { mFormat = tFormat; return *this; }
+
 		private:
 
 			vk::PresentModeKHR mPresentMode;
+			vk::Format mFormat;
+			vk::ColorSpaceKHR mColorSpace;
 
 			friend class Swapchain;
 		};
@@ -72,6 +77,9 @@ namespace graphics
 		inline vk::SwapchainKHR getHandle() const { return mSwapchainHandle; };
 		inline const std::vector<vk::Image>& getImageHandles() const { return mImageHandles; }
 		inline const std::vector<vk::ImageView>& getImageViewHandles() const { return mImageViewHandles; }
+		inline size_t getImageCount() const { return mImageHandles.size(); }
+		inline vk::Extent2D getImageExtent() const { return mSwapchainImageExtent; }
+		inline vk::Format getImageFormat() const { return mSwapchainImageFormat; }
 		uint32_t acquireNextSwapchainImage(const SemaphoreRef &tSemaphore, uint32_t tNanosecondsTimeout = std::numeric_limits<uint64_t>::max());
 
 	private:
@@ -84,10 +92,10 @@ namespace graphics
 		DeviceRef mDevice;
 		SurfaceRef mSurface;
 		vk::SwapchainKHR mSwapchainHandle;
-		vk::Format mSwapchainImageFormat;
-		vk::Extent2D mSwapchainImageExtent;
 		std::vector<vk::Image> mImageHandles;
 		std::vector<vk::ImageView> mImageViewHandles;
+		vk::Format mSwapchainImageFormat;
+		vk::Extent2D mSwapchainImageExtent;
 		uint32_t mWidth;
 		uint32_t mHeight;
 	};

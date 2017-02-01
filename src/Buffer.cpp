@@ -92,12 +92,12 @@ namespace graphics
 		}
 
 		// Associate the device memory with this buffer object.
-		vkBindBufferMemory(mDevice->getHandle(), mBufferHandle, mDeviceMemory->getHandle(), 0);
+		mDevice->getHandle().bindBufferMemory(mBufferHandle, mDeviceMemory->getHandle(), 0);
 	}
 
 	Buffer::~Buffer()
 	{
-		vkDestroyBuffer(mDevice->getHandle(), mBufferHandle, nullptr);
+		mDevice->getHandle().destroyBuffer(mBufferHandle);
 	}
 
 } // namespace graphics

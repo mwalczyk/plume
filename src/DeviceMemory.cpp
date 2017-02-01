@@ -54,6 +54,10 @@ namespace graphics
 
 	DeviceMemory::~DeviceMemory()
 	{
+		if (mInUse)
+		{
+			unmap();
+		}
 		mDevice->getHandle().freeMemory(mDeviceMemoryHandle);
 	}
 
@@ -64,12 +68,14 @@ namespace graphics
 			return nullptr;
 		}
 		void* mappedPtr = mDevice->getHandle().mapMemory(mDeviceMemoryHandle, tOffset, tSize);
+		mInUse = true;
 		return mappedPtr;
 	}
 
 	void DeviceMemory::unmap()
 	{
 		mDevice->getHandle().unmapMemory(mDeviceMemoryHandle);
+		mInUse = false;
 	}
 
 } // namespace graphics
