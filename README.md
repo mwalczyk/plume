@@ -1,6 +1,6 @@
 # Spectrum
 
-![Logo](https://github.com/mwalczyk/VulkanToolkit/blob/master/logo.jpg)
+![Logo](https://github.com/mwalczyk/VulkanToolkit/blob/master/logo.png)
 
 A WIP framework and abstraction layer around the Vulkan graphics API. Currently being developed with
 version 1.0.39.1.
