@@ -1,7 +1,7 @@
 *.cpp linguist-language=C++
 *.h linguist-language=C++
-include/glfw/* linguist-vendored=false
-include/glm/* linguist-vendored=false
-include/spirv-cross/* linguist-vendored=false
-include/stb/* linguist-vendored=false
-include/vulkan-hpp/* linguist-vendored=false
+include/glfw/* linguist-vendored
+include/glm/* linguist-vendored
+include/spirv-cross/* linguist-vendored
+include/stb/* linguist-vendored
+include/vulkan-hpp/* linguist-vendored
