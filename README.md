@@ -1,13 +1,13 @@
 # Spectrum
 
-![IcoSphere](https://github.com/mwalczyk/VulkanToolkit/blob/master/icosphere.PNG)
+![Logo](https://github.com/mwalczyk/VulkanToolkit/blob/master/logo.jpg)
 
 A WIP framework and abstraction layer around the Vulkan graphics API. Currently being developed with
 version 1.0.39.1.
 
 ## Cloning
 
-VulkanToolkit uses several submodules (GLM, SPIRV-Cross, STB, etc.). After cloning the main
+Spectrum uses several submodules (GLM, SPIRV-Cross, STB, etc.). After cloning the main
 repository, make sure to initialize submodules by executing the following command from the top-level
 directory:
 
@@ -17,13 +17,15 @@ More information on working with submodules can be found [here](https://github.c
 
 ## Inspiration
 
-VulkanToolkit's syntax, structure, and design patterns were greatly influenced by several major
+Spectrum's syntax, structure, and design patterns were greatly influenced by several major
 open source projects:
 
 - [Cinder](https://github.com/cinder/Cinder)
 - [Nyorain's VPP Toolkit](https://github.com/nyorain/vpp)
 - [Dynamic Static's Vulkan Toolkit](https://github.com/DynamicStatic/Dynamic_Static_Graphics)
 - [Alexander Overvoorde's Vulkan Tutorial](https://vulkan-tutorial.com/)
+
+See the [Spectrum C++ style guide](https://github.com/mwalczyk/spectrum_cpp_style) for more information.
 
 ## Roadmap:
 
