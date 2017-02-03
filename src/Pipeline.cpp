@@ -43,71 +43,6 @@ namespace graphics
 		"sp_texcoord"
 	};
 
-	static std::string descriptor_type_as_string(vk::DescriptorType descriptor_type)
-	{
-		std::string output = "";
-		switch (descriptor_type)
-		{
-		case vk::DescriptorType::eSampler: output = "SAMPLER"; break;
-		case vk::DescriptorType::eCombinedImageSampler: output = "COMBINED IMAGE SAMPLER"; break;
-		case vk::DescriptorType::eSampledImage: output = "SAMPLED IMAGE"; break;
-		case vk::DescriptorType::eStorageImage: output = "STORAGE IMAGE"; break;
-		case vk::DescriptorType::eUniformTexelBuffer: output = "UNIFORM TEXEL BUFFER"; break;
-		case vk::DescriptorType::eStorageTexelBuffer: output = "STORAGE TEXEL BUFFER"; break;
-		case vk::DescriptorType::eUniformBuffer: output = "UNIFORM BUFFER"; break;
-		case vk::DescriptorType::eStorageBuffer: output = "STORAGE BUFFER"; break;
-		case vk::DescriptorType::eUniformBufferDynamic: output = "UNIFORM BUFFER DYNAMIC"; break;
-		case vk::DescriptorType::eStorageBufferDynamic: output = "STORAGE BUFFER DYNAMIC"; break;
-		case vk::DescriptorType::eInputAttachment: output = "INPUT ATTACHMENT"; break;
-		default: output = "UNKNOWN DESCRIPTOR TYPE"; break;
-		}
-
-		return output;
-	}
-
-	static std::string shader_stage_as_string(vk::ShaderStageFlags shader_stage_flags)
-	{
-		if (shader_stage_flags == vk::ShaderStageFlagBits::eAll)
-		{
-			return "ALL";
-		}
-		if (shader_stage_flags == vk::ShaderStageFlagBits::eAllGraphics)
-		{
-			return "ALL GRAPHICS";
-		}
-		
-		std::vector<std::string> matches;
-		if (shader_stage_flags & vk::ShaderStageFlagBits::eVertex)
-		{
-			matches.push_back("VERTEX");
-		}
-		if (shader_stage_flags & vk::ShaderStageFlagBits::eTessellationControl)
-		{
-			matches.push_back("TESSELLATION CONTROL");
-		}
-		if (shader_stage_flags & vk::ShaderStageFlagBits::eTessellationEvaluation)
-		{
-			matches.push_back("TESSELLATION EVALUATION");
-		}
-		if (shader_stage_flags & vk::ShaderStageFlagBits::eGeometry)
-		{
-			matches.push_back("GEOMETRY");
-		}
-		if (shader_stage_flags & vk::ShaderStageFlagBits::eFragment)
-		{
-			matches.push_back("FRAGMENT");
-		}
-		if (shader_stage_flags & vk::ShaderStageFlagBits::eCompute)
-		{
-			matches.push_back("COMPUTE");
-		}
-			
-		std::ostringstream os;
-		std::copy(matches.begin(), matches.end() - 1, std::ostream_iterator<std::string>(os, " | "));
-		os << *matches.rbegin();
-		return os.str();
-	}
-
 	Pipeline::Options::Options()
 	{
 		// Set up the default viewport.
@@ -339,7 +274,7 @@ namespace graphics
 		return it->second;
 	}
 
-	vk::DescriptorPool Pipeline::create_compatible_descriptor_pool(uint32_t set, uint32_t max_sets)
+	DescriptorPoolRef Pipeline::create_compatible_descriptor_pool(uint32_t set, uint32_t max_sets)
 	{
 		// First, make sure that a descriptor set with this index has been recorded.
 		if (m_descriptors_mapping.find(set) == m_descriptors_mapping.end())
@@ -359,14 +294,7 @@ namespace graphics
 		}
 
 		// Finally, create the descriptor pool from the list of descriptor pool size structures above.
-		vk::DescriptorPoolCreateInfo descriptor_pool_create_info;
-		descriptor_pool_create_info.maxSets = max_sets;
-		descriptor_pool_create_info.poolSizeCount = static_cast<uint32_t>(descriptor_pool_sizes.size());
-		descriptor_pool_create_info.pPoolSizes = descriptor_pool_sizes.data();
-
-		vk::DescriptorPool descriptor_pool_handle = m_device->get_handle().createDescriptorPool(descriptor_pool_create_info);
-
-		return descriptor_pool_handle;
+		return DescriptorPool::create(m_device, descriptor_pool_sizes, max_sets);
 	}
 
 	vk::PipelineShaderStageCreateInfo Pipeline::build_shader_stage_create_info(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits)
@@ -468,7 +396,7 @@ namespace graphics
 			stream << "\tPush constant named: " << mapping.first << ":" << std::endl;
 			stream << "\t\tOffset: " << mapping.second.offset << std::endl;
 			stream << "\t\tSize: " << mapping.second.size << std::endl;
-			stream << "\t\tShader stage flags: " << shader_stage_as_string(mapping.second.stageFlags) << std::endl;
+			stream << "\t\tShader stage flags: " << vk::to_string(mapping.second.stageFlags) << std::endl;
 		}
 
 		stream << "Descriptor set details:" << std::endl;
@@ -479,8 +407,8 @@ namespace graphics
 			{
 				stream << "\t\tDescriptor at binding: " << descriptor_set_layout_binding.binding << std::endl;
 				stream << "\t\t\tDescriptor count: " << descriptor_set_layout_binding.descriptorCount << std::endl;
-				stream << "\t\t\tDescriptor type: " << descriptor_type_as_string(descriptor_set_layout_binding.descriptorType) << std::endl;
-				stream << "\t\t\tShader stage flags: " << shader_stage_as_string(descriptor_set_layout_binding.stageFlags) << std::endl;
+				stream << "\t\t\tDescriptor type: " << vk::to_string(descriptor_set_layout_binding.descriptorType) << std::endl;
+				stream << "\t\t\tShader stage flags: " << vk::to_string(descriptor_set_layout_binding.stageFlags) << std::endl;
 			}
 		}
 

@@ -31,10 +31,10 @@
 #include <map>
 #include <iterator>
 #include <string>
-#include <ostream>
 
 #include "Platform.h"
 #include "Noncopyable.h"
+#include "DescriptorPool.h"
 #include "Device.h"
 #include "RenderPass.h"
 #include "ShaderModule.h"
@@ -119,7 +119,7 @@ namespace graphics
 
 		//! Given a descriptor set index, create and return a handle to a new descriptor pool whose size matches the combined 
 		//! size of all of the descriptors in that set. If there is no descriptor set with the given index, return a null handle.
-		vk::DescriptorPool create_compatible_descriptor_pool(uint32_t set, uint32_t max_sets = 1);
+		DescriptorPoolRef create_compatible_descriptor_pool(uint32_t set, uint32_t max_sets = 1);
 
 		friend std::ostream& operator<<(std::ostream& stream, const PipelineRef& pipeline);
 
