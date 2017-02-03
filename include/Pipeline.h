@@ -95,12 +95,6 @@ namespace graphics
 		{ 
 			return std::make_shared<Pipeline>(device, render_pass, options);
 		}
-		
-		//! Helper function for constructing a vertex input binding description.
-		static vk::VertexInputBindingDescription create_vertex_input_binding_description(uint32_t binding, uint32_t stride, vk::VertexInputRate input_rate = vk::VertexInputRate::eVertex);
-
-		//! Helper function for constructing a vertex input attribute description.
-		static vk::VertexInputAttributeDescription create_vertex_input_attribute_description(uint32_t binding, vk::Format format, uint32_t location, uint32_t offset);
 
 		//! Helper function for constructing a pipeline color blend attachment state that corresponds to standard alpha blending.
 		static vk::PipelineColorBlendAttachmentState create_alpha_blending_attachment_state();

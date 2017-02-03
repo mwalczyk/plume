@@ -38,34 +38,32 @@ namespace graphics
 	class CommandPool;
 	using CommandPoolRef = std::shared_ptr<CommandPool>;
 
+	//! Command pools are opaque objects that command buffer memory is allocated from, and which allow the 
+	//! implementation to reduce the cost of resource creation across multiple command buffers. Command pools
+	//! should not be used concurrently by multiple threads. This includes any recording commands issued to 
+	//! command buffers from the pool, as well as operations that allocate, free, and/or reset command 
+	//! buffers or the pool itself.
 	class CommandPool : public Noncopyable
 	{
 	public:
 
-		class Options
+		//! Factory method for returning a new CommandPoolRef. The vk::CommandPoolCreateFlags parameter   
+		//! determines how and when individual command buffers allocated from this pool can be re-recorded. 
+		//! Possible flags are:
+		//!
+		//! vk::CommandPoolCreateFlagBits::eTransient: command buffers allocated from this pool will be 
+		//!		short lived (reset or freed in a relatively short timeframe).
+		//!
+		//! vk::CommandPoolCreateFlagBits::eResetCommandBuffer: controls whether command buffers allocated
+		//!		from this pool can be individually reset. Note that if this flag is not set, then all 
+		//!		command buffers must be reset together.
+		//!
+		static CommandPoolRef create(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags)
 		{
-		public:
-
-			Options();
-
-			//! Determines how and when individual command buffers allocated from this pool can be re-recorded. 
-			//! Possible flags are vk::CommandPoolCreateFlagBits::eTransient and vk::CommandPoolCreateFlagBits::eResetCommandBuffer.
-			Options& command_pool_create_flags(vk::CommandPoolCreateFlags command_pool_create_flags) { m_command_pool_create_flags = command_pool_create_flags; return *this; }
-			
-		private:
-
-			vk::CommandPoolCreateFlags m_command_pool_create_flags;
-
-			friend class CommandPool;
-		};
-
-		//! Factory method for returning a new CommandPoolRef.
-		static CommandPoolRef create(const DeviceRef& device, uint32_t queue_family_index, const Options& options = Options())
-		{
-			return std::make_shared<CommandPool>(device, queue_family_index, options);
+			return std::make_shared<CommandPool>(device, queue_family_index, command_pool_create_flags);
 		}
 
-		CommandPool(const DeviceRef& device, uint32_t queue_family_index, const Options& options = Options());
+		CommandPool(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags);
 		~CommandPool();
 
 		inline vk::CommandPool get_handle() const { return m_command_pool_handle; };

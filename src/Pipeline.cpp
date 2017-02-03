@@ -78,27 +78,6 @@ namespace graphics
 		m_stencil_test_enabled = VK_FALSE;
 	}
    
-	vk::VertexInputBindingDescription Pipeline::create_vertex_input_binding_description(uint32_t binding, uint32_t stride, vk::VertexInputRate input_rate)
-	{
-		vk::VertexInputBindingDescription vertex_input_binding_description;
-		vertex_input_binding_description.binding = binding;
-		vertex_input_binding_description.inputRate = input_rate;
-		vertex_input_binding_description.stride = stride;
-
-		return vertex_input_binding_description;
-	}
-
-	vk::VertexInputAttributeDescription Pipeline::create_vertex_input_attribute_description(uint32_t binding, vk::Format format, uint32_t location, uint32_t offset)
-	{
-		vk::VertexInputAttributeDescription vertex_input_attribute_description;
-		vertex_input_attribute_description.binding = binding;
-		vertex_input_attribute_description.format = format;
-		vertex_input_attribute_description.location = location;
-		vertex_input_attribute_description.offset = offset;
-
-		return vertex_input_attribute_description;
-	}
-
 	vk::PipelineColorBlendAttachmentState Pipeline::create_alpha_blending_attachment_state()
 	{
 		vk::PipelineColorBlendAttachmentState color_blend_attachment_state;

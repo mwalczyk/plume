@@ -29,23 +29,17 @@
 namespace graphics
 {
 
-	CommandBuffer::Options::Options()
-	{
-		m_command_buffer_level = vk::CommandBufferLevel::ePrimary;
-	}
-
-	CommandBuffer::CommandBuffer(const DeviceRef& device, const CommandPoolRef& command_pool, const Options& options) :
+	CommandBuffer::CommandBuffer(const DeviceRef& device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level) :
 		m_device(device),
 		m_command_pool(command_pool),
-		m_command_buffer_level(options.m_command_buffer_level)
+		m_command_buffer_level(command_buffer_level)
 	{
-		vk::CommandBufferAllocateInfo commandBufferAllocateInfo;
-		commandBufferAllocateInfo.commandPool = m_command_pool->get_handle();
-		commandBufferAllocateInfo.level = m_command_buffer_level;
-		commandBufferAllocateInfo.commandBufferCount = 1;
+		vk::CommandBufferAllocateInfo command_buffer_allocate_info;
+		command_buffer_allocate_info.commandPool = m_command_pool->get_handle();
+		command_buffer_allocate_info.level = m_command_buffer_level;
+		command_buffer_allocate_info.commandBufferCount = 1;
 
-		m_command_buffer_handle = m_device->get_handle().allocateCommandBuffers(commandBufferAllocateInfo)[0];
-
+		m_command_buffer_handle = m_device->get_handle().allocateCommandBuffers(command_buffer_allocate_info)[0];
 	}
 
 	CommandBuffer::~CommandBuffer()
@@ -54,13 +48,13 @@ namespace graphics
 		m_device->get_handle().freeCommandBuffers(m_command_pool->get_handle(), m_command_buffer_handle);
 	}
 
-	void CommandBuffer::begin()
+	void CommandBuffer::begin(vk::CommandBufferUsageFlags command_buffer_usage_flags)
 	{
-		vk::CommandBufferBeginInfo commandBuffer_begin_info;
-		commandBuffer_begin_info.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
-		commandBuffer_begin_info.pInheritanceInfo = nullptr;
+		vk::CommandBufferBeginInfo command_buffer_begin_info;
+		command_buffer_begin_info.flags = command_buffer_usage_flags;
+		command_buffer_begin_info.pInheritanceInfo = nullptr;
 
-		m_command_buffer_handle.begin(commandBuffer_begin_info);
+		m_command_buffer_handle.begin(command_buffer_begin_info);
 	}
 
 	void CommandBuffer::begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values)
@@ -76,26 +70,31 @@ namespace graphics
 		m_command_buffer_handle.beginRenderPass(render_pass_begin_info, vk::SubpassContents::eInline);
 	}
 
+	void CommandBuffer::next_subpass()
+	{
+		m_command_buffer_handle.nextSubpass(vk::SubpassContents::eInline);
+	}
+
 	void CommandBuffer::bind_pipeline(const PipelineRef& pipeline)
 	{
 		m_command_buffer_handle.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->get_handle());
 	}
 
-	void CommandBuffer::bind_vertex_buffers(const std::vector<BufferRef>& buffers)
+	void CommandBuffer::bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding)
 	{
+		// Gather all of the buffer handles.
 		std::vector<vk::Buffer> buffer_handles(buffers.size());
 		std::transform(buffers.begin(), buffers.end(), buffer_handles.begin(), [](const BufferRef& buffer) { return buffer->get_handle(); } );
-		std::vector<vk::DeviceSize> offsets(buffers.size(), 0);
 
-		uint32_t first_binding = 0;
-		uint32_t binding_count = static_cast<uint32_t>(buffers.size());
+		// For now, set all buffer offsets to 0.
+		std::vector<vk::DeviceSize> offsets(buffers.size(), 0);
 
 		m_command_buffer_handle.bindVertexBuffers(first_binding, buffer_handles, offsets);
 	}
 
-	void CommandBuffer::bind_index_buffer(const BufferRef& buffer)
+	void CommandBuffer::bind_index_buffer(const BufferRef& buffer, uint32_t offset, vk::IndexType index_type)
 	{
-		m_command_buffer_handle.bindIndexBuffer(buffer->get_handle(), 0, vk::IndexType::eUint32);
+		m_command_buffer_handle.bindIndexBuffer(buffer->get_handle(), offset, index_type);
 	}
 
 	void CommandBuffer::update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const void* data)
@@ -125,7 +124,7 @@ namespace graphics
 		m_command_buffer_handle.endRenderPass();
 	}
 
-	void CommandBuffer::transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to)
+	void CommandBuffer::transition_image_layout(const Image2DRef& image, vk::ImageLayout from, vk::ImageLayout to)
 	{
 		vk::ImageMemoryBarrier image_memory_barrier;
 

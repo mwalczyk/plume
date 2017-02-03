@@ -90,13 +90,13 @@ int main()
 	std::vector<graphics::BufferRef> vbos = { vbo_0, vbo_1 };
 
 	/// vk::Pipeline
-	auto binding_description_0 = graphics::Pipeline::create_vertex_input_binding_description(0, sizeof(float) * 3);
-	auto binding_description_1 = graphics::Pipeline::create_vertex_input_binding_description(1, sizeof(float) * 3);
-	auto attribute_description_0 = graphics::Pipeline::create_vertex_input_attribute_description(0, vk::Format::eR32G32B32Sfloat, 0, 0);		// 3 floats: position
-	auto attribute_description_1 = graphics::Pipeline::create_vertex_input_attribute_description(1, vk::Format::eR32G32B32Sfloat, 1, 0);		// 3 floats: color
+	vk::VertexInputBindingDescription binding_0 = { 0, sizeof(float) * 3 };
+	vk::VertexInputBindingDescription binding_1 = { 1, sizeof(float) * 3 };
+	vk::VertexInputAttributeDescription attr_0 = { 0, binding_0.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: position
+	vk::VertexInputAttributeDescription attr_1 = { 1, binding_1.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: color
 
-	std::vector<vk::VertexInputBindingDescription> input_binding_descriptions = { binding_description_0, binding_description_1 };
-	std::vector<vk::VertexInputAttributeDescription> input_attribute_descriptions = { attribute_description_0, attribute_description_1 };
+	std::vector<vk::VertexInputBindingDescription> input_binding_descriptions = { binding_0, binding_1 };
+	std::vector<vk::VertexInputAttributeDescription> input_attribute_descriptions = { attr_0, attr_1 };
 	
 	auto vertexShader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/vert.spv"));
 	auto fragmentShader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/frag.spv"));
@@ -115,7 +115,7 @@ int main()
 	std::cout << pipeline << std::endl;
 
 	/// vk::CommandPool
-	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second);
+	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
 	/// vk::CommandBuffer
 	std::vector<graphics::CommandBufferRef> command_buffers(swapchain_image_views.size(), graphics::CommandBuffer::create(device, command_pool));

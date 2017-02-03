@@ -29,16 +29,11 @@
 namespace graphics
 {
 	
-	CommandPool::Options::Options()
-	{
-		m_command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-	}
-
-	CommandPool::CommandPool(const DeviceRef& device, uint32_t queue_family_index, const Options& options) :
+	CommandPool::CommandPool(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags) :
 		m_device(device)
 	{
 		vk::CommandPoolCreateInfo command_pool_create_info;
-		command_pool_create_info.flags = options.m_command_pool_create_flags;
+		command_pool_create_info.flags = command_pool_create_flags;
 		command_pool_create_info.queueFamilyIndex = queue_family_index;
 
 		m_command_pool_handle = m_device->get_handle().createCommandPool(command_pool_create_info);
