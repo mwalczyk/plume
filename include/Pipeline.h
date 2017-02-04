@@ -74,18 +74,19 @@ namespace graphics
 			Options& viewport(const vk::Viewport& viewport) { m_viewport = viewport; return *this; }
 			Options& scissor(const vk::Rect2D& scissor) { m_scissor = scissor; return *this; }
 			Options& attach_shader_stage(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits) { m_shader_stages.push_back({ module, shader_stage_flag_bits }); return *this; }
-			Options& primitive_restart(bool primitive_restart) { m_primitive_restart = primitive_restart; return *this; }
+			Options& primitive_restart(vk::Bool32 primitive_restart) { m_primitive_restart = primitive_restart; return *this; }
 			Options& primitive_topology(vk::PrimitiveTopology primitive_topology) { m_primitive_topology = primitive_topology; return *this; }
 			Options& cull_mode(vk::CullModeFlags cull_mode_flags) { m_cull_mode_flags = cull_mode_flags; return *this; }
 			Options& line_width(float line_width) { m_line_width = line_width; return *this; }
 			Options& polygon_mode(vk::PolygonMode polygon_mode) { m_polygon_mode = polygon_mode; return *this; }
-			Options& depth_test(bool enabled = true) { m_depth_test_enabled = enabled; return *this; }
-			Options& stencilTest(bool enabled = true) { m_stencil_test_enabled = enabled; return *this; }
+			Options& depth_test(vk::Bool32 enabled = VK_TRUE) { m_depth_test_enabled = enabled; return *this; }
+			Options& stencilTest(vk::Bool32 enabled = VK_TRUE) { m_stencil_test_enabled = enabled; return *this; }
 			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) { m_dynamic_states = dynamic_states; return *this; }
 
 			//! Configure per-attached framebuffer color blending, which determines how new fragments are composited with colors that are already in the framebuffer.
-			Options& color_blend_attachment_state(const vk::PipelineColorBlendAttachmentState& color_blend_attachment_state) { m_color_blend_attachment_state = color_blend_attachment_state; return *this; }
-		
+			Options& color_blend_attachment_states(const std::vector<vk::PipelineColorBlendAttachmentState>& color_blend_attachment_states) { m_color_blend_attachment_states = color_blend_attachment_states; return *this; }
+			Options& logic_op(vk::LogicOp logic_op) { m_logic_op = logic_op; m_logic_op_enabled = VK_TRUE; return *this; }
+
 		private:
 
 			std::vector<vk::VertexInputBindingDescription> m_vertex_input_binding_descriptions;
@@ -93,15 +94,27 @@ namespace graphics
 			vk::Viewport m_viewport;
 			vk::Rect2D m_scissor;
 			std::vector<std::pair<ShaderModuleRef, vk::ShaderStageFlagBits>> m_shader_stages;
-			bool m_primitive_restart;
+			vk::Bool32 m_primitive_restart;
 			vk::PrimitiveTopology m_primitive_topology;
 			vk::CullModeFlags m_cull_mode_flags;
 			float m_line_width;
 			vk::PolygonMode m_polygon_mode;
-			bool m_depth_test_enabled;
-			bool m_stencil_test_enabled;
-			vk::PipelineColorBlendAttachmentState m_color_blend_attachment_state;
+			vk::Bool32 m_depth_test_enabled;
+			vk::Bool32 m_stencil_test_enabled;
+			std::vector<vk::PipelineColorBlendAttachmentState> m_color_blend_attachment_states;
 			std::vector<vk::DynamicState> m_dynamic_states;
+			vk::LogicOp m_logic_op;
+			vk::Bool32 m_logic_op_enabled;
+
+			vk::PipelineColorBlendStateCreateInfo m_color_blend_state_create_info;
+			vk::PipelineDepthStencilStateCreateInfo m_depth_stencil_state_create_info;
+			vk::PipelineDynamicStateCreateInfo m_dynamic_state_create_info;
+			vk::PipelineInputAssemblyStateCreateInfo m_input_assembly_state_create_info;
+			vk::PipelineMultisampleStateCreateInfo m_multisample_state_create_info;
+			vk::PipelineRasterizationStateCreateInfo m_rasterization_state_create_info;
+			vk::PipelineTessellationStateCreateInfo m_tessellation_state_create_info;
+			vk::PipelineVertexInputStateCreateInfo m_vertex_input_state_create_info;
+			vk::PipelineViewportStateCreateInfo m_viewport_state_create_info;
 
 			friend class Pipeline;
 		};

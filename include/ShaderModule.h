@@ -41,6 +41,10 @@ namespace graphics
 	class ShaderModule;
 	using ShaderModuleRef = std::shared_ptr<ShaderModule>;
 
+	//! Shader modules contain shader code and one or more entry points. The shader code defining a shader
+	//! module must be in the SPIR-V format. Data is passed into and out of shaders using variables with 
+	//! input or output storage class, respectively. User-defined inputs and outputs are connected between
+	//! stages by matching their 'location' decorations.
 	class ShaderModule : public Noncopyable
 	{
 

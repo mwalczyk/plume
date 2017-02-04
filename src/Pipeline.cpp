@@ -46,7 +46,6 @@ namespace graphics
 	Pipeline::Options::Options()
 	{
 		// Set up the default viewport.
-		m_viewport = {};
 		m_viewport.x = 0;
 		m_viewport.y = 0;
 		m_viewport.width = 640;
@@ -55,7 +54,6 @@ namespace graphics
 		m_viewport.maxDepth = 1.0f;
 
 		// Set up the default scissor region.
-		m_scissor = {};
 		m_scissor.extent = { static_cast<uint32_t>(m_viewport.width), static_cast<uint32_t>(m_viewport.height) };
 		m_scissor.offset = { 0, 0 };
 
@@ -69,10 +67,13 @@ namespace graphics
 		m_polygon_mode = vk::PolygonMode::eFill;
 
 		// Set up the default pipeline color blend attachment state (no blending).
-		m_color_blend_attachment_state = {};
-		m_color_blend_attachment_state.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-		m_color_blend_attachment_state.blendEnable = VK_FALSE;
-		
+		vk::PipelineColorBlendAttachmentState no_blending;
+		no_blending.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+		no_blending.blendEnable = VK_FALSE;
+		m_color_blend_attachment_states = { no_blending };
+		m_logic_op = vk::LogicOp::eCopy;
+		m_logic_op_enabled = VK_FALSE;
+
 		// Turn off depth and stencil testing by default.
 		m_depth_test_enabled = VK_FALSE;
 		m_stencil_test_enabled = VK_FALSE;
@@ -117,11 +118,12 @@ namespace graphics
 			add_push_constants_to_global_map(stage.first, stage.second);
 			add_descriptors_to_global_map(stage.first, stage.second);
 		}
-		if (!found_vertex_shader || !found_fragment_shader)
+		if (!found_vertex_shader)
 		{
-			throw std::runtime_error("At least one vertex and one fragment shader stage are required to build a graphics pipeline");
+			throw std::runtime_error("At least one vertex shader stage is required to build a graphics pipeline");
 		}
 
+		/*
 		// Describe the format of the vertex data that will be passed to the vertex shader.
 		vk::PipelineVertexInputStateCreateInfo vertex_input_state_create_info;
 		vertex_input_state_create_info.pVertexAttributeDescriptions = options.m_vertex_input_attribute_descriptions.data();
@@ -195,20 +197,20 @@ namespace graphics
 		// blend states. Logical operations are applied only for signed/unsigned integer and normalized
 		// integer framebuffers. They are not applied to floating-point/sRGB format color attachments.
 		vk::PipelineColorBlendStateCreateInfo color_blend_state_create_info;
-		color_blend_state_create_info.attachmentCount = 1;
+		color_blend_state_create_info.attachmentCount = static_cast<uint32_t>(options.m_color_blend_attachment_states.size());
 		color_blend_state_create_info.blendConstants[0] = 0.0f;
 		color_blend_state_create_info.blendConstants[1] = 0.0f;
 		color_blend_state_create_info.blendConstants[2] = 0.0f;
 		color_blend_state_create_info.blendConstants[3] = 0.0f;
 		color_blend_state_create_info.logicOp = vk::LogicOp::eCopy;
 		color_blend_state_create_info.logicOpEnable = VK_FALSE;		// If true, the logic op described here will override the blend modes for every attached framebuffer.
-		color_blend_state_create_info.pAttachments = &options.m_color_blend_attachment_state;
+		color_blend_state_create_info.pAttachments = options.m_color_blend_attachment_states.data();
 
 		// A limited amount of the pipeline state can be changed without recreating the entire pipeline.
 		vk::PipelineDynamicStateCreateInfo dynamic_state_create_info;
 		dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(options.m_dynamic_states.size());
 		dynamic_state_create_info.pDynamicStates = options.m_dynamic_states.data();
-
+		*/
 		build_descriptor_set_layouts();
 
 		// Get all of the values in the push constant ranges map. 
