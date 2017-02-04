@@ -86,6 +86,9 @@ namespace graphics
 		//! Advance to the current render pass' next subpass.
 		void next_subpass();
 
+		//! Set the line width: ignored if the corresponding dynamic state is not part of the active pipeline.
+		void set_line_width(float width);
+
 		//! Bind a pipeline for use in subsequent graphics or compute operations.
 		void bind_pipeline(const PipelineRef& pipeline);
 		
@@ -125,6 +128,8 @@ namespace graphics
 		CommandPoolRef m_command_pool;
 		vk::CommandBuffer m_command_buffer_handle;
 		vk::CommandBufferLevel m_command_buffer_level;
+		bool m_is_recording;
+		bool m_is_inside_render_pass;
 	};
 
 } // namespace graphics

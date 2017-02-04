@@ -32,7 +32,9 @@ namespace graphics
 	CommandBuffer::CommandBuffer(const DeviceRef& device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level) :
 		m_device(device),
 		m_command_pool(command_pool),
-		m_command_buffer_level(command_buffer_level)
+		m_command_buffer_level(command_buffer_level),
+		m_is_recording(false),
+		m_is_inside_render_pass(false)
 	{
 		vk::CommandBufferAllocateInfo command_buffer_allocate_info;
 		command_buffer_allocate_info.commandPool = m_command_pool->get_handle();
@@ -50,6 +52,8 @@ namespace graphics
 
 	void CommandBuffer::begin(vk::CommandBufferUsageFlags command_buffer_usage_flags)
 	{
+		m_is_recording = true;
+
 		vk::CommandBufferBeginInfo command_buffer_begin_info;
 		command_buffer_begin_info.flags = command_buffer_usage_flags;
 		command_buffer_begin_info.pInheritanceInfo = nullptr;
@@ -59,6 +63,8 @@ namespace graphics
 
 	void CommandBuffer::begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values)
 	{
+		m_is_inside_render_pass = true;
+
 		vk::RenderPassBeginInfo render_pass_begin_info;
 		render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
 		render_pass_begin_info.framebuffer = framebuffer->get_handle();
@@ -75,9 +81,16 @@ namespace graphics
 		m_command_buffer_handle.nextSubpass(vk::SubpassContents::eInline);
 	}
 
+	void CommandBuffer::set_line_width(float width)
+	{
+		auto range = m_device->get_physical_device_properties().limits.lineWidthRange;
+		float remapped = std::min(range[1], std::max(range[0], width));
+		m_command_buffer_handle.setLineWidth(remapped);
+	}
+
 	void CommandBuffer::bind_pipeline(const PipelineRef& pipeline)
 	{
-		m_command_buffer_handle.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->get_handle());
+		m_command_buffer_handle.bindPipeline(pipeline->get_pipeline_bind_point(), pipeline->get_handle());
 	}
 
 	void CommandBuffer::bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding)
@@ -121,7 +134,10 @@ namespace graphics
 
 	void CommandBuffer::end_render_pass()
 	{
-		m_command_buffer_handle.endRenderPass();
+		if (m_is_inside_render_pass)
+		{
+			m_command_buffer_handle.endRenderPass();
+		}
 	}
 
 	void CommandBuffer::transition_image_layout(const Image2DRef& image, vk::ImageLayout from, vk::ImageLayout to)
@@ -178,7 +194,11 @@ namespace graphics
 
 	void CommandBuffer::end()
 	{
-		m_command_buffer_handle.end();
+		if (m_is_recording)
+		{
+			m_command_buffer_handle.end();
+			m_is_recording = false;
+		}
 	}
 
 } // namespace graphics

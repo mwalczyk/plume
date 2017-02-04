@@ -59,14 +59,14 @@ namespace graphics
 		m_scissor.extent = { static_cast<uint32_t>(m_viewport.width), static_cast<uint32_t>(m_viewport.height) };
 		m_scissor.offset = { 0, 0 };
 
-		// Set up parameters for the default rasterization state.
-		m_polygon_mode = vk::PolygonMode::eFill;
-		m_line_width = 1.0f;
-		m_cull_mode_flags = vk::CullModeFlagBits::eBack;
-
 		// Set up the default input assembly.
 		m_primitive_restart = VK_FALSE;
 		m_primitive_topology = vk::PrimitiveTopology::eTriangleList;
+
+		// Set up parameters for the default rasterization state.
+		m_cull_mode_flags = vk::CullModeFlagBits::eBack;
+		m_line_width = 1.0f;
+		m_polygon_mode = vk::PolygonMode::eFill;
 
 		// Set up the default pipeline color blend attachment state (no blending).
 		m_color_blend_attachment_state = {};
@@ -96,18 +96,24 @@ namespace graphics
 		m_device(device),
 		m_render_pass(render_pass)
 	{		
-		// Group the create info structures together.
+		// Group the shader create info structs together.
 		std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos;
-
 		bool found_vertex_shader = false;
+		bool found_tessellation_control_shader = false;
+		bool found_tessellation_evaluation_shader = false;
+		bool found_geometry_shader = false;
 		bool found_fragment_shader = false;
+
 		for (const auto& stage : options.m_shader_stages)
 		{
 			if (stage.second == vk::ShaderStageFlagBits::eVertex) found_vertex_shader = true;
+			if (stage.second == vk::ShaderStageFlagBits::eTessellationControl) found_tessellation_control_shader = true;
+			if (stage.second == vk::ShaderStageFlagBits::eTessellationEvaluation) found_tessellation_evaluation_shader = true;
+			if (stage.second == vk::ShaderStageFlagBits::eGeometry) found_geometry_shader = true;
 			if (stage.second == vk::ShaderStageFlagBits::eFragment) found_fragment_shader = true;
+
 			auto shader_stage_info = build_shader_stage_create_info(stage.first, stage.second);
 			shader_stage_create_infos.push_back(shader_stage_info);
-			
 			add_push_constants_to_global_map(stage.first, stage.second);
 			add_descriptors_to_global_map(stage.first, stage.second);
 		}
@@ -163,11 +169,31 @@ namespace graphics
 		depth_stencil_state_create_info.depthCompareOp = vk::CompareOp::eLessOrEqual;
 		depth_stencil_state_create_info.depthTestEnable = options.m_depth_test_enabled;
 		depth_stencil_state_create_info.depthWriteEnable = VK_TRUE;
-		depth_stencil_state_create_info.maxDepthBounds = 1.0f;	// This is optional, since the depth bounds test is disabled.
-		depth_stencil_state_create_info.minDepthBounds = 0.0f;  // This is optional, since the depth bounds test is disabled.
+		depth_stencil_state_create_info.maxDepthBounds = 1.0f;		// This is optional, since the depth bounds test is disabled.
+		depth_stencil_state_create_info.minDepthBounds = 0.0f;		// This is optional, since the depth bounds test is disabled.
 		depth_stencil_state_create_info.stencilTestEnable = options.m_stencil_test_enabled;
 		
-		// Configure color blending properties.
+		// Configure color blending properties. Source and destination pixels are combined according to 
+		// the blend operation, quadruplets of source and destination weighting factors determined by
+		// the blend factors, and a blend constant, to obtain a new set of R, G, B, and A values. Each
+		// color attachment used by this pipeline's corresponding subpass can have different blend
+		// settings. The following pseudo-code from the Vulkan Tutorial describes how these per-attachment
+		// blend operations are performed:
+		//
+		// if (blending_enabled) 
+		// {
+		//		final_color.rgb = (src_color_blend_factor * new_color.rgb) <color_blend_op> (dst_color_blend_factor * old_color.rgb);
+		//		final_color.a = (src_alpha_blend_factor * new_color.a) <alpha_blend_op> (dst_alpha_blend_factor * old_color.a);
+		// }
+		// else 
+		// {
+		//		final_color = newColor;
+		// }
+		// final_color = final_color & color_write_mask;
+		//
+		// Note that if the logic op below is enabled, this will override (disable) all per-attachment
+		// blend states. Logical operations are applied only for signed/unsigned integer and normalized
+		// integer framebuffers. They are not applied to floating-point/sRGB format color attachments.
 		vk::PipelineColorBlendStateCreateInfo color_blend_state_create_info;
 		color_blend_state_create_info.attachmentCount = 1;
 		color_blend_state_create_info.blendConstants[0] = 0.0f;
@@ -178,7 +204,10 @@ namespace graphics
 		color_blend_state_create_info.logicOpEnable = VK_FALSE;		// If true, the logic op described here will override the blend modes for every attached framebuffer.
 		color_blend_state_create_info.pAttachments = &options.m_color_blend_attachment_state;
 
-		// A limited amount of the pipeline state can be changed without recreating the entire pipeline - see VkPipelineDynamicStateCreateInfo.
+		// A limited amount of the pipeline state can be changed without recreating the entire pipeline.
+		vk::PipelineDynamicStateCreateInfo dynamic_state_create_info;
+		dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(options.m_dynamic_states.size());
+		dynamic_state_create_info.pDynamicStates = options.m_dynamic_states.data();
 
 		build_descriptor_set_layouts();
 
@@ -206,7 +235,7 @@ namespace graphics
 		graphics_pipeline_create_info.layout = m_pipeline_layout_handle;
 		graphics_pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
 		graphics_pipeline_create_info.pDepthStencilState = &depth_stencil_state_create_info;
-		graphics_pipeline_create_info.pDynamicState = nullptr;
+		graphics_pipeline_create_info.pDynamicState = (options.m_dynamic_states.size() > 0) ? &dynamic_state_create_info : nullptr;
 		graphics_pipeline_create_info.pInputAssemblyState = &input_assembly_state_create_info;
 		graphics_pipeline_create_info.pMultisampleState = &multisample_state_create_info;
 		graphics_pipeline_create_info.pRasterizationState = &rasterization_state_create_info;

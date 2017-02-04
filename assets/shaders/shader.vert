@@ -12,6 +12,7 @@ layout(std430, push_constant) uniform PushConstants
 {
 	float time;
 	vec2 mouse;
+	vec3 color;
 } constants;
 
 // Vertex shader inputs
@@ -26,7 +27,7 @@ out gl_PerVertex
 
 layout (location = 0) out vec3 vsColor;
 
-vec2 hash2(in vec2 p)
+/*vec2 hash2(in vec2 p)
 {
     p = vec2(dot(p, vec2(12.9898, 78.233)),
              dot(p, vec2(139.234, 98.187)));
@@ -55,15 +56,15 @@ float noise(in vec2 p)
                     mix(dot(c, f - vec2(0.0,1.0)),
                         dot(d, f - vec2(1.0,1.0)), u.x), u.y);
     return val * 0.5 + 0.5;
-}
+}*/
 
 void main()
 {
 	vsColor = inColor;
 
-	float n = noise(inPosition.xy * 2.0 + constants.time) * 2.0 - 1.0;
+	/*float n = noise(inPosition.xy * 2.0 + constants.time) * 2.0 - 1.0;
 	vec3 normalDirection = normalize(inPosition);
-	vec3 modifiedPosition = inPosition + normalDirection * n * constants.mouse.x;
+	vec3 modifiedPosition = inPosition + normalDirection * n * constants.mouse.x;*/
 
-  gl_Position = ubo.projection * ubo.view * ubo.model * vec4(modifiedPosition, 1.0);
+  gl_Position = ubo.projection * ubo.view * ubo.model * vec4(inPosition, 1.0);
 }

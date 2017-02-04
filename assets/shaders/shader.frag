@@ -14,6 +14,7 @@ layout(std430, push_constant) uniform PushConstants
 {
 	float time;
 	vec2 mouse;
+	vec3 color;
 } constants;
 
 void main()
@@ -22,5 +23,5 @@ void main()
 	float m = constants.mouse.x;
 	vec4 sampledColor = texture(CombinedImageSampler, vec2(0.0, 0.0));
 
-	oColor = vec4(vsColor, 1.0);
+	oColor = vec4(constants.color * vsColor, 1.0);
 }
