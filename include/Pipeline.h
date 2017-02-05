@@ -69,42 +69,90 @@ namespace graphics
 
 			Options();
 			
+			//! Configure color blending properties. Source and destination pixels are combined according to 
+			//! the blend operation, quadruplets of source and destination weighting factors determined by
+			//! the blend factors, and a blend constant, to obtain a new set of R, G, B, and A values. Each
+			//! color attachment used by this pipeline's corresponding subpass can have different blend
+			//! settings. The following pseudo-code from the Vulkan Tutorial describes how these per-attachment
+			//! blend operations are performed:
+			//!
+			//! if (blending_enabled) 
+			//! {
+			//!		final_color.rgb = (src_color_blend_factor * new_color.rgb) <color_blend_op> (dst_color_blend_factor * old_color.rgb);
+			//!		final_color.a = (src_alpha_blend_factor * new_color.a) <alpha_blend_op> (dst_alpha_blend_factor * old_color.a);
+			//! }
+			//! else 
+			//! {
+			//!		final_color = newColor;
+			//! }
+			//! final_color = final_color & color_write_mask;
+			Options& color_blend_attachment_states(const std::vector<vk::PipelineColorBlendAttachmentState>& color_blend_attachment_states) 
+			{
+				m_color_blend_state_create_info.attachmentCount = static_cast<uint32_t>(color_blend_attachment_states.size());
+				m_color_blend_state_create_info.pAttachments = color_blend_attachment_states.data();
+				return *this; 
+			}
+			
+			//! Set the logical operation for all framebuffer attachments. Note that if a logical operation is 
+			//! enabled, this will override (disable) all per-attachment blend states. Logical operations are 
+			//! applied only for signed/unsigned integer and normalized integer framebuffers. They are not applied 
+			//! to floating-point/sRGB format color attachments.
+			Options& logic_op(vk::LogicOp logic_op) 
+			{ 
+				m_color_blend_state_create_info.logicOp = logic_op; 
+				m_color_blend_state_create_info.logicOpEnable = VK_TRUE; 
+				return *this; 
+			}
+			
+			//! Enable or disable depth testing.
+			Options& depth_test(vk::Bool32 enabled = VK_TRUE) { m_depth_stencil_state_create_info.depthTestEnable = enabled; return *this; }
+			
+			//! Enable or disable stencil testing.
+			Options& stencil_test(vk::Bool32 enabled = VK_TRUE) { m_depth_stencil_state_create_info.stencilTestEnable = enabled; return *this; }
+
+			//! A limited amount of the pipeline state can be changed without recreating the entire pipeline.
+			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) 
+			{ 
+				m_dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
+				m_dynamic_state_create_info.pDynamicStates = dynamic_states.data();
+				return *this; 
+			}
+
+			//! Enable or disable primitive restart.
+			Options& primitive_restart(vk::Bool32 primitive_restart) { m_input_assembly_state_create_info.primitiveRestartEnable = primitive_restart; return *this; }
+			
+			//! Describe the type of geometry that will be drawn, i.e. triangles, lines, points, etc.
+			Options& primitive_topology(vk::PrimitiveTopology primitive_topology) { m_input_assembly_state_create_info.topology = primitive_topology; return *this; }
+
+			// Multisample state
+			
+			//! Configure frontface/backface culling.
+			Options& cull_mode(vk::CullModeFlags cull_mode_flags) { m_rasterization_state_create_info.cullMode = cull_mode_flags; return *this; }
+			
+			//! Set the line width - only applies if the primitive topology is set to a vk::PrimitiveTopology::eLine* variant.
+			Options& line_width(float line_width) { m_rasterization_state_create_info.lineWidth = line_width; return *this; }
+
+			//! Set the polygon mode, i.e. vk::PolygonMode::eFill or vk::PolygonMode::eLines.
+			Options& polygon_mode(vk::PolygonMode polygon_mode) { m_rasterization_state_create_info.polygonMode = polygon_mode; return *this; }
+
+			// Tessellation state
+
+			// Vertex input state
 			Options& vertex_input_binding_descriptions(const std::vector<vk::VertexInputBindingDescription>& vertex_input_binding_descriptions) { m_vertex_input_binding_descriptions = vertex_input_binding_descriptions; return *this; }
+
 			Options& vertex_input_attribute_descriptions(const std::vector<vk::VertexInputAttributeDescription>& vertex_input_attribute_descriptions) { m_vertex_input_attribute_descriptions = vertex_input_attribute_descriptions; return *this; }
-			Options& viewport(const vk::Viewport& viewport) { m_viewport = viewport; return *this; }
-			Options& scissor(const vk::Rect2D& scissor) { m_scissor = scissor; return *this; }
+			
+			//! Set the region of the framebuffer that the output will be rendered to. Some graphics cards support multiple
+			//! viewports/scissors, but doing so requires a special logical device feature.
+			Options& viewports(const std::vector<vk::Viewport>& viewports) { m_viewports = viewports; return *this; }
+
+			//! Set the rectangular regions of the framebuffer output that will be visible.
+			Options& scissors(const std::vector<vk::Rect2D>& scissors){ m_scissors = scissors; return *this; }
+			
+			// Shader stages
 			Options& attach_shader_stage(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits) { m_shader_stages.push_back({ module, shader_stage_flag_bits }); return *this; }
-			Options& primitive_restart(vk::Bool32 primitive_restart) { m_primitive_restart = primitive_restart; return *this; }
-			Options& primitive_topology(vk::PrimitiveTopology primitive_topology) { m_primitive_topology = primitive_topology; return *this; }
-			Options& cull_mode(vk::CullModeFlags cull_mode_flags) { m_cull_mode_flags = cull_mode_flags; return *this; }
-			Options& line_width(float line_width) { m_line_width = line_width; return *this; }
-			Options& polygon_mode(vk::PolygonMode polygon_mode) { m_polygon_mode = polygon_mode; return *this; }
-			Options& depth_test(vk::Bool32 enabled = VK_TRUE) { m_depth_test_enabled = enabled; return *this; }
-			Options& stencilTest(vk::Bool32 enabled = VK_TRUE) { m_stencil_test_enabled = enabled; return *this; }
-			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) { m_dynamic_states = dynamic_states; return *this; }
-
-			//! Configure per-attached framebuffer color blending, which determines how new fragments are composited with colors that are already in the framebuffer.
-			Options& color_blend_attachment_states(const std::vector<vk::PipelineColorBlendAttachmentState>& color_blend_attachment_states) { m_color_blend_attachment_states = color_blend_attachment_states; return *this; }
-			Options& logic_op(vk::LogicOp logic_op) { m_logic_op = logic_op; m_logic_op_enabled = VK_TRUE; return *this; }
-
+			
 		private:
-
-			std::vector<vk::VertexInputBindingDescription> m_vertex_input_binding_descriptions;
-			std::vector<vk::VertexInputAttributeDescription> m_vertex_input_attribute_descriptions;
-			vk::Viewport m_viewport;
-			vk::Rect2D m_scissor;
-			std::vector<std::pair<ShaderModuleRef, vk::ShaderStageFlagBits>> m_shader_stages;
-			vk::Bool32 m_primitive_restart;
-			vk::PrimitiveTopology m_primitive_topology;
-			vk::CullModeFlags m_cull_mode_flags;
-			float m_line_width;
-			vk::PolygonMode m_polygon_mode;
-			vk::Bool32 m_depth_test_enabled;
-			vk::Bool32 m_stencil_test_enabled;
-			std::vector<vk::PipelineColorBlendAttachmentState> m_color_blend_attachment_states;
-			std::vector<vk::DynamicState> m_dynamic_states;
-			vk::LogicOp m_logic_op;
-			vk::Bool32 m_logic_op_enabled;
 
 			vk::PipelineColorBlendStateCreateInfo m_color_blend_state_create_info;
 			vk::PipelineDepthStencilStateCreateInfo m_depth_stencil_state_create_info;
@@ -113,8 +161,12 @@ namespace graphics
 			vk::PipelineMultisampleStateCreateInfo m_multisample_state_create_info;
 			vk::PipelineRasterizationStateCreateInfo m_rasterization_state_create_info;
 			vk::PipelineTessellationStateCreateInfo m_tessellation_state_create_info;
-			vk::PipelineVertexInputStateCreateInfo m_vertex_input_state_create_info;
-			vk::PipelineViewportStateCreateInfo m_viewport_state_create_info;
+
+			std::vector<vk::VertexInputBindingDescription> m_vertex_input_binding_descriptions;
+			std::vector<vk::VertexInputAttributeDescription> m_vertex_input_attribute_descriptions;
+			std::vector<vk::Viewport> m_viewports;
+			std::vector<vk::Rect2D> m_scissors;
+			std::vector<std::pair<ShaderModuleRef, vk::ShaderStageFlagBits>> m_shader_stages;
 
 			friend class Pipeline;
 		};
