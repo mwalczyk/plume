@@ -124,8 +124,11 @@ namespace graphics
 			//! Describe the type of geometry that will be drawn, i.e. triangles, lines, points, etc.
 			Options& primitive_topology(vk::PrimitiveTopology primitive_topology) { m_input_assembly_state_create_info.topology = primitive_topology; return *this; }
 
-			// Multisample state
-			
+			//! Set the number of samples per pixel used in rasterization. Multisampling (MSAA) is one method for achieving
+			//! full-screen antialiasing (FSAA). Each sub-pixel element will have its own unique depth data, but the color
+			//! is only calculated once.
+			Options& samples(vk::SampleCountFlagBits sample_count) { m_multisample_state_create_info.rasterizationSamples = sample_count; }
+
 			//! Configure frontface/backface culling.
 			Options& cull_mode(vk::CullModeFlags cull_mode_flags) { m_rasterization_state_create_info.cullMode = cull_mode_flags; return *this; }
 			
@@ -135,7 +138,7 @@ namespace graphics
 			//! Set the polygon mode, i.e. vk::PolygonMode::eFill or vk::PolygonMode::eLines.
 			Options& polygon_mode(vk::PolygonMode polygon_mode) { m_rasterization_state_create_info.polygonMode = polygon_mode; return *this; }
 
-			// Tessellation state
+			//! TODO: tessellation state
 
 			//! Vertex input binding descriptions tell the implementation how to fetch the vertex data from the GPU once it has 
 			//! been uploaded. It describes the rate at which data will be loaded from memory (per-vertex or per-instance). It also
@@ -152,7 +155,7 @@ namespace graphics
 			//! Set the rectangular regions of the framebuffer output that will be visible.
 			Options& scissors(const std::vector<vk::Rect2D>& scissors){ m_scissors = scissors; return *this; }
 			
-			// Shader stages
+			//! Add a shader stage to the pipeline. Note that all graphics pipeline objects must contain a vertex shader.
 			Options& attach_shader_stage(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits) { m_shader_stages.push_back({ module, shader_stage_flag_bits }); return *this; }
 			
 		private:

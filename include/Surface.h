@@ -38,6 +38,11 @@ namespace graphics
 	class Surface;
 	using SurfaceRef = std::shared_ptr<Surface>;
 
+	//! Vulkan is a platform agnostic API and therefore does not directly interface with the window system.
+	//! The WSI (window system integration) extensions establish the connection between Vulkan and the 
+	//! underlying window system to present rendered images to the screen. Note that the surface and window 
+	//! creation process is not strictly necessary to build a functional Vulkan system, as Vulkan allows 
+	//! headless rendering.
 	class Surface : public Noncopyable
 	{
 	public:

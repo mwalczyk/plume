@@ -31,7 +31,7 @@ namespace graphics
 	
 	Buffer::Options::Options()
 	{
-		m_use_staging_buffer = false;
+		m_memory_property_flags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 	}
 
 	Buffer::Buffer(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const Options& options) :
@@ -42,7 +42,7 @@ namespace graphics
 		vk::SharingMode sharing_mode = vk::SharingMode::eExclusive;
 		if (options.m_queue_family_indices.size())
 		{
-			std::cout << "This buffer is used by multiple queue families: setting its share mode to VK_SHARING_MODE_CONCURRENT\n";
+			std::cout << "This buffer is used by multiple queue families: setting its share mode to vk::SharingMode::eConcurrent\n";
 			sharing_mode = vk::SharingMode::eConcurrent;
 		}
 
@@ -53,35 +53,13 @@ namespace graphics
 		buffer_create_info.size = m_requested_size;
 		buffer_create_info.usage = m_buffer_usage_flags;
 
-		if (options.m_use_staging_buffer)
-		{
-			// Steps:
-			// Create a second command pool for command buffers that are submitted on the transfer queue family.
-			// Change the sharingMode of resources to be VK_SHARING_MODE_CONCURRENT and specify both the graphics and transfer queue families.
-			// Submit the transfer command vkCmdCopyBuffer to the transfer queue instead of the graphics queue.
-
-			// If there is a separate transfer queue available on this device, use it for setting up the staging buffer. The buffer needs to be
-			// created with this in mind. First, see if it was already included in the list of queue family indices that was passed to the constructor.
-			// If it wasn't, add it to the new list below, which will be used to create both buffers.
-			auto transfer_index = m_device->get_queue_families_mapping().transfer().second;
-			std::vector<uint32_t> staged_queue_family_indices(options.m_queue_family_indices.begin(), options.m_queue_family_indices.end());
-
-			if (std::find(staged_queue_family_indices.begin(), staged_queue_family_indices.end(), transfer_index) == staged_queue_family_indices.end())
-			{
-				staged_queue_family_indices.push_back(transfer_index);
-			}
-		}
-		else
-		{
-			m_buffer_handle = m_device->get_handle().createBuffer(buffer_create_info);
-		}
+		m_buffer_handle = m_device->get_handle().createBuffer(buffer_create_info);
 
 		// Store the memory requirements for this buffer object.
-		auto memory_requirements = m_device->get_handle().getBufferMemoryRequirements(m_buffer_handle);
-		auto required_memory_properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+		m_memory_requirements = m_device->get_handle().getBufferMemoryRequirements(m_buffer_handle);
 
 		// Allocate device memory.
-		m_device_memory = DeviceMemory::create(m_device, memory_requirements, required_memory_properties);
+		m_device_memory = DeviceMemory::create(m_device, m_memory_requirements, options.m_memory_property_flags);
 
 		// Fill the buffer with the data that was passed into the constructor.
 		if (data)

@@ -31,14 +31,17 @@ namespace graphics
 
 	DeviceMemory::DeviceMemory(const DeviceRef& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties) :
 		m_device(device),
-		m_selected_memory_index(0),
-		m_allocation_size(memory_requirements.size)
+		m_allocation_size(memory_requirements.size),
+		m_selected_memory_index(-1)
 	{
 		auto& physical_device_memory_properties = m_device->get_physical_device_memory_properties();
 
 		// Based on the memory requirements, find the index of the memory heap that should be used to allocate memory.
 		for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount; ++i)
 		{
+			// The memoryTypeBits field is a bitmask and contains one bit set for every supported memory type for the resource.
+			// Bit i is set if and only if the memory type i in the physical device memory properties struct is supported for
+			// this resource. The implementation guarantees that at least one bit of this bitmask will be set.
 			if ((memory_requirements.memoryTypeBits & (1 << i)) &&
 				physical_device_memory_properties.memoryTypes[i].propertyFlags & required_memory_properties)
 			{

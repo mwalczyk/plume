@@ -40,6 +40,11 @@ namespace graphics
 	class Buffer;
 	using BufferRef = std::shared_ptr<Buffer>;
 
+	//! Buffers represent linear arrays of data. They are created with a usage bitmask which describes the
+	//! allowed usages of the buffer (i.e. vk::BufferUsageFlagBits::eUniformBuffer). Any combination of bits
+	//! can be specified. Buffers are created with a sharing mode that controls how they can be accessed 
+	//! from queues. Note that if a buffer is created with the vk::SharingMode::eExclusive sharing mode, 
+	//! ownership can be transferred to another queue.
 	class Buffer : public Noncopyable
 	{
 	public:
@@ -49,24 +54,29 @@ namespace graphics
 		public:
 			Options();
 
+			//! List the indices of all queue families that will access the contents of the buffer.
 			Options& queue_family_indices(const std::vector<uint32_t> queue_family_indices) {  m_queue_family_indices = queue_family_indices; return *this; }
-			Options& use_staging_buffer(bool use_staging_buffer) { m_use_staging_buffer = use_staging_buffer; return *this; }
+
+			//! Set the required memory properties (i.e. vk::MemoryPropertyFlagBits::eHostCoherent) of 
+			//! the device memory that will be bound to the buffer. 
+			Options& memory_property_flags(vk::MemoryPropertyFlags memory_property_flags) { m_memory_property_flags = memory_property_flags; return *this; }
 
 		private:
 
 			std::vector<uint32_t> m_queue_family_indices;
-			bool m_use_staging_buffer;
+			vk::MemoryPropertyFlags m_memory_property_flags;
 
 			friend class Buffer;
 		};
 
-		//! Factory method for returning a new BufferRef.
+		//! Factory method for returning a new BufferRef that will be filled with the supplied vector of data.
 		template<class T>
 		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const Options& options = Options())
 		{
 			return std::make_shared<Buffer>(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), options);
 		}
 
+		//! Factory method for returning a new BufferRef that will be filled with the supplied data.
 		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const Options& options = Options())
 		{
 			return std::make_shared<Buffer>(device, buffer_usage_flags, size, data, options);
@@ -90,6 +100,7 @@ namespace graphics
 		DeviceMemoryRef m_device_memory;
 		vk::Buffer m_buffer_handle;
 		vk::BufferUsageFlags m_buffer_usage_flags;
+		vk::MemoryRequirements m_memory_requirements;
 		size_t m_requested_size;
 	};
 

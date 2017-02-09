@@ -52,6 +52,17 @@ namespace graphics
 	//! be directly visible to other commands without explicit barriers.
 	//!
 	//! For restrictions on using command buffers concurrently, see the notes inside of the command pool class.
+	//! 
+	//! Command buffers submitted to different queues may execute in parallel or even out of order with
+	//! respect to one another. Command buffers submitted to a single queue respect the submission order.
+	//! Finally, command buffer execution by the device is asynchronous to host execution. It is the 
+	//! application's responsibility to synchronize between the device and host and between different queues.
+	//!
+	//! Queue submission commands optionally take a list of semaphores upon which to wait before work begins
+	//! and a list of semaphores to signal once work has completed. Explicit ordering constraints between
+	//! queues can be expressed with semaphores and fences. There are a few implicit ordering constraints
+	//! between commands within a command buffer but only covering a subset of execution. Additional explicit
+	//! ordering constraints can be expressed with events, pipeline barriers, and subpass dependencies.
 	class CommandBuffer : public Noncopyable
 	{
 	public:

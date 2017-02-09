@@ -42,6 +42,9 @@ namespace graphics
 	class Instance;
 	using InstanceRef = std::shared_ptr<Instance>;
 
+	//! There is no global state in Vulkan and all per-application state is stored in an instance object.
+	//! Creating an instance initializes the Vulkan library and allows the application to pass information
+	//! about itself to the implementation.
 	class Instance : public Noncopyable
 	{
 	public:
@@ -115,7 +118,27 @@ namespace graphics
 															const char* message,
 															void* data)
 		{
-			std::cerr << "VALIDATION LAYER: " << message << std::endl;
+			std::cerr << "VALIDATION LAYER [";
+			if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
+			{
+				std::cerr << "DEBUG]:" << message << "\n";
+			}
+			else if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
+			{
+				std::cerr << "ERROR]:" << message << "\n";
+			}
+			else if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
+			{
+				std::cerr << "INFORMATION]:" << message << "\n";
+			}
+			else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
+			{
+				std::cerr << "PERFORMANCE WARNING]:" << message << "\n";
+			}
+			else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
+			{
+				std::cerr << "WARNING]:" << message << "\n";
+			}
 			return VK_FALSE;
 		}
 	};
