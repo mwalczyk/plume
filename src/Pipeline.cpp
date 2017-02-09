@@ -152,7 +152,7 @@ namespace graphics
 		vertex_input_state_create_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(options.m_vertex_input_attribute_descriptions.size());
 		vertex_input_state_create_info.vertexBindingDescriptionCount = static_cast<uint32_t>(options.m_vertex_input_binding_descriptions.size());
 
-		// Combine the viewport and scissor settings into a viewport state structure.
+		// Combine the viewport and scissor settings into a single viewport state.
 		vk::PipelineViewportStateCreateInfo viewport_state_create_info;
 		viewport_state_create_info.pScissors = options.m_scissors.data();
 		viewport_state_create_info.pViewports = options.m_viewports.data();

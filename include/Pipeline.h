@@ -137,9 +137,12 @@ namespace graphics
 
 			// Tessellation state
 
-			// Vertex input state
+			//! Vertex input binding descriptions tell the implementation how to fetch the vertex data from the GPU once it has 
+			//! been uploaded. It describes the rate at which data will be loaded from memory (per-vertex or per-instance). It also
+			//! specifies the number of bytes between data entries.
 			Options& vertex_input_binding_descriptions(const std::vector<vk::VertexInputBindingDescription>& vertex_input_binding_descriptions) { m_vertex_input_binding_descriptions = vertex_input_binding_descriptions; return *this; }
 
+			//! Vertex input attribute descriptions describe the size, location, and binding index of each vertex attribute. 
 			Options& vertex_input_attribute_descriptions(const std::vector<vk::VertexInputAttributeDescription>& vertex_input_attribute_descriptions) { m_vertex_input_attribute_descriptions = vertex_input_attribute_descriptions; return *this; }
 			
 			//! Set the region of the framebuffer that the output will be rendered to. Some graphics cards support multiple
