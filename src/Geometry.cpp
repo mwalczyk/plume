@@ -162,4 +162,47 @@ namespace geo
 		set_solid({ 1.0f, 1.0f, 1.0f });
 	}
 
+	Sphere::Sphere()
+	{
+		const uint32_t v_divisions = 20;
+		const uint32_t u_divisions = 20;
+		const float radius = 1.0f;
+
+		// Calculate vertex positions
+		for (int i = 0; i <= v_divisions; ++i)
+		{
+			float v = i / static_cast<float>(v_divisions);		// Fraction along the v-axis, 0..1
+			float phi = v * glm::pi<float>();					// Vertical angle, 0..pi
+
+			for (int j = 0; j <= u_divisions; ++j)
+			{
+				float u = j / static_cast<float>(u_divisions);	// Fraction along the u-axis, 0..1
+				float theta = u * (glm::pi<float>() * 2);		// Rotational angle, 0..2*pi
+
+				// Spherical to Cartesian coordinates
+				float x = cosf(theta) * sinf(phi);
+				float y = cosf(phi);
+				float z = sinf(theta) * sinf(phi);
+				auto vertex = glm::vec3(x, y, z) * radius;
+
+				m_positions.push_back(vertex);
+				m_normals.push_back(glm::normalize(vertex));
+			}
+		}
+
+		// Calculate indices
+		for (int i = 0; i < u_divisions * v_divisions + u_divisions; ++i)
+		{
+			m_indices.push_back(i);
+			m_indices.push_back(i + u_divisions + 1);
+			m_indices.push_back(i + u_divisions);
+
+			m_indices.push_back(i + u_divisions + 1);
+			m_indices.push_back(i);
+			m_indices.push_back(i + 1);
+		}
+
+		set_solid({ 1.0f, 1.0f, 1.0f });
+	}
+
 } // namespace geo

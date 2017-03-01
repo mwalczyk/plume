@@ -92,7 +92,7 @@ namespace graphics
 		m_rasterization_state_create_info.depthBiasSlopeFactor = 0.0f;
 		m_rasterization_state_create_info.depthClampEnable = VK_FALSE;
 		m_rasterization_state_create_info.frontFace = vk::FrontFace::eClockwise;
-		m_rasterization_state_create_info.lineWidth = 0.0f;
+		m_rasterization_state_create_info.lineWidth = 1.0f;
 		m_rasterization_state_create_info.polygonMode = vk::PolygonMode::eFill;
 		m_rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
 

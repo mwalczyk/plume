@@ -121,4 +121,13 @@ namespace geo
 
 	};
 
+	class Sphere : public Geometry
+	{
+	public:
+
+		Sphere();
+
+		inline vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
+	};
+
 } // namespace geo

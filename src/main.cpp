@@ -80,32 +80,36 @@ int main()
 	auto render_pass = graphics::RenderPass::create(device);
 
 	/// geo::Geometry
-	auto geometry = geo::Circle(1.0f, 60);
+	auto geometry = geo::Sphere();// geo::Circle(1.0f, 60);
 	geometry.set_random_colors();
 
 	/// vk::Buffer	
 	auto vbo_0 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_positions());
 	auto vbo_1 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_colors());
+	auto vbo_2 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_normals());
 	auto ibo = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
 
 	/// vk::Pipeline
 	vk::VertexInputBindingDescription binding_0 = { 0, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
 	vk::VertexInputBindingDescription binding_1 = { 1, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
+	vk::VertexInputBindingDescription binding_2 = { 2, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
 	vk::VertexInputAttributeDescription attr_0 = { 0, binding_0.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: position
 	vk::VertexInputAttributeDescription attr_1 = { 1, binding_1.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: color	
+	vk::VertexInputAttributeDescription attr_2 = { 2, binding_2.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: normal	
 	auto v_shader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/vert.spv"));
 	auto f_shader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/frag.spv"));
 
 	auto pipeline_options = graphics::Pipeline::Options()
-		.vertex_input_binding_descriptions({ binding_0, binding_1 })
-		.vertex_input_attribute_descriptions({ attr_0, attr_1 })
+		.vertex_input_binding_descriptions({ binding_0, binding_1, binding_2 })
+		.vertex_input_attribute_descriptions({ attr_0, attr_1, attr_2 })
 		.viewports({ window->get_fullscreen_viewport() })
 		.scissors({ window->get_fullscreen_scissor_rect2d() })
 		.attach_shader_stage(v_shader, vk::ShaderStageFlagBits::eVertex)
 		.attach_shader_stage(f_shader, vk::ShaderStageFlagBits::eFragment)
 		.primitive_topology(geometry.get_topology())
-		.depth_test();
+		//.depth_test()
+		.polygon_mode(vk::PolygonMode::eLine);
 	auto pipeline = graphics::Pipeline::create(device, render_pass, pipeline_options);
 	std::cout << pipeline << std::endl;
 
@@ -197,7 +201,7 @@ int main()
 		command_buffer->begin();
 		command_buffer->begin_render_pass(render_pass, framebuffers[image_index], clear_vals);
 		command_buffer->bind_pipeline(pipeline);
-		command_buffer->bind_vertex_buffers({ vbo_0, vbo_1 });
+		command_buffer->bind_vertex_buffers({ vbo_0, vbo_1, vbo_2 });
 		command_buffer->bind_index_buffer(ibo);
 		command_buffer->update_push_constant_ranges(pipeline, "time", &elapsed);
 		command_buffer->update_push_constant_ranges(pipeline, "mouse", &mouse_position);
