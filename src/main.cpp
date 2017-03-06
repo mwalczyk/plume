@@ -108,8 +108,8 @@ int main()
 		.attach_shader_stage(v_shader, vk::ShaderStageFlagBits::eVertex)
 		.attach_shader_stage(f_shader, vk::ShaderStageFlagBits::eFragment)
 		.primitive_topology(geometry.get_topology())
-		//.depth_test()
-		.polygon_mode(vk::PolygonMode::eLine);
+		.polygon_mode(vk::PolygonMode::eFill)
+		.depth_test();
 	auto pipeline = graphics::Pipeline::create(device, render_pass, pipeline_options);
 	std::cout << pipeline << std::endl;
 
