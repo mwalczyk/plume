@@ -67,7 +67,7 @@ int main()
 	auto queue_family_properties = device->get_physical_device_queue_family_properties();
 	for (size_t i = 0; i < queue_family_properties.size(); ++i)
 	{
-		vk::Bool32 support = device->get_physical_device_handle().getSurfaceSupportKHR(static_cast<uint32_t>(i), surface->get_handle());		
+		vk::Bool32 support = device->get_physical_device_handle().getSurfaceSupportKHR(static_cast<uint32_t>(i), surface->get_handle());
 		if (support) { /* TODO: move this check into the device class */ }
 	}
 	std::cout << device << std::endl;
@@ -83,7 +83,7 @@ int main()
 	auto geometry = geo::Grid();
 	geometry.set_solid({ 1.0f, 1.0f, 1.0f });
 
-	/// vk::Buffer	
+	/// vk::Buffer
 	auto vbo_0 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_positions());
 	auto vbo_1 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_colors());
 	auto ibo = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
@@ -93,7 +93,7 @@ int main()
 	vk::VertexInputBindingDescription binding_0 = { 0, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
 	vk::VertexInputBindingDescription binding_1 = { 1, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
 	vk::VertexInputAttributeDescription attr_0 = { 0, binding_0.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: position
-	vk::VertexInputAttributeDescription attr_1 = { 1, binding_1.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: color	
+	vk::VertexInputAttributeDescription attr_1 = { 1, binding_1.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: color
 	auto v_shader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/vert.spv"));
 	auto f_shader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/frag.spv"));
 
@@ -110,12 +110,12 @@ int main()
 
 	/// vk::CommandPool
 	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-	
+
 	/// vk::Image
 	auto texture = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::load_image("../assets/textures/texture.jpg"));
 	auto texture_view = texture->build_image_view();
 	auto texture_sampler = texture->build_sampler();
-	
+
 	auto depth_image_options = graphics::Image2D::Options().image_tiling(vk::ImageTiling::eOptimal);
 	auto depth_image = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eDepthStencilAttachment, device->get_supported_depth_format(), width, height, depth_image_options);
 	auto depth_image_view = depth_image->build_image_view();
@@ -144,7 +144,7 @@ int main()
 	}
 
 	/// vk::DescriptorPool
-	auto descriptor_pool = graphics::DescriptorPool::create(device, { {vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1} } ); 
+	auto descriptor_pool = graphics::DescriptorPool::create(device, { {vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1} } );
 
 	/// vk::DescriptorSet
 	vk::DescriptorSetLayout descriptor_set_layout = pipeline->get_descriptor_set_layout(0);
@@ -190,10 +190,10 @@ int main()
 		std::vector<vk::ClearValue> clear_vals(2);
 		clear_vals[0].color = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };
 		clear_vals[1].depthStencil = {1.0f, 0};
-		
+
 		// Set up a new command buffer and record draw calls.
 		auto command_buffer = graphics::CommandBuffer::create(device, command_pool);
-		auto command_buffer_handle = command_buffer->get_handle(); 
+		auto command_buffer_handle = command_buffer->get_handle();
 		command_buffer->begin();
 		command_buffer->begin_render_pass(render_pass, framebuffers[image_index], clear_vals);
 		command_buffer->bind_pipeline(pipeline);
@@ -213,12 +213,12 @@ int main()
 		vk::PipelineStageFlags wait_stages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 		vk::SubmitInfo submit_info;
 		submit_info.waitSemaphoreCount = 1;
-		submit_info.pWaitSemaphores = wait_sems;		
+		submit_info.pWaitSemaphores = wait_sems;
 		submit_info.pWaitDstStageMask = wait_stages;
 		submit_info.commandBufferCount = 1;
 		submit_info.pCommandBuffers = &command_buffer_handle;
 		submit_info.signalSemaphoreCount = 1;
-		submit_info.pSignalSemaphores = signal_sems;	
+		submit_info.pSignalSemaphores = signal_sems;
 		device->get_queue_families_mapping().graphics().first.submit(submit_info, {});
 
 		// Submit the result back to the swapchain for presentation:  make sure to wait for rendering to finish before attempting to present.

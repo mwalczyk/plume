@@ -68,10 +68,6 @@ namespace graphics
 		m_depth_stencil_state_create_info.minDepthBounds = 0.0f;
 		m_depth_stencil_state_create_info.stencilTestEnable = VK_FALSE;
 		
-		// Set up the default dynamic state.
-		m_dynamic_state_create_info.dynamicStateCount = 0;
-		m_dynamic_state_create_info.pDynamicStates = nullptr;
-		
 		// Set up the default input assembly state.
 		m_input_assembly_state_create_info.primitiveRestartEnable = VK_FALSE;
 		m_input_assembly_state_create_info.topology = vk::PrimitiveTopology::eTriangleList;
@@ -145,14 +141,16 @@ namespace graphics
 			throw std::runtime_error("At least one vertex shader stage is required to build a graphics pipeline");
 		}
 
-		// Describe the format of the vertex data that will be passed to the vertex shader.
+		vk::PipelineDynamicStateCreateInfo dynamic_state_create_info;
+		dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(options.m_dynamic_states.size());
+		dynamic_state_create_info.pDynamicStates = options.m_dynamic_states.data();
+
 		vk::PipelineVertexInputStateCreateInfo vertex_input_state_create_info;
 		vertex_input_state_create_info.pVertexAttributeDescriptions = options.m_vertex_input_attribute_descriptions.data();
 		vertex_input_state_create_info.pVertexBindingDescriptions = options.m_vertex_input_binding_descriptions.data();
 		vertex_input_state_create_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(options.m_vertex_input_attribute_descriptions.size());
 		vertex_input_state_create_info.vertexBindingDescriptionCount = static_cast<uint32_t>(options.m_vertex_input_binding_descriptions.size());
 
-		// Combine the viewport and scissor settings into a single viewport state.
 		vk::PipelineViewportStateCreateInfo viewport_state_create_info;
 		viewport_state_create_info.pScissors = options.m_scissors.data();
 		viewport_state_create_info.pViewports = options.m_viewports.data();
@@ -185,7 +183,7 @@ namespace graphics
 		graphics_pipeline_create_info.layout = m_pipeline_layout_handle;
 		graphics_pipeline_create_info.pColorBlendState = &options.m_color_blend_state_create_info;
 		graphics_pipeline_create_info.pDepthStencilState = &options.m_depth_stencil_state_create_info;
-		graphics_pipeline_create_info.pDynamicState = (options.m_dynamic_state_create_info.dynamicStateCount > 0) ? &options.m_dynamic_state_create_info : nullptr;
+		graphics_pipeline_create_info.pDynamicState = (options.m_dynamic_states.size() > 0) ? &dynamic_state_create_info : nullptr;
 		graphics_pipeline_create_info.pInputAssemblyState = &options.m_input_assembly_state_create_info;
 		graphics_pipeline_create_info.pMultisampleState = &options.m_multisample_state_create_info;
 		graphics_pipeline_create_info.pRasterizationState = &options.m_rasterization_state_create_info;

@@ -111,12 +111,7 @@ namespace graphics
 			Options& stencil_test(vk::Bool32 enabled = VK_TRUE) { m_depth_stencil_state_create_info.stencilTestEnable = enabled; return *this; }
 
 			//! A limited amount of the pipeline state can be changed without recreating the entire pipeline.
-			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) 
-			{ 
-				m_dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
-				m_dynamic_state_create_info.pDynamicStates = dynamic_states.data();
-				return *this; 
-			}
+			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) { m_dynamic_states = dynamic_states; return *this; }
 
 			//! Enable or disable primitive restart.
 			Options& primitive_restart(vk::Bool32 primitive_restart) { m_input_assembly_state_create_info.primitiveRestartEnable = primitive_restart; return *this; }
@@ -137,8 +132,6 @@ namespace graphics
 
 			//! Set the polygon mode, i.e. vk::PolygonMode::eFill or vk::PolygonMode::eLines.
 			Options& polygon_mode(vk::PolygonMode polygon_mode) { m_rasterization_state_create_info.polygonMode = polygon_mode; return *this; }
-
-			//! TODO: tessellation state
 
 			//! Vertex input binding descriptions tell the implementation how to fetch the vertex data from the GPU once it has 
 			//! been uploaded. It describes the rate at which data will be loaded from memory (per-vertex or per-instance). It also
@@ -162,12 +155,12 @@ namespace graphics
 
 			vk::PipelineColorBlendStateCreateInfo m_color_blend_state_create_info;
 			vk::PipelineDepthStencilStateCreateInfo m_depth_stencil_state_create_info;
-			vk::PipelineDynamicStateCreateInfo m_dynamic_state_create_info;
 			vk::PipelineInputAssemblyStateCreateInfo m_input_assembly_state_create_info;
 			vk::PipelineMultisampleStateCreateInfo m_multisample_state_create_info;
 			vk::PipelineRasterizationStateCreateInfo m_rasterization_state_create_info;
 			vk::PipelineTessellationStateCreateInfo m_tessellation_state_create_info;
 
+			std::vector<vk::DynamicState> m_dynamic_states;
 			std::vector<vk::VertexInputBindingDescription> m_vertex_input_binding_descriptions;
 			std::vector<vk::VertexInputAttributeDescription> m_vertex_input_attribute_descriptions;
 			std::vector<vk::Viewport> m_viewports;
