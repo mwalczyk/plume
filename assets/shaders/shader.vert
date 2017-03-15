@@ -18,7 +18,6 @@ layout(std430, push_constant) uniform PushConstants
 // Vertex shader inputs
 layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec3 inColor;
-layout (location = 2) in vec3 inNormal;
 
 // Vertex shader outputs
 out gl_PerVertex
@@ -27,11 +26,9 @@ out gl_PerVertex
 };
 
 layout (location = 0) out vec3 vsColor;
-layout (location = 1) out vec3 vsNormal;
 
 void main()
 {
 	vsColor = inColor;
-	vsNormal = inNormal;
-  gl_Position = ubo.projection * ubo.view * ubo.model * vec4(inPosition, 1.0);
+  gl_Position = ubo.projection * ubo.model * vec4(inPosition, 1.0);
 }

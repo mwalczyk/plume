@@ -3,7 +3,6 @@
 
 // Fragment shader inputs
 layout(location = 0) in vec3 vsColor;
-layout(location = 1) in vec3 vsNormal;
 
 // Fragment shader outputs
 layout(location = 0) out vec4 oColor;
@@ -24,6 +23,6 @@ void main()
 	float m = constants.mouse.x;
 	vec4 sampledColor = texture(CombinedImageSampler, vec2(0.0, 0.0));
 	vec3 c = constants.color;
-	
-	oColor = vec4(vsNormal, 1.0);
+
+	oColor = vec4(vsColor, 1.0);
 }

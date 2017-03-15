@@ -72,22 +72,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VULKAN_SDK)\Include;$(SolutionDir)include\node;$(SolutionDir)include\vk;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VULKAN_SDK)\Include;$(SolutionDir)include\node;$(SolutionDir)include\vk;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VULKAN_SDK)\Include;$(SolutionDir)include\node;$(SolutionDir)include\vk;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VULKAN_SDK)\Include;$(SolutionDir)include\node;$(SolutionDir)include\vk;$(SolutionDir)include\glfw\include\GLFW;$(SolutionDir)include\glm\glm;$(SolutionDir)include\spirv-cross;$(SolutionDir)include\spirv-cross\include\spirv_cross;$(SolutionDir)include\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -195,45 +195,32 @@
     <ClCompile Include="..\include\spirv-cross\spirv_cross.cpp" />
     <ClCompile Include="..\include\spirv-cross\spirv_glsl.cpp" />
     <ClCompile Include="..\include\spirv-cross\spirv_msl.cpp" />
-    <ClCompile Include="..\src\Buffer.cpp" />
-    <ClCompile Include="..\src\CommandBuffer.cpp" />
-    <ClCompile Include="..\src\CommandPool.cpp" />
-    <ClCompile Include="..\src\DescriptorPool.cpp" />
-    <ClCompile Include="..\src\Device.cpp" />
-    <ClCompile Include="..\src\DeviceMemory.cpp" />
-    <ClCompile Include="..\src\Framebuffer.cpp" />
     <ClCompile Include="..\src\Geometry.cpp" />
-    <ClCompile Include="..\src\Image.cpp" />
-    <ClCompile Include="..\src\Instance.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\Pipeline.cpp" />
-    <ClCompile Include="..\src\RenderPass.cpp" />
+    <ClCompile Include="..\src\node\NodeBase.cpp" />
     <ClCompile Include="..\src\ResourceManager.cpp" />
-    <ClCompile Include="..\src\Semaphore.cpp" />
-    <ClCompile Include="..\src\ShaderModule.cpp" />
-    <ClCompile Include="..\src\Surface.cpp" />
-    <ClCompile Include="..\src\Swapchain.cpp" />
-    <ClCompile Include="..\src\Window.cpp" />
+    <ClCompile Include="..\src\vk\Buffer.cpp" />
+    <ClCompile Include="..\src\vk\CommandBuffer.cpp" />
+    <ClCompile Include="..\src\vk\CommandPool.cpp" />
+    <ClCompile Include="..\src\vk\DescriptorPool.cpp" />
+    <ClCompile Include="..\src\vk\Device.cpp" />
+    <ClCompile Include="..\src\vk\DeviceMemory.cpp" />
+    <ClCompile Include="..\src\vk\Framebuffer.cpp" />
+    <ClCompile Include="..\src\vk\Image.cpp" />
+    <ClCompile Include="..\src\vk\Instance.cpp" />
+    <ClCompile Include="..\src\vk\Pipeline.cpp" />
+    <ClCompile Include="..\src\vk\RenderPass.cpp" />
+    <ClCompile Include="..\src\vk\Semaphore.cpp" />
+    <ClCompile Include="..\src\vk\ShaderModule.cpp" />
+    <ClCompile Include="..\src\vk\Surface.cpp" />
+    <ClCompile Include="..\src\vk\Swapchain.cpp" />
+    <ClCompile Include="..\src\vk\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\Application.h" />
-    <ClInclude Include="..\include\Buffer.h" />
-    <ClInclude Include="..\include\CommandBuffer.h" />
-    <ClInclude Include="..\include\CommandPool.h" />
-    <ClInclude Include="..\include\DescriptorPool.h" />
-    <ClInclude Include="..\include\Device.h" />
-    <ClInclude Include="..\include\DeviceMemory.h" />
-    <ClInclude Include="..\include\Framebuffer.h" />
     <ClInclude Include="..\include\Geometry.h" />
-    <ClInclude Include="..\include\Image.h" />
-    <ClInclude Include="..\include\Instance.h" />
-    <ClInclude Include="..\include\Noncopyable.h" />
-    <ClInclude Include="..\include\Pipeline.h" />
-    <ClInclude Include="..\include\Platform.h" />
-    <ClInclude Include="..\include\RenderPass.h" />
+    <ClInclude Include="..\include\node\NodeBase.h" />
     <ClInclude Include="..\include\ResourceManager.h" />
-    <ClInclude Include="..\include\Semaphore.h" />
-    <ClInclude Include="..\include\ShaderModule.h" />
     <ClInclude Include="..\include\spirv-cross\GLSL.std.450.h" />
     <ClInclude Include="..\include\spirv-cross\spirv.hpp" />
     <ClInclude Include="..\include\spirv-cross\spirv_cfg.hpp" />
@@ -242,10 +229,25 @@
     <ClInclude Include="..\include\spirv-cross\spirv_cross.hpp" />
     <ClInclude Include="..\include\spirv-cross\spirv_glsl.hpp" />
     <ClInclude Include="..\include\spirv-cross\spirv_msl.hpp" />
-    <ClInclude Include="..\include\Surface.h" />
-    <ClInclude Include="..\include\Swapchain.h" />
-    <ClInclude Include="..\include\Vk.h" />
-    <ClInclude Include="..\include\Window.h" />
+    <ClInclude Include="..\include\vk\Buffer.h" />
+    <ClInclude Include="..\include\vk\CommandBuffer.h" />
+    <ClInclude Include="..\include\vk\CommandPool.h" />
+    <ClInclude Include="..\include\vk\DescriptorPool.h" />
+    <ClInclude Include="..\include\vk\Device.h" />
+    <ClInclude Include="..\include\vk\DeviceMemory.h" />
+    <ClInclude Include="..\include\vk\Framebuffer.h" />
+    <ClInclude Include="..\include\vk\Image.h" />
+    <ClInclude Include="..\include\vk\Instance.h" />
+    <ClInclude Include="..\include\vk\Noncopyable.h" />
+    <ClInclude Include="..\include\vk\Pipeline.h" />
+    <ClInclude Include="..\include\vk\Platform.h" />
+    <ClInclude Include="..\include\vk\RenderPass.h" />
+    <ClInclude Include="..\include\vk\Semaphore.h" />
+    <ClInclude Include="..\include\vk\ShaderModule.h" />
+    <ClInclude Include="..\include\vk\Surface.h" />
+    <ClInclude Include="..\include\vk\Swapchain.h" />
+    <ClInclude Include="..\include\vk\Vk.h" />
+    <ClInclude Include="..\include\vk\Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
