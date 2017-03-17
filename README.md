@@ -23,6 +23,12 @@ open source projects:
 - [Nyorain's VPP Toolkit](https://github.com/nyorain/vpp)
 - [Dynamic Static's Vulkan Toolkit](https://github.com/DynamicStatic/Dynamic_Static_Graphics)
 - [Alexander Overvoorde's Vulkan Tutorial](https://vulkan-tutorial.com/)
+- [gan74's Yave Engine](https://github.com/gan74/Yave)
+- [Jian Ru's Laugh Engine](https://github.com/jian-ru/laugh_engine)
+
+Other resources that were helpful throughout the development of Spectrum:
+
+- [Nvidia Vulkan Renderer Example](https://github.com/nvpro-samples/gl_vk_chopper)
 
 See the [Spectrum C++ style guide](https://github.com/mwalczyk/spectrum_cpp_style) for more information.
 

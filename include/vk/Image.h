@@ -57,7 +57,7 @@ namespace graphics
 		//! Translate an image format into the appropriate aspect mask flags.
 		static vk::ImageAspectFlags format_to_aspect_mask(vk::Format format);
 
-		virtual vk::ImageView build_image_view() const = 0;
+		vk::ImageView build_image_view() const;
 
 		//! Image samplers are used by the implementation to read image data and apply filtering and
 		//! other transformations inside of a shader. Note that a single sampler can be used with multiple 
