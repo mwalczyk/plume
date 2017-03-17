@@ -118,6 +118,9 @@ namespace graphics
 		//! at the start of a command buffer.
 		void update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const void* data);
 		
+		//! Binds the specified descriptor sets.
+		void bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets);
+
 		//! Issue a non-indexed draw command.
 		void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
 

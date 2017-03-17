@@ -149,7 +149,7 @@ namespace graphics
 			Options& scissors(const std::vector<vk::Rect2D>& scissors){ m_scissors = scissors; return *this; }
 			
 			//! Add a shader stage to the pipeline. Note that all graphics pipeline objects must contain a vertex shader.
-			Options& attach_shader_stage(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits) { m_shader_stages.push_back({ module, shader_stage_flag_bits }); return *this; }
+			Options& attach_shader_stages(const std::vector<ShaderModuleRef>& modules) { m_shader_stages = modules; return *this; }
 			
 		private:
 
@@ -165,7 +165,7 @@ namespace graphics
 			std::vector<vk::VertexInputAttributeDescription> m_vertex_input_attribute_descriptions;
 			std::vector<vk::Viewport> m_viewports;
 			std::vector<vk::Rect2D> m_scissors;
-			std::vector<std::pair<ShaderModuleRef, vk::ShaderStageFlagBits>> m_shader_stages;
+			std::vector<ShaderModuleRef> m_shader_stages;
 
 			friend class Pipeline;
 		};
@@ -200,13 +200,13 @@ namespace graphics
 
 	private:
 
-		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits);
+		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(const ShaderModuleRef& module);
 
 		//! Given a shader module and shader stage, add all of the module's push constants to the pipeline object's global map.
-		void add_push_constants_to_global_map(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits);
+		void add_push_constants_to_global_map(const ShaderModuleRef& module);
 
 		//! Given a shader module and shader stage, add all of the module's descriptors to the pipeline object's global map.
-		void add_descriptors_to_global_map(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits);
+		void add_descriptors_to_global_map(const ShaderModuleRef& module);
 
 		//! Generate all of the descriptor set layout handles.		
 		void build_descriptor_set_layouts();

@@ -51,6 +51,14 @@ namespace node
 		m_device->get_handle().updateDescriptorSets(w_descriptor_sets, {});
 	}
 
+	void NodeManager::record_draw_commands(graphics::CommandBufferRef& command_buffer)
+	{
+		command_buffer->bind_vertex_buffers({ m_position_buffer });
+		command_buffer->bind_index_buffer(m_index_buffer);
+		//command_buffer->get_handle().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->get_pipeline_layout_handle(), 0, 1, &m_descriptor_set, 0, nullptr);
+		command_buffer->draw_indexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+	}
+
 	NodeBase::NodeBase() :
 		NodeBase({ 0.0f, 0.0f }, { 50.0f, 30.0f })
 	{

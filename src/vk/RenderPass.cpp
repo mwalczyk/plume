@@ -31,7 +31,7 @@ namespace graphics
 
 	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::create_color_attachment(vk::Format format, uint32_t attachment)
 	{
-		// Set up the attachment description
+		// Set up the attachment description.
 		vk::AttachmentDescription attachment_description;
 		attachment_description.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 		attachment_description.format = format;
@@ -42,7 +42,7 @@ namespace graphics
 		attachment_description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
 		attachment_description.storeOp = vk::AttachmentStoreOp::eStore;
 
-		// Set up the attachment reference
+		// Set up the attachment reference.
 		vk::AttachmentReference attachment_reference;
 		attachment_reference.attachment = attachment;
 		attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
@@ -57,7 +57,7 @@ namespace graphics
 			throw std::runtime_error("Attempting to create a depth stencil attachment with an invalid image format");
 		}
 
-		// Set up the attachment description
+		// Set up the attachment description.
 		vk::AttachmentDescription attachment_description;
 		attachment_description.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 		attachment_description.format = format;
@@ -68,7 +68,7 @@ namespace graphics
 		attachment_description.stencilStoreOp = ImageBase::is_stencil_format(format) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
 		attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
 
-		// Set up the attachment reference
+		// Set up the attachment reference.
 		vk::AttachmentReference attachment_reference;
 		attachment_reference.attachment = attachment;
 		attachment_reference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;

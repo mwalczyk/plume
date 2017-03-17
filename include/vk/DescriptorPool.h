@@ -52,9 +52,9 @@ namespace graphics
 		//! which maps a descriptor type to a descriptor count. For example, a pool that is large enough to hold 3 uniform  
 		//! buffers, 4 combined image samplers, and 1 storage buffer could be created like:
 		//!			
-		//!		auto pool = graphics::DescriptorPool::create(device, {{ vk::DescriptorType::eUniformBuffer, 3 }, 
-		//!															  { vk::DescriptorType::eCombinedImageSampler, 4},
-		//!															  { vk::DescriptorType::eStorageBuffer, 1}});
+		//!		auto pool = graphics::DescriptorPool::create(device, { { vk::DescriptorType::eUniformBuffer, 3 }, 
+		//!															   { vk::DescriptorType::eCombinedImageSampler, 4},
+		//!															   { vk::DescriptorType::eStorageBuffer, 1} });
 		//!
 		static DescriptorPoolRef create(const DeviceRef& device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1)
 		{

@@ -11,9 +11,13 @@
 #include "Window.h"
 #include "Buffer.h"
 #include "DescriptorPool.h"
+#include "CommandBuffer.h"
 
 namespace node
 {
+
+	class NodeBase;
+	using NodeBaseRef = std::shared_ptr<NodeBase>;
 
 	//! To properly render the entire network of nodes, the node manager traverses the network and draws
 	//! each node as a rectangle:
@@ -38,7 +42,7 @@ namespace node
 
 		NodeManager(const graphics::DeviceRef& device, const graphics::WindowRef& window);
 
-		void prepare_command_buffer();
+		void record_draw_commands(graphics::CommandBufferRef& command_buffer);
 
 	private:
 
@@ -52,9 +56,6 @@ namespace node
 		vk::DescriptorSet m_descriptor_set;
 		glm::mat4 m_projection_matrix;
 	};
-
-	class NodeBase;
-	using NodeBaseRef = std::shared_ptr<NodeBase>;
 
 	class NodeBase
 	{

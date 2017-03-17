@@ -55,6 +55,9 @@ namespace graphics
 		//! {
 		//!		float time;		<--- this
 		//! } constants;
+		//!
+		//! Note that there can only be one push constants block, but it can be shared across multiple shader
+		//! stages.
 		struct PushConstant
 		{
 			uint32_t index;
@@ -81,11 +84,9 @@ namespace graphics
 		//! } ubo;
 		struct Descriptor
 		{
-			uint32_t layout_set;
-			uint32_t layout_binding;
-			uint32_t descriptor_count;
-			vk::DescriptorType descriptor_type;
+			uint32_t set;
 			std::string name;
+			vk::DescriptorSetLayoutBinding layout_binding;
 		};
 
 		//! Factory method for returning a new ShaderModuleRef.
@@ -111,6 +112,9 @@ namespace graphics
 		//! Retrieve a list of low-level details about the descriptors contained within this GLSL shader.
 		inline const std::vector<Descriptor>& get_descriptors() const { return m_descriptors; }
 
+		//! Returns the shader stage corresponding to this module (i.e. vk::ShaderStageFlagBits::eVertex).
+		inline vk::ShaderStageFlagBits get_stage() const { return m_shader_stage; }
+
 	private:
 
 		void perform_reflection();
@@ -125,6 +129,7 @@ namespace graphics
 		std::vector<StageInput> m_stage_inputs;
 		std::vector<PushConstant> m_push_constants;
 		std::vector<Descriptor> m_descriptors;
+		vk::ShaderStageFlagBits m_shader_stage;
 	};
 
 } // namespace graphics

@@ -102,8 +102,7 @@ int main()
 		.vertex_input_attribute_descriptions({ attr_0, attr_1 })
 		.viewports({ window->get_fullscreen_viewport() })
 		.scissors({ window->get_fullscreen_scissor_rect2d() })
-		.attach_shader_stage(v_shader, vk::ShaderStageFlagBits::eVertex)
-		.attach_shader_stage(f_shader, vk::ShaderStageFlagBits::eFragment)
+		.attach_shader_stages({ v_shader, f_shader })
 		.primitive_topology(geometry.get_topology());
 	auto pipeline = graphics::Pipeline::create(device, render_pass, pipeline_options);
 	std::cout << pipeline << std::endl;
@@ -202,7 +201,7 @@ int main()
 		command_buffer->update_push_constant_ranges(pipeline, "time", &elapsed);
 		command_buffer->update_push_constant_ranges(pipeline, "mouse", &mouse_position);
 		command_buffer->update_push_constant_ranges(pipeline, "color", glm::value_ptr(color));
-		command_buffer->get_handle().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->get_pipeline_layout_handle(), 0, 1, &descriptor_set, 0, nullptr);
+		command_buffer->bind_descriptor_sets(pipeline, 0, { descriptor_set }, {});
 		command_buffer->draw_indexed(static_cast<uint32_t>(geometry.get_indices().size()), 1, 0, 0, 0);
 		command_buffer->end_render_pass();
 		command_buffer->end();

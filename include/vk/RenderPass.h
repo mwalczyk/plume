@@ -42,7 +42,7 @@ namespace graphics
 
 	//! In Vulkan, a render pass represents a collection of attachments, subpasses, and dependencies between
 	//! the subpasses, and describes how the attachments are used over the course of the subpasses. A subpass
-	//! represents a phase of rendering that reads and writes a subset of the attachments in a render pass.
+	//! represents a phase of rendering that reads and writes to a subset of the attachments in a render pass.
 	//! Rendering commands are recorded into a particular subpass of a render pass. The specific image views
 	//! that will be used for the attachments are specified by framebuffer objects. Framebuffers are created
 	//! with respect to a specific render pass that the framebuffer is compatible with.

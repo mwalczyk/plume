@@ -69,6 +69,26 @@ namespace graphics
 		return size;
 	}
 
+	static vk::ShaderStageFlagBits spv_to_vk_execution_mode(spv::ExecutionModel mode)
+	{
+		switch (mode)
+		{
+		case spv::ExecutionModelVertex:
+			std::cout << "Vertex SHADER MODE\n";
+			return vk::ShaderStageFlagBits::eVertex;
+		case spv::ExecutionModelFragment:
+			std::cout << "Fragment SHADER MODE\n";
+			return vk::ShaderStageFlagBits::eFragment;
+		case spv::ExecutionModelGeometry:
+			return vk::ShaderStageFlagBits::eGeometry;
+		case spv::ExecutionModelGLCompute:
+		case spv::ExecutionModelKernel:
+			return vk::ShaderStageFlagBits::eCompute;
+		default:
+			break;
+		}
+	}
+
 	ShaderModule::ShaderModule(const DeviceRef& device, const FileResource& resource) :
 		m_device(device)
 	{
@@ -102,10 +122,10 @@ namespace graphics
 		// Parse the shader resources.
 		spirv_cross::CompilerGLSL compiler_glsl = spirv_cross::CompilerGLSL(m_shader_code);
 		spirv_cross::ShaderResources shader_resources = compiler_glsl.get_shader_resources();
-
+		m_shader_stage = spv_to_vk_execution_mode(compiler_glsl.get_execution_model());
 		m_entry_points = compiler_glsl.get_entry_points();
 
-		// Get all of the push constants (currently, Vulkan only supports one block).
+		// Push constants
 		for (const auto &resource : shader_resources.push_constant_buffers)
 		{
 			auto ranges = compiler_glsl.get_active_buffer_ranges(resource.id);
@@ -188,12 +208,17 @@ namespace graphics
 
 	void ShaderModule::resource_to_descriptor(const spirv_cross::CompilerGLSL& compiler, const spirv_cross::Resource& resource, vk::DescriptorType descriptor_type)
 	{
+		vk::DescriptorSetLayoutBinding descriptor_set_layout_binding;
+		descriptor_set_layout_binding.binding = compiler.get_decoration(resource.id, spv::Decoration::DecorationBinding);
+		descriptor_set_layout_binding.descriptorCount = 1;
+		descriptor_set_layout_binding.descriptorType = descriptor_type;
+		descriptor_set_layout_binding.pImmutableSamplers = nullptr;
+		descriptor_set_layout_binding.stageFlags = vk::ShaderStageFlagBits::eAll;
+
 		Descriptor descriptor;
-		descriptor.layout_set = compiler.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
-		descriptor.layout_binding = compiler.get_decoration(resource.id, spv::Decoration::DecorationBinding);
-		descriptor.descriptor_count = 1;
-		descriptor.descriptor_type = descriptor_type;
+		descriptor.layout_binding = descriptor_set_layout_binding;
 		descriptor.name = resource.name;
+		descriptor.set = compiler.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
 
 		m_descriptors.push_back(descriptor);
 	}

@@ -125,16 +125,16 @@ namespace graphics
 
 		for (const auto& stage : options.m_shader_stages)
 		{
-			if (stage.second == vk::ShaderStageFlagBits::eVertex) found_vertex_shader = true;
-			if (stage.second == vk::ShaderStageFlagBits::eTessellationControl) found_tessellation_control_shader = true;
-			if (stage.second == vk::ShaderStageFlagBits::eTessellationEvaluation) found_tessellation_evaluation_shader = true;
-			if (stage.second == vk::ShaderStageFlagBits::eGeometry) found_geometry_shader = true;
-			if (stage.second == vk::ShaderStageFlagBits::eFragment) found_fragment_shader = true;
+			if (stage->get_stage() == vk::ShaderStageFlagBits::eVertex) found_vertex_shader = true;
+			if (stage->get_stage() == vk::ShaderStageFlagBits::eTessellationControl) found_tessellation_control_shader = true;
+			if (stage->get_stage() == vk::ShaderStageFlagBits::eTessellationEvaluation) found_tessellation_evaluation_shader = true;
+			if (stage->get_stage() == vk::ShaderStageFlagBits::eGeometry) found_geometry_shader = true;
+			if (stage->get_stage() == vk::ShaderStageFlagBits::eFragment) found_fragment_shader = true;
 
-			auto shader_stage_info = build_shader_stage_create_info(stage.first, stage.second);
+			auto shader_stage_info = build_shader_stage_create_info(stage);
 			shader_stage_create_infos.push_back(shader_stage_info);
-			add_push_constants_to_global_map(stage.first, stage.second);
-			add_descriptors_to_global_map(stage.first, stage.second);
+			add_push_constants_to_global_map(stage);
+			add_descriptors_to_global_map(stage);
 		}
 		if (!found_vertex_shader)
 		{
@@ -253,18 +253,18 @@ namespace graphics
 		return DescriptorPool::create(m_device, descriptor_pool_sizes, max_sets);
 	}
 
-	vk::PipelineShaderStageCreateInfo Pipeline::build_shader_stage_create_info(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits)
+	vk::PipelineShaderStageCreateInfo Pipeline::build_shader_stage_create_info(const ShaderModuleRef& module)
 	{
 		vk::PipelineShaderStageCreateInfo shader_stage_create_info;
 		shader_stage_create_info.module = module->get_handle();
 		shader_stage_create_info.pName = module->get_entry_points()[0].c_str();
 		shader_stage_create_info.pSpecializationInfo = nullptr;
-		shader_stage_create_info.stage = shader_stage_flag_bits;
+		shader_stage_create_info.stage = module->get_stage();
 
 		return shader_stage_create_info;
 	}
 
-	void Pipeline::add_push_constants_to_global_map(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits)
+	void Pipeline::add_push_constants_to_global_map(const ShaderModuleRef& module)
 	{
 		uint32_t max_push_constants_size = m_device->get_physical_device_properties().limits.maxPushConstantsSize;
 
@@ -276,7 +276,7 @@ namespace graphics
 				it->second.offset == push_constant.offset &&
 				it->second.size == push_constant.size)
 			{
-				it->second.stageFlags |= shader_stage_flag_bits;
+				it->second.stageFlags |= module->get_stage();
 				continue;
 			}
 
@@ -284,30 +284,23 @@ namespace graphics
 			vk::PushConstantRange push_constant_range;
 			push_constant_range.offset = push_constant.offset;
 			push_constant_range.size = push_constant.size;
-			push_constant_range.stageFlags = shader_stage_flag_bits;
+			push_constant_range.stageFlags = module->get_stage();
 
 			m_push_constants_mapping.insert({ push_constant.name, push_constant_range });
 		}
 	}
 
-	void Pipeline::add_descriptors_to_global_map(const ShaderModuleRef& module, vk::ShaderStageFlagBits shader_stage_flag_bits)
+	void Pipeline::add_descriptors_to_global_map(const ShaderModuleRef& module)
 	{
 		for (const auto& descriptor : module->get_descriptors())
 		{
 			// for every descriptor found in this shader stage
-			uint32_t set = descriptor.layout_set;
-
-			vk::DescriptorSetLayoutBinding descriptor_set_layout_binding;
-			descriptor_set_layout_binding.binding = descriptor.layout_binding;
-			descriptor_set_layout_binding.descriptorCount = descriptor.descriptor_count;
-			descriptor_set_layout_binding.descriptorType = descriptor.descriptor_type;
-			descriptor_set_layout_binding.pImmutableSamplers = nullptr;
-			descriptor_set_layout_binding.stageFlags = vk::ShaderStageFlagBits::eAll;
+			uint32_t set = descriptor.set;
 
 			auto it = m_descriptors_mapping.find(set);
 			if (it == m_descriptors_mapping.end())
 			{
-				std::vector<vk::DescriptorSetLayoutBinding> fresh_descriptor_set_layout_bindings = { descriptor_set_layout_binding };
+				std::vector<vk::DescriptorSetLayoutBinding> fresh_descriptor_set_layout_bindings = { descriptor.layout_binding };
 				m_descriptors_mapping.insert(std::make_pair(set, fresh_descriptor_set_layout_bindings));
 			}
 			else
@@ -317,12 +310,12 @@ namespace graphics
 				auto it = std::find_if(existing_descriptor_set_layout_bindings.begin(), existing_descriptor_set_layout_bindings.end(),
 					[&](const vk::DescriptorSetLayoutBinding &tDescriptorSetLayoutBinding) 
 					{
-						return tDescriptorSetLayoutBinding.binding == descriptor_set_layout_binding.binding;
+						return tDescriptorSetLayoutBinding.binding == descriptor.layout_binding.binding;
 					});
 
 				if (it == existing_descriptor_set_layout_bindings.end())
 				{
-					existing_descriptor_set_layout_bindings.push_back(descriptor_set_layout_binding);
+					existing_descriptor_set_layout_bindings.push_back(descriptor.layout_binding);
 				}
 			}
 		}			
@@ -330,11 +323,14 @@ namespace graphics
 
 	void Pipeline::build_descriptor_set_layouts()
 	{
+		// Iterate through the map of descriptors, which maps descriptor set IDs (i.e. 0, 1, 2) to
+		// a list of descriptors (i.e. uniform buffers, samplers), and create a descriptor set layout
+		// for each set.
 		for (const auto& mapping : m_descriptors_mapping)
 		{
 			vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
-			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(m_descriptors_mapping[mapping.first].size());
-			descriptor_set_layout_create_info.pBindings = m_descriptors_mapping[mapping.first].data();
+			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(mapping.second.size());
+			descriptor_set_layout_create_info.pBindings = mapping.second.data();
 
 			vk::DescriptorSetLayout descriptorSetLayout = m_device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 
