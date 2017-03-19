@@ -29,70 +29,49 @@
 namespace graphics
 {
 
-	bool ImageBase::is_depth_format(vk::Format format)
+	Sampler::Options::Options()
 	{
-		return (format == vk::Format::eD16Unorm ||
-			format == vk::Format::eD16UnormS8Uint ||
-			format == vk::Format::eD24UnormS8Uint ||
-			format == vk::Format::eD32Sfloat ||
-			format == vk::Format::eD32SfloatS8Uint);
+		m_address_mode_u = m_address_mode_v = m_address_mode_w = vk::SamplerAddressMode::eRepeat;
+		m_min_filter = m_mag_filter = vk::Filter::eLinear;
+		m_min_lod = m_max_lod = m_mip_lod_bias = 0.0f;
+		m_anistropy_enabled = VK_TRUE;
+		m_max_anistropy = 16.0f;
 	}
 
-	bool ImageBase::is_stencil_format(vk::Format format)
+	Sampler::Sampler(const DeviceRef& device, const Options& options) :
+		m_device(device)
 	{
-		return (format == vk::Format::eD16UnormS8Uint ||
-			format == vk::Format::eD24UnormS8Uint ||
-			format == vk::Format::eD32SfloatS8Uint);
+		vk::SamplerCreateInfo sampler_create_info;
+		sampler_create_info.addressModeU = options.m_address_mode_u;
+		sampler_create_info.addressModeV = options.m_address_mode_v;
+		sampler_create_info.addressModeW = options.m_address_mode_w;
+		sampler_create_info.anisotropyEnable = options.m_anistropy_enabled;
+		sampler_create_info.borderColor = vk::BorderColor::eIntOpaqueBlack;
+		sampler_create_info.compareEnable = VK_FALSE;
+		sampler_create_info.compareOp = vk::CompareOp::eAlways;
+		sampler_create_info.magFilter = options.m_mag_filter;
+		sampler_create_info.maxAnisotropy = options.m_max_anistropy;
+		sampler_create_info.maxLod = options.m_max_lod;
+		sampler_create_info.minFilter = options.m_min_filter;
+		sampler_create_info.minLod = options.m_min_lod;
+		sampler_create_info.mipLodBias = options.m_mip_lod_bias;
+		sampler_create_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
+		sampler_create_info.unnormalizedCoordinates = VK_FALSE;
+
+		m_sampler_handle = m_device->get_handle().createSampler(sampler_create_info);
 	}
 
-	vk::ImageAspectFlags ImageBase::format_to_aspect_mask(vk::Format format)
+	Sampler::~Sampler()
 	{
-		vk::ImageAspectFlags image_aspect_flags;
-
-		if (is_depth_format(format))
-		{
-			image_aspect_flags = vk::ImageAspectFlagBits::eDepth;
-			if (is_stencil_format(format))
-			{
-				image_aspect_flags |= vk::ImageAspectFlagBits::eStencil;
-			}
-		}
-		else
-		{
-			image_aspect_flags = vk::ImageAspectFlagBits::eColor;
-		}
-		
-		return image_aspect_flags;
+		m_device->get_handle().destroySampler(m_sampler_handle);
 	}
 
-	ImageBase::~ImageBase()
+	Image::~Image()
 	{
 		m_device->get_handle().destroyImage(m_image_handle);
 	}
 
-	vk::Sampler ImageBase::build_sampler() const
-	{
-		vk::SamplerCreateInfo sampler_create_info;
-		sampler_create_info.addressModeU = vk::SamplerAddressMode::eRepeat;
-		sampler_create_info.addressModeV = vk::SamplerAddressMode::eRepeat;
-		sampler_create_info.addressModeW = vk::SamplerAddressMode::eRepeat;
-		sampler_create_info.anisotropyEnable = VK_TRUE;
-		sampler_create_info.borderColor = vk::BorderColor::eIntOpaqueBlack;
-		sampler_create_info.compareEnable = VK_FALSE;
-		sampler_create_info.compareOp = vk::CompareOp::eAlways;
-		sampler_create_info.magFilter = vk::Filter::eLinear;
-		sampler_create_info.maxAnisotropy = 16;
-		sampler_create_info.maxLod = 0.0f;
-		sampler_create_info.minFilter = vk::Filter::eLinear;
-		sampler_create_info.minLod = 0.0f;
-		sampler_create_info.mipLodBias = 0.0f;
-		sampler_create_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
-		sampler_create_info.unnormalizedCoordinates = VK_FALSE;
-
-		return m_device->get_handle().createSampler(sampler_create_info);
-	}
-
-	void ImageBase::initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags)
+	void Image::initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags)
 	{
 		// Retrieve the memory requirements for this image.
 		auto memory_requirements = m_device->get_handle().getImageMemoryRequirements(m_image_handle);
@@ -105,15 +84,21 @@ namespace graphics
 		m_device->get_handle().bindImageMemory(m_image_handle, m_device_memory->get_handle(), 0);
 	}
 
-	Image2D::Options::Options()
+	Image::Options::Options()
 	{
 		m_image_tiling = vk::ImageTiling::eLinear;
 		m_sample_count_flag_bits = vk::SampleCountFlagBits::e1;
 		m_mip_levels = 1;
 	}
 
-	Image2D::Image2D(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, const Options& options) :
-		ImageBase(device, image_usage_flags, format, width, height, 1),
+	Image::Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const Options& options) :
+		m_device(device),
+		m_image_type(image_type),
+		m_image_usage_flags(image_usage_flags),
+		m_format(format),
+		m_width(width),
+		m_height(height),
+		m_depth(depth),
 		m_mip_levels(options.m_mip_levels)
 	{
 		m_current_layout = vk::ImageLayout::eUndefined;
@@ -125,7 +110,7 @@ namespace graphics
 		image_create_info.extent.depth = m_depth;
 		image_create_info.format = m_format;
 		image_create_info.initialLayout = m_current_layout;
-		image_create_info.imageType = vk::ImageType::e2D;
+		image_create_info.imageType = m_image_type;
 		image_create_info.mipLevels = m_mip_levels;
 		image_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();
 		image_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
@@ -139,8 +124,14 @@ namespace graphics
 		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eDeviceLocal);
 	}
 
-	Image2D::Image2D(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options) :
-		ImageBase(device, image_usage_flags, format, resource.width, resource.height, 1),
+	Image::Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options) :
+		m_device(device),
+		m_image_type(image_type),
+		m_image_usage_flags(image_usage_flags),
+		m_format(format),
+		m_width(resource.width),
+		m_height(resource.height),
+		m_depth(1),
 		m_mip_levels(options.m_mip_levels)
 	{	
 		m_current_layout = vk::ImageLayout::ePreinitialized;
@@ -152,7 +143,7 @@ namespace graphics
 		image_create_info.extent.depth = m_depth;
 		image_create_info.format = m_format;
 		image_create_info.initialLayout = m_current_layout;
-		image_create_info.imageType = vk::ImageType::e2D;
+		image_create_info.imageType = m_image_type;
 		image_create_info.mipLevels = m_mip_levels;
 		image_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();
 		image_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
@@ -169,7 +160,7 @@ namespace graphics
 		void* mapped_ptr = m_device_memory->map(0, m_device_memory->get_allocation_size());		// Map
 
 		vk::ImageSubresource image_subresource;
-		image_subresource.aspectMask = format_to_aspect_mask(m_format);
+		image_subresource.aspectMask = utils::format_to_aspect_mask(m_format);
 		image_subresource.arrayLayer = 0;
 		image_subresource.mipLevel = 0;
 
@@ -194,12 +185,12 @@ namespace graphics
 		m_device_memory->unmap();																// Unmap
 	}
 
-	vk::ImageView Image2D::build_image_view() const
+	vk::ImageView Image::build_image_view() const
 	{
 		vk::ImageViewCreateInfo image_view_create_info;
 		image_view_create_info.format = m_format;
 		image_view_create_info.image = m_image_handle;
-		image_view_create_info.subresourceRange.aspectMask = format_to_aspect_mask(m_format);
+		image_view_create_info.subresourceRange.aspectMask = utils::format_to_aspect_mask(m_format);
 		image_view_create_info.subresourceRange.baseArrayLayer = 0;
 		image_view_create_info.subresourceRange.baseMipLevel = 0;
 		image_view_create_info.subresourceRange.layerCount = 1;

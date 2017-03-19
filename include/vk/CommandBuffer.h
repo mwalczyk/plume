@@ -36,7 +36,6 @@
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "Buffer.h"
-#include "Image.h"
 
 namespace graphics
 {
@@ -131,7 +130,7 @@ namespace graphics
 		void end_render_pass();
 
 		//! Use an image memory barrier to transition an image from one layout to another.
-		void transition_image_layout(const Image2DRef& image, vk::ImageLayout from, vk::ImageLayout to);
+		void transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to);
 
 		//! Stop recording into the command buffer. Puts the command buffer into an executable state.
 		void end();

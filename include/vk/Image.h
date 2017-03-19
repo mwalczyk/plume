@@ -35,71 +35,102 @@
 #include "Device.h"
 #include "DeviceMemory.h"
 #include "ResourceManager.h"
+#include "Utils.h"
 
 namespace graphics
 {
 
-	class ImageBase;
-	using ImageBaseRef = std::shared_ptr<ImageBase>;
-	using ImageRef = ImageBaseRef;
+	class Sampler;
+	using SamplerRef = std::shared_ptr<Sampler>;
 
-	class ImageBase : public Noncopyable
+	//! Image samplers are used by the implementation to read image data and apply filtering and other transformations
+	//! inside of a shader. Note that a single sampler can be used with multiple attachments when constructing 
+	//! descriptor sets. 
+	class Sampler : public Noncopyable
 	{
-	public:
-		virtual ~ImageBase();
+	public: 
 
-		//! Determine whether or not an image format contains a depth component.
-		static bool is_depth_format(vk::Format format);
-
-		//! Determine whether or not an image format contains a stencil component.
-		static bool is_stencil_format(vk::Format format);
-
-		//! Translate an image format into the appropriate aspect mask flags.
-		static vk::ImageAspectFlags format_to_aspect_mask(vk::Format format);
-
-		vk::ImageView build_image_view() const;
-
-		//! Image samplers are used by the implementation to read image data and apply filtering and
-		//! other transformations inside of a shader. Note that a single sampler can be used with multiple 
-		//! attachments when constructing descriptor sets.
-		virtual vk::Sampler build_sampler() const final;
-		virtual inline vk::Image get_handle() const final { return m_image_handle; }
-		virtual inline vk::Format get_format() const final { return m_format; }
-		virtual inline vk::DescriptorImageInfo build_descriptor_info(vk::Sampler sampler, vk::ImageView image_view, vk::ImageLayout image_layout = vk::ImageLayout::eShaderReadOnlyOptimal) const { return { sampler, image_view, image_layout }; }
-	
-	protected:
-
-		ImageBase(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth) :
-			m_device(device),
-			m_image_usage_flags(image_usage_flags),
-			m_format(format),
-			m_width(width),
-			m_height(height),
-			m_depth(depth)
+		class Options
 		{
+		public:
+			Options();
+
+			//! Sets all three sampler address modes (u, v, w) simultaneously.
+			Options& address_modes(vk::SamplerAddressMode mode) { m_address_mode_u = m_address_mode_v = m_address_mode_w = mode; return *this; }
+
+			//! Sets each sampler address mode (u, v, w) independently.
+			Options& address_modes(vk::SamplerAddressMode u, vk::SamplerAddressMode v, vk::SamplerAddressMode w) 
+			{ 
+				m_address_mode_u = u; 
+				m_address_mode_v = v;
+				m_address_mode_w = w;
+				return *this;
+			}
+			
+			//! Sets the minification and magnification filter modes for the sampler.
+			Options& min_mag_filters(vk::Filter min, vk::Filter mag) 
+			{ 
+				m_min_filter = min; 
+				m_mag_filter = mag;
+				return *this; 
+			}
+
+			//! Sets both the minification and magnification filter modes for the sampler.
+			Options& min_mag_filters(vk::Filter filter) { m_min_filter = m_mag_filter = filter; return *this; }
+
+			//! Enables or disables texel anistropic filtering.
+			Options& anistropy_enabled(vk::Bool32 anistropy_enabled = VK_TRUE) { m_anistropy_enabled = anistropy_enabled; return *this; }
+
+			//! Sets the anistropy value clamp.
+			Options& max_anistropy(float max_anistropy) { m_max_anistropy = max_anistropy; return *this; }
+			
+			//! Sets the values that are used to clamp the computed level-of-detail value. Note
+			//! that the maximum LOD must be greater than or equal to the minimum LOD. 
+			Options& lod(float min, float max, float mip_bias) 
+			{
+				m_min_lod = min; 
+				m_max_lod = (max < min) ? min : max;
+				m_mip_lod_bias = mip_bias;
+				return *this;
+			}
+
+		private:
+			
+			vk::SamplerAddressMode m_address_mode_u;
+			vk::SamplerAddressMode m_address_mode_v;
+			vk::SamplerAddressMode m_address_mode_w;
+			vk::Filter m_min_filter;
+			vk::Filter m_mag_filter;
+			float m_min_lod;
+			float m_max_lod;
+			float m_mip_lod_bias;
+			vk::Bool32 m_anistropy_enabled;
+			float m_max_anistropy;
+
+			friend class Sampler;
+		};
+
+		//! Factory method for returning a new SamplerRef.
+		static SamplerRef create(const DeviceRef& device,const Options& options = Options())
+		{
+			return std::make_shared<Sampler>(device, options);
 		}
 
-		//! Given the memory requirements of this image, allocate the appropriate type and size of device memory.
-		void initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags);
-		
-		DeviceRef m_device;
-		DeviceMemoryRef m_device_memory;
-		vk::Image m_image_handle;
-		vk::ImageUsageFlags m_image_usage_flags;
-		vk::Format m_format;
-		vk::ImageLayout m_current_layout;
-		uint32_t m_width;
-		uint32_t m_height;
-		uint32_t m_depth;
-		uint32_t m_channels;
+		Sampler(const DeviceRef& device, const Options& options = Options());
+		~Sampler();
 
-		friend class CommandBuffer;
+		inline vk::Sampler get_handle() const { return m_sampler_handle; }
+
+	private:
+
+		DeviceRef m_device;
+		vk::Sampler m_sampler_handle;
 	};
 
-	class Image2D;
-	using Image2DRef = std::shared_ptr<Image2D>;
+	class Image;
+	using ImageRef = std::shared_ptr<Image>;
 
-	class Image2D: public ImageBase
+	class Image : public Noncopyable
 	{
 	public:
 
@@ -120,37 +151,59 @@ namespace graphics
 			std::vector<uint32_t> m_queue_family_indices;
 			uint32_t m_mip_levels;
 
-			friend class Image2D;
+			friend class Image;
 		};
 
 		//! Factory method for returning a new ImageRef that will be empty.
-		static Image2DRef create(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, const Options& options = Options())
+		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const Options& options = Options())
 		{
-			return std::make_shared<Image2D>(device, image_usage_flags, format, width, height, options);
+			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, options);
 		}
 
-		//! Factory method for returning a new ImageRef that will be pre-initialized with data.
+		//! Factory method for returning a new ImageRef that will be pre-initialized with the user supplied data.
 		template<class T>
-		static Image2DRef create(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, const std::vector<T>& data, const Options& options = Options())
+		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const std::vector<T>& data, const Options& options = Options())
 		{
-			return std::make_shared<Image2D>(device, image_usage_flags, format, width, height, sizeof(T) * data.size(), data.data(), options);
+			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, sizeof(T) * data.size(), data.data(), options);
 		}
 
 		//! Factory method for returning a new ImageRef from an image file.
-		static Image2DRef create(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options = Options())
+		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options = Options())
 		{
-			return std::make_shared<Image2D>(device, image_usage_flags, format, resource, options);
+			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource, options);
 		}
 
-		vk::ImageView build_image_view() const override;
+		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const Options& options = Options());
+		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, size_t size, const void* data, const Options& options = Options());
+		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options = Options());
 
-		Image2D(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, const Options& options = Options());
-		Image2D(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, size_t size, const void* data, const Options& options = Options());
-		Image2D(const DeviceRef& device, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options = Options());
+		~Image();
 
-	private:
+		vk::ImageView build_image_view() const;
 
+		inline vk::Image get_handle() const { return m_image_handle; }
+		inline vk::Format get_format() const { return m_format; }
+	    inline vk::DescriptorImageInfo build_descriptor_info(const SamplerRef& sampler, vk::ImageView image_view, vk::ImageLayout image_layout = vk::ImageLayout::eShaderReadOnlyOptimal) const { return { sampler->get_handle(), image_view, image_layout }; }
+		
+	protected:
+
+		//! Given the memory requirements of this image, allocate the appropriate type and size of device memory.
+		void initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags);
+		
+		DeviceRef m_device;
+		DeviceMemoryRef m_device_memory;
+		vk::Image m_image_handle;
+		vk::ImageType m_image_type;
+		vk::ImageUsageFlags m_image_usage_flags;
+		vk::Format m_format;
+		vk::ImageLayout m_current_layout;
+		uint32_t m_width;
+		uint32_t m_height;
+		uint32_t m_depth;
+		uint32_t m_channels;
 		uint32_t m_mip_levels;
+
+		friend class CommandBuffer;
 	};
 
 } // namespace graphics

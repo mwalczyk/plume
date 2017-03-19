@@ -208,13 +208,16 @@ namespace graphics
 
 	void ShaderModule::resource_to_descriptor(const spirv_cross::CompilerGLSL& compiler, const spirv_cross::Resource& resource, vk::DescriptorType descriptor_type)
 	{
+		// TODO: parse the descriptor count (array size)
+		// auto full_type = compiler.get_type(resource.type_id);
+
 		vk::DescriptorSetLayoutBinding descriptor_set_layout_binding;
 		descriptor_set_layout_binding.binding = compiler.get_decoration(resource.id, spv::Decoration::DecorationBinding);
 		descriptor_set_layout_binding.descriptorCount = 1;
 		descriptor_set_layout_binding.descriptorType = descriptor_type;
 		descriptor_set_layout_binding.pImmutableSamplers = nullptr;
 		descriptor_set_layout_binding.stageFlags = vk::ShaderStageFlagBits::eAll;
-
+		
 		Descriptor descriptor;
 		descriptor.layout_binding = descriptor_set_layout_binding;
 		descriptor.name = resource.name;

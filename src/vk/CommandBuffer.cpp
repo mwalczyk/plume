@@ -145,7 +145,7 @@ namespace graphics
 		}
 	}
 
-	void CommandBuffer::transition_image_layout(const Image2DRef& image, vk::ImageLayout from, vk::ImageLayout to)
+	void CommandBuffer::transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to)
 	{
 		vk::ImageMemoryBarrier image_memory_barrier;
 
@@ -185,7 +185,7 @@ namespace graphics
 		image_memory_barrier.newLayout = to;
 		image_memory_barrier.oldLayout = from;
 		image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		image_memory_barrier.subresourceRange.aspectMask = ImageBase::format_to_aspect_mask(image->get_format());
+		image_memory_barrier.subresourceRange.aspectMask = utils::format_to_aspect_mask(image->get_format());
 		image_memory_barrier.subresourceRange.baseArrayLayer = 0;
 		image_memory_barrier.subresourceRange.baseMipLevel = 0;
 		image_memory_barrier.subresourceRange.layerCount = 1;

@@ -111,12 +111,12 @@ int main()
 	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
 	/// vk::Image
-	auto texture = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::load_image("../assets/textures/texture.jpg"));
+	auto texture = graphics::Image::create(device, vk::ImageType::e2D, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::load_image("../assets/textures/texture.jpg"));
 	auto texture_view = texture->build_image_view();
-	auto texture_sampler = texture->build_sampler();
+	auto sampler = graphics::Sampler::create(device);
 
-	auto depth_image_options = graphics::Image2D::Options().image_tiling(vk::ImageTiling::eOptimal);
-	auto depth_image = graphics::Image2D::create(device, vk::ImageUsageFlagBits::eDepthStencilAttachment, device->get_supported_depth_format(), width, height, depth_image_options);
+	auto depth_image_options = graphics::Image::Options().image_tiling(vk::ImageTiling::eOptimal);
+	auto depth_image = graphics::Image::create(device, vk::ImageType::e2D, vk::ImageUsageFlagBits::eDepthStencilAttachment, device->get_supported_depth_format(), width, height, 1, depth_image_options);
 	auto depth_image_view = depth_image->build_image_view();
 
 	{
@@ -151,7 +151,7 @@ int main()
 	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
 
 	auto d_buffer_info = ubo->build_descriptor_info();										// ubo
-	auto d_image_info = texture->build_descriptor_info(texture_sampler, texture_view);		// sampler
+	auto d_image_info = texture->build_descriptor_info(sampler, texture_view);				// sampler
 	vk::WriteDescriptorSet w_descriptor_set_buffer = { descriptor_set, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };		// ubo
 	vk::WriteDescriptorSet w_descriptor_set_sampler = { descriptor_set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_image_info };		// sampler
 	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer, w_descriptor_set_sampler };

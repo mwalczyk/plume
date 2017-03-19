@@ -246,6 +246,7 @@
     <ClInclude Include="..\include\vk\ShaderModule.h" />
     <ClInclude Include="..\include\vk\Surface.h" />
     <ClInclude Include="..\include\vk\Swapchain.h" />
+    <ClInclude Include="..\include\vk\Utils.h" />
     <ClInclude Include="..\include\vk\Vk.h" />
     <ClInclude Include="..\include\vk\Window.h" />
   </ItemGroup>

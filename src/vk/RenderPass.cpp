@@ -52,7 +52,7 @@ namespace graphics
 
 	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::create_depth_stencil_attachment(vk::Format format, uint32_t attachment)
 	{
-		if (!ImageBase::is_depth_format(format))
+		if (!utils::is_depth_format(format))
 		{
 			throw std::runtime_error("Attempting to create a depth stencil attachment with an invalid image format");
 		}
@@ -64,8 +64,8 @@ namespace graphics
 		attachment_description.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
 		attachment_description.samples = vk::SampleCountFlagBits::e1;
-		attachment_description.stencilLoadOp = ImageBase::is_stencil_format(format) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
-		attachment_description.stencilStoreOp = ImageBase::is_stencil_format(format) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
+		attachment_description.stencilLoadOp = utils::is_stencil_format(format) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
+		attachment_description.stencilStoreOp = utils::is_stencil_format(format) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
 		attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
 
 		// Set up the attachment reference.
