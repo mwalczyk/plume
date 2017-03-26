@@ -25,6 +25,7 @@ open source projects:
 - [Alexander Overvoorde's Vulkan Tutorial](https://vulkan-tutorial.com/)
 - [gan74's Yave Engine](https://github.com/gan74/Yave)
 - [Jian Ru's Laugh Engine](https://github.com/jian-ru/laugh_engine)
+- [AMD's Anvil](https://github.com/GPUOpen-LibrariesAndSDKs/Anvil)
 
 Other resources that were helpful throughout the development of Spectrum:
 
