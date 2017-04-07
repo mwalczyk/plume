@@ -239,7 +239,7 @@ namespace graphics
 			throw std::runtime_error("No available surface formats or present modes found");
 		}
 
-		return support_details;
+		return support_details; 
 	}
 
 	std::ostream& operator<<(std::ostream& stream, const DeviceRef& device)

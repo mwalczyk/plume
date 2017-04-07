@@ -1,3 +1,6 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
 // Microfacet theory:
 //
 // The microfacet models attempts to model the tiny imperfections on the surface of an object.s
@@ -80,7 +83,19 @@
 //    2.) Geometric shadowing function (G): describes the self-shadowing property of the microfacets
 //    3.) Fresnel factor (F): the strength of surface reflection at different surface angles
 
-const float pi = 3.14159;
+layout (location = 0) out vec4 o_color;
+
+layout (location = 0) in vec3 vs_world_position;
+layout (location = 1) in vec3 vs_color;
+layout (location = 2) in vec3 vs_normal;
+
+layout(std430, push_constant) uniform push_constants
+{
+	float time;
+	float roughness;
+} constants;
+
+const float pi = 3.1415926535897932384626433832795;
 
 // Trowbridge-Reitz GGX normal distribution function
 //
@@ -146,17 +161,25 @@ vec3 fresnel(in vec3 r0,
 
 void main()
 {
+  const vec3 light = vec3(3.0, 3.0, 2.2);
+
+  vec3 n = normalize(vs_world_position);
+  vec3 l = normalize(vs_world_position - light);
+  vec3 v = normalize(vec3(0.0, 0.0, 1.0) - vs_world_position);
+  vec3 h = normalize(l + v);
+
   // Determine the amount of specular and diffuse contributions
-  float ks = calculate_specular_component(...);
+  float ks = 0.0; //calculate_specular_component(...);
   float kd = 1.0 - ks;
+  float t = constants.time;
 
   // For now, we have a red surface
   vec3 albedo = vec3(1.0, 0.0, 0.0);
 
   // Compute relevant dot products
-  float n_dot_h = 0.0;
-  float n_dot_v = 0.0;
-  float n_dot_l = 0.0;
+  float n_dot_h = dot(n, h);
+  float n_dot_v = dot(n, v);
+  float n_dot_l = dot(n, l);
 
   // 0: dielectric, 1: metal
   // Theoretically this should be a binary toggle, but most workflows allow the 'metallic' parameter
@@ -166,4 +189,14 @@ void main()
   // Determine the base reflectivity of our material based on the 'metallic' parameter
   vec3 r0 = vec3(0.04);
   r0 = mix(r0, albedo, metallic);
+
+	// Calculate
+	float a = constants.roughness;
+	float D = normal_distribution(n_dot_h, a);
+
+	// For now, just calculate a Lambertian diffuse term
+  float light_intensity = max(dot(n, l), 0.1);
+	vec3 lambertian = albedo * light_intensity;
+
+  o_color = vec4(vec3(D), 1.0);
 }

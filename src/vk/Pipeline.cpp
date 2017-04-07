@@ -332,9 +332,9 @@ namespace graphics
 			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(mapping.second.size());
 			descriptor_set_layout_create_info.pBindings = mapping.second.data();
 
-			vk::DescriptorSetLayout descriptorSetLayout = m_device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+			vk::DescriptorSetLayout descriptor_set_layout = m_device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 
-			m_descriptor_set_layouts_mapping.insert(std::make_pair(mapping.first, descriptorSetLayout));
+			m_descriptor_set_layouts_mapping.insert(std::make_pair(mapping.first, descriptor_set_layout));
 		}
 	}
 

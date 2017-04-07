@@ -164,8 +164,8 @@ namespace geo
 
 	Sphere::Sphere()
 	{
-		const uint32_t v_divisions = 20;
-		const uint32_t u_divisions = 20;
+		const uint32_t v_divisions = 60;
+		const uint32_t u_divisions = 60;
 		const float radius = 1.0f;
 
 		// Calculate vertex positions
