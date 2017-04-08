@@ -12,6 +12,7 @@ layout (set = 0, binding = 0) uniform UniformBufferObject
 layout (location = 0) in vec3 in_position;
 layout (location = 1) in vec3 in_color;
 layout (location = 2) in vec3 in_normal;
+layout (location = 3) in vec3 in_instance_position;
 
 // Vertex shader outputs
 out gl_PerVertex
@@ -22,14 +23,17 @@ out gl_PerVertex
 layout (location = 0) out vec3 vs_world_position;
 layout (location = 1) out vec3 vs_color;
 layout (location = 2) out vec3 vs_normal;
+layout (location = 3) flat out uint vs_instance_id;
 
 void main()
 {
 	mat4 normal_matrix = transpose(inverse(ubo.view * ubo.model));
 
-	vs_world_position = (ubo.model * vec4(in_position, 1.0)).xyz;
+	vec3 offset_position = in_position + in_instance_position;
+	vs_world_position = (ubo.model * vec4(offset_position, 1.0)).xyz;
 	vs_color = in_color;
 	vs_normal = mat3(normal_matrix) * in_normal;
+	vs_instance_id = gl_InstanceIndex;
 
-  gl_Position = ubo.projection * ubo.view * ubo.model * vec4(in_position, 1.0);
+  gl_Position = ubo.projection * ubo.view * ubo.model * vec4(offset_position, 1.0);
 }

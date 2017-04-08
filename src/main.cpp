@@ -52,16 +52,20 @@ static const uint32_t height = 800;
 int main()
 {
 	/// vk::Instance
+	///
+	///
 	auto instance = graphics::Instance::create();
 	auto physical_devices = instance->get_physical_devices();
 
-	/// vk::Window
+	/// vk::Window and vk::Surface
+	///
+	///
 	auto window = graphics::Window::create(instance, width, height);
-
-	/// vk::Surface
 	auto surface = window->create_surface();
 
 	/// vk::Device
+	///
+	///
 	auto device_options = graphics::Device::Options().required_queue_flags(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer);
 	auto device = graphics::Device::create(physical_devices[0], device_options);
 	auto queue_family_properties = device->get_physical_device_queue_family_properties();
@@ -73,37 +77,79 @@ int main()
 	std::cout << device << std::endl;
 
 	/// vk::Swapchain
+	///
+	///
 	auto swapchain = graphics::Swapchain::create(device, surface, width, height);
 	auto swapchain_image_views = swapchain->get_image_view_handles();
 
 	/// vk::RenderPass
+	///
+	///
 	auto render_pass = graphics::RenderPass::create(device);
 
 	/// geo::Geometry
+	///
+	///
 	auto geometry = geo::Sphere();
 	geometry.set_random_colors();
 
 	/// vk::Buffer
+	///
+	///
 	auto vbo_0 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_positions());
 	auto vbo_1 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_colors());
 	auto vbo_2 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_normals());
 	auto ibo = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
+	
+	UniformBufferData ubo_data = {
+		glm::mat4(),
+		glm::lookAt({ 0.0f, 0.0, 15.0f }, { 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
+		glm::perspective(45.0f, static_cast<float>(width / height), 0.1f, 1000.0f) 
+	};
+
+	void *data = ubo->get_device_memory()->map(0, ubo->get_device_memory()->get_allocation_size());
+	memcpy(data, &ubo_data, sizeof(ubo_data));
+	ubo->get_device_memory()->unmap();
+
+	const size_t grid_x = 5;
+	const size_t grid_y = 5;
+	const float grid_size = 6.0f;
+	std::vector<glm::vec3> instance_positions;
+	instance_positions.resize(grid_x * grid_y);
+	for (size_t x = 0; x < grid_x; ++x)	
+	{
+		float fx = static_cast<float>(x + 0.5f) / grid_x;
+		fx = (fx * 2.0f - 1.0f) * grid_size;
+
+		for (size_t y = 0; y < grid_y; ++y)
+		{
+			float fy = static_cast<float>(y + 0.5f) / grid_y;
+			fy = (fy * 2.0f - 1.0f) * grid_size;
+
+			instance_positions[x + grid_x * y] = glm::vec3(fx, fy, 0.0f);
+		}
+	}
+	auto vbo_instance = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, instance_positions);
 
 	/// vk::Pipeline
+	///
+	///
 	vk::VertexInputBindingDescription binding_0 = { 0, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
 	vk::VertexInputBindingDescription binding_1 = { 1, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
 	vk::VertexInputBindingDescription binding_2 = { 2, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
+	vk::VertexInputBindingDescription binding_instance = { 3, sizeof(float) * 3, vk::VertexInputRate::eInstance }; // input rate instance: 3 floats between each instance
 	vk::VertexInputAttributeDescription attr_0 = { 0, binding_0.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: position
 	vk::VertexInputAttributeDescription attr_1 = { 1, binding_1.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: color
 	vk::VertexInputAttributeDescription attr_2 = { 2, binding_2.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: color
-
+	vk::VertexInputAttributeDescription attr_instance = { 3, binding_instance.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: instance position offset
+	
 	auto v_shader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/vert.spv"));
 	auto f_shader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/frag.spv"));
 
 	auto pipeline_options = graphics::Pipeline::Options()
-		.vertex_input_binding_descriptions({ binding_0, binding_1, binding_2 })
-		.vertex_input_attribute_descriptions({ attr_0, attr_1, attr_2 })
+		.vertex_input_binding_descriptions({ binding_0, binding_1, binding_2, binding_instance })
+		.vertex_input_attribute_descriptions({ attr_0, attr_1, attr_2, attr_instance })
 		.viewports({ window->get_fullscreen_viewport() })
 		.scissors({ window->get_fullscreen_scissor_rect2d() })
 		.attach_shader_stages({ v_shader, f_shader })
@@ -113,9 +159,13 @@ int main()
 	std::cout << pipeline << std::endl;
 
 	/// vk::CommandPool
+	///
+	///
 	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
 	/// vk::Image
+	///
+	///
 	auto texture = graphics::Image::create(device, vk::ImageType::e2D, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::load_image("../assets/textures/texture.jpg"));
 	auto texture_view = texture->build_image_view();
 	auto sampler = graphics::Sampler::create(device);
@@ -140,6 +190,8 @@ int main()
 	}
 
 	/// vk::Framebuffer
+	///
+	///
 	std::vector<graphics::FramebufferRef> framebuffers(swapchain_image_views.size());
 	for (size_t i = 0; i < swapchain_image_views.size(); ++i)
 	{
@@ -148,6 +200,8 @@ int main()
 	}
 
 	/// vk::DescriptorPool
+	///
+	///
 	auto descriptor_pool = graphics::DescriptorPool::create(device, { {vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1} } );
 
 	/// vk::DescriptorSetLayout
@@ -169,6 +223,8 @@ int main()
 	vk::DescriptorSetLayout descriptor_set_layout = device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 
 	/// vk::DescriptorSet
+	///
+	///
 	vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(descriptor_pool->get_handle(), 1, &descriptor_set_layout);
 	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
 
@@ -181,17 +237,10 @@ int main()
 	device->get_handle().updateDescriptorSets(w_descriptor_sets, {});
 
 	/// vk::Semaphore
+	///
+	///
 	auto image_available_sem = graphics::Semaphore::create(device);
 	auto render_complete_sem = graphics::Semaphore::create(device);
-
-	UniformBufferData ubo_data = {};
-	ubo_data.model = glm::mat4();
-	ubo_data.view = glm::lookAt({ 0.0f, 0.0, 1.0f }, { 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo_data.projection = glm::perspective(60.0f, static_cast<float>(width / height), 0.1f, 1000.0f);
-
-	void *data = ubo->get_device_memory()->map(0, ubo->get_device_memory()->get_allocation_size());
-	memcpy(data, &ubo_data, sizeof(ubo_data));
-	ubo->get_device_memory()->unmap();
 
 	while (!window->should_close())
 	{
@@ -200,7 +249,8 @@ int main()
 		// Set up data for push constants.
 		float elapsed = getElapsedSeconds();
 		auto mouse = window->get_mouse_position();
-		float roughness = mouse.x / width;
+		float metallic = mouse.x / width;
+		metallic = std::fminf(std::fmaxf(metallic, 0.001f), 1.0f);
 
 		// Get the index of the next available image.
 		uint32_t image_index = swapchain->acquire_next_swapchain_image(image_available_sem);
@@ -216,12 +266,12 @@ int main()
 		command_buffer->begin();
 		command_buffer->begin_render_pass(render_pass, framebuffers[image_index], clear_vals);
 		command_buffer->bind_pipeline(pipeline);
-		command_buffer->bind_vertex_buffers({ vbo_0, vbo_1, vbo_2 });
+		command_buffer->bind_vertex_buffers({ vbo_0, vbo_1, vbo_2, vbo_instance });
 		command_buffer->bind_index_buffer(ibo);
 		command_buffer->update_push_constant_ranges(pipeline, "time", &elapsed);
-		command_buffer->update_push_constant_ranges(pipeline, "roughness", &roughness);
+		command_buffer->update_push_constant_ranges(pipeline, "metallic", &metallic);
 		command_buffer->bind_descriptor_sets(pipeline, 0, { descriptor_set }, {});
-		command_buffer->draw_indexed(static_cast<uint32_t>(geometry.get_indices().size()), 1, 0, 0, 0);
+		command_buffer->draw_indexed(static_cast<uint32_t>(geometry.get_indices().size()), instance_positions.size(), 0, 0, 0);
 		command_buffer->end_render_pass();
 		command_buffer->end();
 

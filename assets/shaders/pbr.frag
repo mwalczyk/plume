@@ -88,14 +88,25 @@ layout (location = 0) out vec4 o_color;
 layout (location = 0) in vec3 vs_world_position;
 layout (location = 1) in vec3 vs_color;
 layout (location = 2) in vec3 vs_normal;
+layout (location = 3) flat in uint vs_instance_id;
 
 layout(std430, push_constant) uniform push_constants
 {
 	float time;
-	float roughness;
+	float metallic;
 } constants;
 
 const float pi = 3.1415926535897932384626433832795;
+
+// Cosine-based color palette generator from IQ: https://www.shadertoy.com/view/ll2GD3
+vec3 palette(in float t,
+						 in vec3 a,
+						 in vec3 b,
+						 in vec3 c,
+						 in vec3 d)
+{
+    return a + b * cos(2.0 * pi * (c * t + d));
+}
 
 // Trowbridge-Reitz GGX normal distribution function
 //
@@ -105,9 +116,6 @@ const float pi = 3.1415926535897932384626433832795;
 float normal_distribution(float n_dot_h,
                           float a)
 {
-  // Ignore cases where the cosine is negative
-  n_dot_h = max(n_dot_h, 0.0);
-
   float a_squared = a * a;
   float denonimator = n_dot_h * n_dot_h * (a_squared - 1.0) + 1.0;
   denonimator = pi * denonimator * denonimator;
@@ -138,8 +146,8 @@ float geometric_shadowing(float n_dot_v,
   float k = ((a + 1.0) * (a + 1.0)) / 8.0; // Remapping of roughness parameter for direct lighting
   // k = (a * a) / 2.0;                    // Remapping of roughness parameter for IBL
 
-  float ggx_0 = ggx(max(n_dot_v, 0.0), k); // Geometric obstruction
-  float ggx_1 = ggx(max(n_dot_l, 0.0), k); // Geometric shadowing
+  float ggx_0 = ggx(n_dot_v, k); // Geometric obstruction
+  float ggx_1 = ggx(n_dot_l, k); // Geometric shadowing
 
   return ggx_0 * ggx_1;
 }
@@ -158,45 +166,104 @@ vec3 fresnel(in vec3 r0,
   return r0 + (1.0 - r0) * pow(1.0 - n_dot_v, 5.0);
 }
 
+struct light
+{
+	vec3 position;
+	vec3 color;
+};
 
 void main()
 {
-  const vec3 light = vec3(3.0, 3.0, 2.2);
+	float t = constants.time;
+	float r = constants.metallic;
+	float pct = float(vs_instance_id) / 25.0;
 
-  vec3 n = normalize(vs_world_position);
-  vec3 l = normalize(vs_world_position - light);
-  vec3 v = normalize(vec3(0.0, 0.0, 1.0) - vs_world_position);
-  vec3 h = normalize(l + v);
+	// For now, use a push constant to vary the roughness between 0..1
+	float a = float(vs_instance_id + 1.0) / 25.0;
 
-  // Determine the amount of specular and diffuse contributions
-  float ks = 0.0; //calculate_specular_component(...);
-  float kd = 1.0 - ks;
-  float t = constants.time;
+	// Note that 0: dielectric, 1: metal
+	// Theoretically this should be a binary toggle, but most workflows allow the 'metallic' parameter
+	// to vary smoothly between 0..1
+	float metallic = constants.metallic;
+	float ambient_occlusion = 0.1;
+	vec3 albedo = palette(pct + constants.time * 0.1,
+											  //vec3(0.5,0.5,0.5),
+												//vec3(0.5,0.5,0.5),
+												//vec3(1.0,1.0,1.0),
+												//vec3(0.0,0.33,0.67));
+ 											vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,0.7,0.4),vec3(0.0,0.15,0.20) );
+	// Determine the base reflectivity of our material based on the 'metallic' parameter the Fresenel term
+	vec3 r0 = vec3(0.04);
+	r0 = mix(r0, albedo, metallic);
 
-  // For now, we have a red surface
-  vec3 albedo = vec3(1.0, 0.0, 0.0);
+	// The world-space position of the camera (this should eventually be passed in as a uniform)
+	const vec3 camera_position = vec3(0.0, 0.0, 15.0);
 
-  // Compute relevant dot products
-  float n_dot_h = dot(n, h);
-  float n_dot_v = dot(n, v);
-  float n_dot_l = dot(n, l);
+	// Setup scene lighting
+	const uint number_of_lights = 4;
+	const float grid = 5.0;
+	const float z = 6.0;
+	light scene_lights[] = light[4](
+		light(vec3(sin(constants.time) * grid, -grid, z), vec3(23.47, 21.31, 20.79)),
+		light(vec3(cos(constants.time) * -grid, -grid, z), vec3(23.47, 21.31, 20.79)),
+		light(vec3(sin(constants.time) * -grid, grid, z), vec3(23.47, 21.31, 20.79)),
+		light(vec3(cos(constants.time) * grid, grid, z), vec3(23.47, 21.31, 20.79))
+	);
 
-  // 0: dielectric, 1: metal
-  // Theoretically this should be a binary toggle, but most workflows allow the 'metallic' parameter
-  // to vary smoothly between 0..1
-  float metallic = 0.0;
+	// Calculate direct lighting
+	vec3 outgoing_radiance = vec3(0.0);
 
-  // Determine the base reflectivity of our material based on the 'metallic' parameter
-  vec3 r0 = vec3(0.04);
-  r0 = mix(r0, albedo, metallic);
+	for (int i = 0; i < number_of_lights; ++i)
+	{
+		// Calculate the observed radiance coming from the current light source at the fragment's position
+		float distance_to_light = length(scene_lights[i].position - vs_world_position);
+		float distance_attenuation = 1.0 / (distance_to_light * distance_to_light);
+		vec3 radiance = scene_lights[i].color * distance_attenuation;
 
-	// Calculate
-	float a = constants.roughness;
-	float D = normal_distribution(n_dot_h, a);
+		// Calculate the relevant direction vectors used throughout
+		vec3 n = normalize(vs_normal);
+		vec3 l = normalize(scene_lights[i].position - vs_world_position);
+		vec3 v = normalize(camera_position - vs_world_position);
+		vec3 h = normalize(l + v);
 
-	// For now, just calculate a Lambertian diffuse term
-  float light_intensity = max(dot(n, l), 0.1);
-	vec3 lambertian = albedo * light_intensity;
+		// Compute relevant dot products
+		float n_dot_h = max(dot(n, h), 0.0);
+		float n_dot_v = max(dot(n, v), 0.0);
+		float n_dot_l = max(dot(n, l), 0.0);
 
-  o_color = vec4(vec3(D), 1.0);
+		// Calculate the terms for the Cook-Torrance BRDF
+		float D = normal_distribution(n_dot_h, a);
+		float G = geometric_shadowing(n_dot_v, n_dot_l, a);
+		vec3 F = fresnel(r0, n_dot_v);
+
+		// Combine terms, taking care to prevent a division by zero by adding a small epsilon term to
+		// the denonimator
+		vec3 cook_torrance = (D * G * F) / (4.0 * n_dot_v * n_dot_l + 0.001);
+
+		// Determine the ratio of specular to diffuse contributions from the current light source.
+		// Note that the Fresnel-Schlick approximation gives us the exact percentage of reflected
+		// (specular) light at the fragment's position. So, the diffuse contribution from this light
+		// source must be (1 - F).
+		vec3 ks = F;
+		vec3 kd = vec3(1.0) - ks;
+
+		// If the material is a metal, it should not have a diffuse component (all refracted light
+		// is immediately absorbed)
+		kd *= 1.0 - metallic;
+
+		// The full reflectance equation is below. Note that we leave ks out of this equation. Since
+		// ks = F, this is already accounted for in the Cook-Torrance BRDF, so we don't want to multiply
+		// by ks twice.
+		outgoing_radiance += (kd * (albedo / pi) + cook_torrance) * radiance * n_dot_l;
+	}
+
+	// Add a (somewhat) arbitrary ambient term to the direct lighting result
+	const vec3 ambient = vec3(0.03) * albedo * ambient_occlusion;
+	outgoing_radiance += ambient;
+
+	// Apply tone mapping then gamma correction
+	outgoing_radiance /= outgoing_radiance + vec3(1.0);
+	outgoing_radiance = pow(outgoing_radiance, vec3(1.0 / 2.2));
+
+  o_color = vec4(outgoing_radiance, 1.0);
 }
