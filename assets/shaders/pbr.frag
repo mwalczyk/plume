@@ -90,11 +90,13 @@ layout (location = 1) in vec3 vs_color;
 layout (location = 2) in vec3 vs_normal;
 layout (location = 3) flat in uint vs_instance_id;
 
-layout(std430, push_constant) uniform push_constants
+layout (std430, push_constant) uniform push_constants
 {
 	float time;
 	float metallic;
 } constants;
+
+layout (set = 0, binding = 1) uniform sampler2D combined_image_sampler;
 
 const float pi = 3.1415926535897932384626433832795;
 
@@ -176,33 +178,30 @@ void main()
 {
 	float t = constants.time;
 	float r = constants.metallic;
-	float pct = float(vs_instance_id) / 25.0;
+	float pct = float(vs_instance_id) / 225.0;
 
 	// For now, use a push constant to vary the roughness between 0..1
-	float a = float(vs_instance_id + 1.0) / 25.0;
+	float a = float(vs_instance_id + 1.0) / 225.0;
 
 	// Note that 0: dielectric, 1: metal
 	// Theoretically this should be a binary toggle, but most workflows allow the 'metallic' parameter
 	// to vary smoothly between 0..1
 	float metallic = constants.metallic;
 	float ambient_occlusion = 0.1;
-	vec3 albedo = palette(pct + constants.time * 0.1,
-											  //vec3(0.5,0.5,0.5),
-												//vec3(0.5,0.5,0.5),
-												//vec3(1.0,1.0,1.0),
-												//vec3(0.0,0.33,0.67));
- 											vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,0.7,0.4),vec3(0.0,0.15,0.20) );
+	vec3 albedo = palette(pct, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.0,0.10,0.20));
+											 //vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.3,0.20,0.20));
+											 //vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.0,0.33,0.67));
 	// Determine the base reflectivity of our material based on the 'metallic' parameter the Fresenel term
 	vec3 r0 = vec3(0.04);
 	r0 = mix(r0, albedo, metallic);
 
 	// The world-space position of the camera (this should eventually be passed in as a uniform)
-	const vec3 camera_position = vec3(0.0, 0.0, 15.0);
+	const vec3 camera_position = vec3(0.0, 0.0, 40.0);
 
 	// Setup scene lighting
 	const uint number_of_lights = 4;
-	const float grid = 5.0;
-	const float z = 6.0;
+	const float grid = 4.0;
+	const float z = 8.0;
 	light scene_lights[] = light[4](
 		light(vec3(sin(constants.time) * grid, -grid, z), vec3(23.47, 21.31, 20.79)),
 		light(vec3(cos(constants.time) * -grid, -grid, z), vec3(23.47, 21.31, 20.79)),
@@ -230,6 +229,7 @@ void main()
 		float n_dot_h = max(dot(n, h), 0.0);
 		float n_dot_v = max(dot(n, v), 0.0);
 		float n_dot_l = max(dot(n, l), 0.0);
+		float h_dot_v = max(dot(h, v), 0.0);
 
 		// Calculate the terms for the Cook-Torrance BRDF
 		float D = normal_distribution(n_dot_h, a);
@@ -263,7 +263,9 @@ void main()
 
 	// Apply tone mapping then gamma correction
 	outgoing_radiance /= outgoing_radiance + vec3(1.0);
+	outgoing_radiance = vec3(1.0) - exp(-outgoing_radiance * 4.0);
 	outgoing_radiance = pow(outgoing_radiance, vec3(1.0 / 2.2));
 
+	//vec4 samp = texture(combined_image_sampler, gl_FragCoord.xy / vec2(800.0, 600.0));
   o_color = vec4(outgoing_radiance, 1.0);
 }

@@ -122,7 +122,14 @@ namespace graphics
 			//! Set the number of samples per pixel used in rasterization. Multisampling (MSAA) is one method for achieving
 			//! full-screen antialiasing (FSAA). Each sub-pixel element will have its own unique depth data, but the color
 			//! is only calculated once.
-			Options& samples(vk::SampleCountFlagBits sample_count) { m_multisample_state_create_info.rasterizationSamples = sample_count; }
+			Options& samples(vk::SampleCountFlagBits sample_count) { m_multisample_state_create_info.rasterizationSamples = sample_count; return *this; }
+
+			Options& min_sample_shading(float min_sample_shading) 
+			{ 
+				m_multisample_state_create_info.minSampleShading = min_sample_shading; 
+				m_multisample_state_create_info.sampleShadingEnable = VK_TRUE; 
+				return *this; 
+			}
 
 			//! Configure frontface/backface culling.
 			Options& cull_mode(vk::CullModeFlags cull_mode_flags) { m_rasterization_state_create_info.cullMode = cull_mode_flags; return *this; }

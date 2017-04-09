@@ -38,16 +38,17 @@ struct UniformBufferData
 	glm::mat4 projection;
 };
 
-float getElapsedSeconds()
+float get_elapsed_seconds()
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+	static auto start = std::chrono::high_resolution_clock::now();
+	auto current = std::chrono::high_resolution_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current - start).count() / 1000.0f;
 	return elapsed;
 }
 
 static const uint32_t width = 800;
 static const uint32_t height = 800;
+static const auto msaa = vk::SampleCountFlagBits::e8;
 
 int main()
 {
@@ -85,13 +86,29 @@ int main()
 	/// vk::RenderPass
 	///
 	///
-	auto render_pass = graphics::RenderPass::create(device);
+	auto ms_attachment = graphics::RenderPass::create_multisample_attachment(vk::Format::eB8G8R8A8Unorm, 0, msaa);
+	auto resolve_attachment = graphics::RenderPass::create_color_attachment(vk::Format::eB8G8R8A8Unorm, 1);
+	auto depth_attachment = graphics::RenderPass::create_depth_stencil_attachment(vk::Format::eD32SfloatS8Uint, 2, msaa);
+	
+	vk::SubpassDescription subpass_description = {};
+	subpass_description.colorAttachmentCount = 1;
+	subpass_description.pColorAttachments = &ms_attachment.second;
+	subpass_description.pDepthStencilAttachment = &depth_attachment.second;
+	subpass_description.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+	subpass_description.pResolveAttachments = &resolve_attachment.second;
+
+	auto render_pass_options = graphics::RenderPass::Options()
+		.attachment_descriptions({ ms_attachment.first, resolve_attachment.first, depth_attachment.first })
+		.attachment_references({ ms_attachment.second, resolve_attachment.second, depth_attachment.second })
+		.subpass_descriptions({ subpass_description })
+		.subpass_dependencies({ graphics::RenderPass::create_default_subpass_dependency() });
+
+	auto render_pass = graphics::RenderPass::create(device, render_pass_options);
 
 	/// geo::Geometry
 	///
 	///
 	auto geometry = geo::Sphere();
-	geometry.set_random_colors();
 
 	/// vk::Buffer
 	///
@@ -104,7 +121,7 @@ int main()
 	
 	UniformBufferData ubo_data = {
 		glm::mat4(),
-		glm::lookAt({ 0.0f, 0.0, 15.0f }, { 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
+		glm::lookAt({ 0.0f, 0.0, 40.0f }, { 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
 		glm::perspective(45.0f, static_cast<float>(width / height), 0.1f, 1000.0f) 
 	};
 
@@ -112,9 +129,9 @@ int main()
 	memcpy(data, &ubo_data, sizeof(ubo_data));
 	ubo->get_device_memory()->unmap();
 
-	const size_t grid_x = 5;
-	const size_t grid_y = 5;
-	const float grid_size = 6.0f;
+	const size_t grid_x = 15;
+	const size_t grid_y = 15;
+	const float grid_size = 16.0f;
 	std::vector<glm::vec3> instance_positions;
 	instance_positions.resize(grid_x * grid_y);
 	for (size_t x = 0; x < grid_x; ++x)	
@@ -130,6 +147,7 @@ int main()
 			instance_positions[x + grid_x * y] = glm::vec3(fx, fy, 0.0f);
 		}
 	}
+
 	auto vbo_instance = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, instance_positions);
 
 	/// vk::Pipeline
@@ -154,7 +172,9 @@ int main()
 		.scissors({ window->get_fullscreen_scissor_rect2d() })
 		.attach_shader_stages({ v_shader, f_shader })
 		.primitive_topology(geometry.get_topology())
-		.depth_test();
+		.depth_test()
+		.samples(msaa)
+		.min_sample_shading(0.25f);
 	auto pipeline = graphics::Pipeline::create(device, render_pass, pipeline_options);
 	std::cout << pipeline << std::endl;
 
@@ -166,20 +186,39 @@ int main()
 	/// vk::Image
 	///
 	///
-	auto texture = graphics::Image::create(device, vk::ImageType::e2D, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, vk::Format::eR8G8B8A8Unorm, ResourceManager::load_image("../assets/textures/texture.jpg"));
-	auto texture_view = texture->build_image_view();
+	auto ms_options = graphics::Image::Options()
+		.image_tiling(vk::ImageTiling::eOptimal)
+		.sample_count(msaa);
+	auto image_ms = graphics::Image::create(device,
+		vk::ImageType::e2D,
+		vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
+		swapchain->get_image_format(),
+		width, height, 1,
+		ms_options);
+	auto image_ms_view = image_ms->build_image_view();
+
+	auto image_from_file = graphics::Image::create(device, 
+		vk::ImageType::e2D, 
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, 
+		vk::Format::eR16G16B16A16Sfloat, 
+		ResourceManager::load_image_hdr("../assets/textures/newport_loft.hdr"));
+	auto image_from_file_view = image_from_file->build_image_view();
 	auto sampler = graphics::Sampler::create(device);
 
-	auto depth_image_options = graphics::Image::Options().image_tiling(vk::ImageTiling::eOptimal);
-	auto depth_image = graphics::Image::create(device, vk::ImageType::e2D, vk::ImageUsageFlagBits::eDepthStencilAttachment, device->get_supported_depth_format(), width, height, 1, depth_image_options);
-	auto depth_image_view = depth_image->build_image_view();
+	auto image_depth = graphics::Image::create(device, 
+		vk::ImageType::e2D, 
+		vk::ImageUsageFlagBits::eDepthStencilAttachment, 
+		device->get_supported_depth_format(), 
+		width, height, 1, 
+		ms_options);
+	auto image_depth_view = image_depth->build_image_view();
 
 	{
 		auto temp_command_buffer = graphics::CommandBuffer::create(device, command_pool);
 		auto temp_command_buffer_handle = temp_command_buffer->get_handle();
 		temp_command_buffer->begin();
-		temp_command_buffer->transition_image_layout(texture, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
-		temp_command_buffer->transition_image_layout(depth_image, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		temp_command_buffer->transition_image_layout(image_from_file, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
+		temp_command_buffer->transition_image_layout(image_depth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		temp_command_buffer->end();
 
 		vk::SubmitInfo submit_info;
@@ -195,24 +234,38 @@ int main()
 	std::vector<graphics::FramebufferRef> framebuffers(swapchain_image_views.size());
 	for (size_t i = 0; i < swapchain_image_views.size(); ++i)
 	{
-		std::vector<vk::ImageView> image_views = { swapchain_image_views[i], depth_image_view };
+		std::vector<vk::ImageView> image_views = { 
+			image_ms_view,				// attachment 0: multisample color 
+			swapchain_image_views[i],	// attachment 1: resolve color (swapchain)
+			image_depth_view			// attachment 2: depth-stencil
+		};
+
 		framebuffers[i] = graphics::Framebuffer::create(device, render_pass, image_views, width, height);
 	}
 
 	/// vk::DescriptorPool
 	///
 	///
-	auto descriptor_pool = graphics::DescriptorPool::create(device, { {vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1} } );
+	auto descriptor_pool = graphics::DescriptorPool::create(device, { 
+		{ vk::DescriptorType::eUniformBuffer, 1 }, 
+		{ vk::DescriptorType::eCombinedImageSampler, 1 } 
+	});
 
 	/// vk::DescriptorSetLayout
 	///
 	///
-	std::array<vk::DescriptorSetLayoutBinding, 1> layout_bindings = {{
+	std::array<vk::DescriptorSetLayoutBinding, 2> layout_bindings = {{
 		{	
-			0, 
-			vk::DescriptorType::eUniformBuffer, 1, 
-			vk::ShaderStageFlagBits::eAll, 
-			nullptr 
+			0,											// binding (see shader code)
+			vk::DescriptorType::eUniformBuffer, 1,		// type and count
+			vk::ShaderStageFlagBits::eAll,				// shader usage stages
+			nullptr										// immutable samplers
+		},
+		{
+			1,
+			vk::DescriptorType::eCombinedImageSampler, 1,
+			vk::ShaderStageFlagBits::eAll,
+			nullptr
 		}
 	}};
 
@@ -225,14 +278,18 @@ int main()
 	/// vk::DescriptorSet
 	///
 	///
-	vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(descriptor_pool->get_handle(), 1, &descriptor_set_layout);
-	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptorSetAllocateInfo)[0];
+	vk::DescriptorSetAllocateInfo descriptor_set_allocate_info = { 
+		descriptor_pool->get_handle(),	// descriptor pool
+		1,								// number of sets to allocate
+		&descriptor_set_layout			// descriptor set layout
+	};
+	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptor_set_allocate_info)[0];
 
-	auto d_buffer_info = ubo->build_descriptor_info();										// ubo
-	auto d_image_info = texture->build_descriptor_info(sampler, texture_view);				// sampler
+	auto d_buffer_info = ubo->build_descriptor_info();														// ubo
+	auto d_image_info = image_from_file->build_descriptor_info(sampler, image_from_file_view);				// sampler
 	vk::WriteDescriptorSet w_descriptor_set_buffer = { descriptor_set, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };		// ubo
-	//vk::WriteDescriptorSet w_descriptor_set_sampler = { descriptor_set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_image_info };		// sampler
-	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer };// , w_descriptor_set_sampler };
+	vk::WriteDescriptorSet w_descriptor_set_sampler = { descriptor_set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_image_info };		// sampler
+	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer, w_descriptor_set_sampler };
 
 	device->get_handle().updateDescriptorSets(w_descriptor_sets, {});
 
@@ -247,18 +304,17 @@ int main()
 		window->poll_events();
 
 		// Set up data for push constants.
-		float elapsed = getElapsedSeconds();
-		auto mouse = window->get_mouse_position();
-		float metallic = mouse.x / width;
-		metallic = std::fminf(std::fmaxf(metallic, 0.001f), 1.0f);
-
+		float elapsed = get_elapsed_seconds();
+		float metallic = glm::clamp(window->get_mouse_position().x / width, 0.001f, 1.0f);
+		
 		// Get the index of the next available image.
 		uint32_t image_index = swapchain->acquire_next_swapchain_image(image_available_sem);
 
-		// Set the clear values for each of this framebuffer's attachments, including the depth stencil attachment.
-		std::vector<vk::ClearValue> clear_vals(2);
-		clear_vals[0].color = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };
-		clear_vals[1].depthStencil = {1.0f, 0};
+		// Set the clear values for each of this framebuffer's attachments.
+		std::vector<vk::ClearValue> clear_vals(3);
+		clear_vals[0].color = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };	// multisample color attachment
+		clear_vals[1].color = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };	// resolve color attachment
+		clear_vals[2].depthStencil = {1.0f, 0};									// depth-stencil attachment
 
 		// Set up a new command buffer and record draw calls.
 		auto command_buffer = graphics::CommandBuffer::create(device, command_pool);

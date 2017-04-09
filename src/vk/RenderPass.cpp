@@ -50,7 +50,7 @@ namespace graphics
 		return { attachment_description, attachment_reference };
 	}
 
-	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::create_depth_stencil_attachment(vk::Format format, uint32_t attachment)
+	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::create_depth_stencil_attachment(vk::Format format, uint32_t attachment, vk::SampleCountFlagBits sample_count)
 	{
 		if (!utils::is_depth_format(format))
 		{
@@ -63,7 +63,7 @@ namespace graphics
 		attachment_description.format = format;
 		attachment_description.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
-		attachment_description.samples = vk::SampleCountFlagBits::e1;
+		attachment_description.samples = sample_count;
 		attachment_description.stencilLoadOp = utils::is_stencil_format(format) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
 		attachment_description.stencilStoreOp = utils::is_stencil_format(format) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
 		attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
@@ -74,6 +74,30 @@ namespace graphics
 		attachment_reference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
 		return { attachment_description, attachment_reference };
+	}
+
+	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::create_multisample_attachment(vk::Format format, uint32_t attachment, vk::SampleCountFlagBits sample_count)
+	{
+		// Set up the attachment description.
+		// For the store op, vk::AttachmentStoreOp::eDontCare is critical, since it allows tile based renderers 
+		// to completely avoid writing out the multisampled framebuffer to memory. This is a huge performance and 
+		// bandwidth improvement.
+		vk::AttachmentDescription attachment_description;
+		attachment_description.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		attachment_description.format = format;
+		attachment_description.initialLayout = vk::ImageLayout::eUndefined;
+		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
+		attachment_description.samples = sample_count;
+		attachment_description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+		attachment_description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+		attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
+
+		// Set up the attachment reference.
+		vk::AttachmentReference attachment_reference;
+		attachment_reference.attachment = attachment;
+		attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+		return{ attachment_description, attachment_reference };
 	}
 
 	vk::SubpassDescription RenderPass::create_subpass_description(const std::vector<vk::AttachmentReference>& color_attachment_references, const vk::AttachmentReference& depth_stencil_attachment_reference)

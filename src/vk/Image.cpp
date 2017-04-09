@@ -124,67 +124,6 @@ namespace graphics
 		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eDeviceLocal);
 	}
 
-	Image::Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options) :
-		m_device(device),
-		m_image_type(image_type),
-		m_image_usage_flags(image_usage_flags),
-		m_format(format),
-		m_width(resource.width),
-		m_height(resource.height),
-		m_depth(1),
-		m_mip_levels(options.m_mip_levels)
-	{	
-		m_current_layout = vk::ImageLayout::ePreinitialized;
-
-		vk::ImageCreateInfo image_create_info;
-		image_create_info.arrayLayers = 1;
-		image_create_info.extent.width = m_width;
-		image_create_info.extent.height = m_height;
-		image_create_info.extent.depth = m_depth;
-		image_create_info.format = m_format;
-		image_create_info.initialLayout = m_current_layout;
-		image_create_info.imageType = m_image_type;
-		image_create_info.mipLevels = m_mip_levels;
-		image_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();
-		image_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
-		image_create_info.samples = options.m_sample_count_flag_bits;
-		image_create_info.sharingMode = (image_create_info.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
-		image_create_info.tiling = options.m_image_tiling;
-		image_create_info.usage = m_image_usage_flags; 
-
-		m_image_handle = m_device->get_handle().createImage(image_create_info);
-		
-		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-	
-		// Fill the image with the provided data.
-		void* mapped_ptr = m_device_memory->map(0, m_device_memory->get_allocation_size());		// Map
-
-		vk::ImageSubresource image_subresource;
-		image_subresource.aspectMask = utils::format_to_aspect_mask(m_format);
-		image_subresource.arrayLayer = 0;
-		image_subresource.mipLevel = 0;
-
-		vk::SubresourceLayout subresource_layout = m_device->get_handle().getImageSubresourceLayout(m_image_handle, image_subresource);
-			
-		// The subresource has no additional padding, so we can directly copy the pixel data into the image.
-		// This usually happens when the requested image is a power-of-two texture.
-		VkDeviceSize image_size = m_width * m_height * 4;
-		if (subresource_layout.rowPitch == m_width * 4)
-		{
-			memcpy(mapped_ptr, resource.contents.data(), static_cast<size_t>(image_size));
-		}
-		else 
-		{
-			uint8_t* data_as_bytes = reinterpret_cast<uint8_t*>(mapped_ptr);
-			for (size_t i = 0; i < m_height; ++i)
-			{
-				memcpy(&data_as_bytes[i * subresource_layout.rowPitch], &resource.contents[i * m_width * 4], m_width * 4);
-			}
-		}
-			
-		m_device_memory->unmap();																// Unmap
-	}
-
 	vk::ImageView Image::build_image_view() const
 	{
 		vk::ImageViewCreateInfo image_view_create_info;

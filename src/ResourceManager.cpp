@@ -72,3 +72,23 @@ ImageResource ResourceManager::load_image(const std::string& file_name, bool for
 
 	return resource;
 }
+
+ImageResourceHDR ResourceManager::load_image_hdr(const std::string& file_name, bool force_channels)
+{
+	ImageResourceHDR resource;
+
+	float* pixels = stbi_loadf(file_name.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), 0);
+	if (!pixels)
+	{
+		throw std::runtime_error("Failed to load image: " + file_name);
+	}
+	if (force_channels)
+	{
+		resource.channels = 3;
+	}
+	resource.contents = std::vector<float>(pixels, pixels + resource.width * resource.height * resource.channels);
+
+	stbi_image_free(pixels);
+
+	return resource;
+}

@@ -43,6 +43,14 @@ struct ImageResource
 	std::vector<uint8_t> contents;
 };
 
+struct ImageResourceHDR
+{
+	uint32_t width;
+	uint32_t height;
+	uint32_t channels;
+	std::vector<float> contents;
+};
+
 class ResourceManager
 {
 public:
@@ -55,6 +63,7 @@ public:
 
 	static FileResource load_file(const std::string& file_name);
 	static ImageResource load_image(const std::string& file_name, bool force_channels = true);
+	static ImageResourceHDR load_image_hdr(const std::string& file_name, bool force_channels = true);
 
 	ResourceManager(const ResourceManager& other) = delete;
 	ResourceManager& operator=(const ResourceManager& other) = delete;
