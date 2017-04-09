@@ -96,7 +96,7 @@ layout (std430, push_constant) uniform push_constants
 	float metallic;
 } constants;
 
-layout (set = 0, binding = 1) uniform sampler2D combined_image_sampler;
+layout (set = 0, binding = 1) uniform sampler2D irradiance_map;
 
 const float pi = 3.1415926535897932384626433832795;
 
@@ -108,6 +108,20 @@ vec3 palette(in float t,
 						 in vec3 d)
 {
     return a + b * cos(2.0 * pi * (c * t + d));
+}
+
+vec4 sample_equirectangular_map(in vec3 direction,
+																sampler2D equirectangular)
+{
+	// From the OpenGL SuperBible, 6th Ed.
+	vec2 uv;
+	uv.y = direction.y;
+	direction.x = normalize( direction.xz ).x * 0.5;
+	float s = sign( direction.z ) * 0.5;
+	uv.x = 0.75 - s * (0.5 - uv.x);
+	uv.y = 0.5 + 0.5 * uv.y;
+
+ 	return texture(equirectangular, uv);
 }
 
 // Trowbridge-Reitz GGX normal distribution function
@@ -187,8 +201,8 @@ void main()
 	// Theoretically this should be a binary toggle, but most workflows allow the 'metallic' parameter
 	// to vary smoothly between 0..1
 	float metallic = constants.metallic;
-	float ambient_occlusion = 0.1;
-	vec3 albedo = palette(pct, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.0,0.10,0.20));
+	float ambient_occlusion = 1.0;
+	vec3 albedo = palette(pct * 0.3, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.0,0.10,0.20));
 											 //vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.3,0.20,0.20));
 											 //vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.0,0.33,0.67));
 	// Determine the base reflectivity of our material based on the 'metallic' parameter the Fresenel term
@@ -258,14 +272,27 @@ void main()
 	}
 
 	// Add a (somewhat) arbitrary ambient term to the direct lighting result
-	const vec3 ambient = vec3(0.03) * albedo * ambient_occlusion;
+	//const vec3 ambient = vec3(0.03) * albedo * ambient_occlusion;
+
+	// If we are using IBL, we calculate the indirect lighting term as follows
+	vec3 n = normalize(vs_normal);
+	vec3 v = normalize(camera_position - vs_world_position);
+	float n_dot_v = max(dot(n, v), 0.0);
+	vec3 ks = fresnel(r0, n_dot_v);
+	vec3 kd = 1.0 - ks;
+	kd *= 1.0 - metallic;
+	vec3 irradiance = sample_equirectangular_map(n, irradiance_map).rgb;	// irradiance
+	vec3 ambient = irradiance * albedo * kd * ambient_occlusion;
+
+	// Add the ambient term
 	outgoing_radiance += ambient;
 
 	// Apply tone mapping then gamma correction
 	outgoing_radiance /= outgoing_radiance + vec3(1.0);
-	outgoing_radiance = vec3(1.0) - exp(-outgoing_radiance * 4.0);
+	//outgoing_radiance = vec3(1.0) - exp(-outgoing_radiance * 2.0);
 	outgoing_radiance = pow(outgoing_radiance, vec3(1.0 / 2.2));
 
-	//vec4 samp = texture(combined_image_sampler, gl_FragCoord.xy / vec2(800.0, 600.0));
+	vec4 samp = texture(irradiance_map, gl_FragCoord.xy / vec2(800.0));
+
   o_color = vec4(outgoing_radiance, 1.0);
 }

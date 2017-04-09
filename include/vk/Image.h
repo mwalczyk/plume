@@ -225,10 +225,15 @@ namespace graphics
 
 			vk::SubresourceLayout subresource_layout = m_device->get_handle().getImageSubresourceLayout(m_image_handle, image_subresource);
 
+			// We assume that the image data has four channels (RGBA). We also need to account for the bit depth
+			// of the image data: floats are 4 bits, for example.
+			const size_t channels = 4;
+			constexpr size_t bit_multipler = sizeof(T);
+
 			// The subresource has no additional padding, so we can directly copy the pixel data into the image.
 			// This usually happens when the requested image is a power-of-two texture.
-			VkDeviceSize image_size = m_width * m_height * 3;
-			if (subresource_layout.rowPitch == m_width * 3)
+			VkDeviceSize image_size = m_width * m_height * channels;
+			if (subresource_layout.rowPitch == m_width * channels)
 			{
 				memcpy(mapped_ptr, pixels.data(), static_cast<size_t>(image_size));
 			}
@@ -237,7 +242,7 @@ namespace graphics
 				uint8_t* data_as_bytes = reinterpret_cast<uint8_t*>(mapped_ptr);
 				for (size_t i = 0; i < m_height; ++i)
 				{
-					memcpy(&data_as_bytes[i * subresource_layout.rowPitch], &pixels[i * m_width * 3], m_width * 3);
+					memcpy(&data_as_bytes[i * subresource_layout.rowPitch], &pixels[i * m_width * channels], m_width * channels * bit_multipler); 
 				}
 			}
 

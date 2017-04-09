@@ -200,8 +200,8 @@ int main()
 	auto image_from_file = graphics::Image::create(device, 
 		vk::ImageType::e2D, 
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, 
-		vk::Format::eR16G16B16A16Sfloat, 
-		ResourceManager::load_image_hdr("../assets/textures/newport_loft.hdr"));
+		vk::Format::eR32G32B32A32Sfloat, 
+		ResourceManager::load_image_hdr("../assets/textures/techgate_diffuse.hdr"));
 	auto image_from_file_view = image_from_file->build_image_view();
 	auto sampler = graphics::Sampler::create(device);
 
