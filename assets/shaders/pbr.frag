@@ -289,7 +289,7 @@ void main()
 
 	// Apply tone mapping then gamma correction
 	outgoing_radiance /= outgoing_radiance + vec3(1.0);
-	//outgoing_radiance = vec3(1.0) - exp(-outgoing_radiance * 2.0);
+	outgoing_radiance = vec3(1.0) - exp(-outgoing_radiance * 2.0);
 	outgoing_radiance = pow(outgoing_radiance, vec3(1.0 / 2.2));
 
 	vec4 samp = texture(irradiance_map, gl_FragCoord.xy / vec2(800.0));
