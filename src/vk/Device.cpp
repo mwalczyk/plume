@@ -125,8 +125,9 @@ namespace graphics
 			m_required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		}
 
-		// Create the logical device: note that device layers were deprecated in Vulkan 1.0.13, and device layer 
-		// requests should be ignored by the driver.
+		// Create the logical device: note that device layers were deprecated, and device layer 
+		// requests should be ignored by the driver. 
+		// See: https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#extended-functionality-device-layer-deprecation
 		vk::DeviceCreateInfo device_create_info;
 		device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_required_device_extensions.size());
 		device_create_info.pEnabledFeatures = &m_physical_device_features;
