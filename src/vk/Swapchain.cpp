@@ -66,7 +66,7 @@ namespace graphics
 		swapchain_create_info.imageSharingMode = vk::SharingMode::eExclusive;				// This swapchain is only accessed by one queue family (see notes above).
 		swapchain_create_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 		swapchain_create_info.minImageCount = image_count;
-		swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+		swapchain_create_info.oldSwapchain = vk::SwapchainKHR{};
 		swapchain_create_info.pQueueFamilyIndices = nullptr;								// If the sharing mode is exlusive, we don't need to specify this.
 		swapchain_create_info.presentMode = present_mode;
 		swapchain_create_info.preTransform = support_details.m_capabilities.currentTransform;
@@ -92,7 +92,7 @@ namespace graphics
 
 	uint32_t Swapchain::acquire_next_swapchain_image(const SemaphoreRef& semaphore, uint32_t timeout)
 	{
-		auto result = m_device->get_handle().acquireNextImageKHR(m_swapchain_handle, timeout, semaphore->get_handle(), VK_NULL_HANDLE);
+		auto result = m_device->get_handle().acquireNextImageKHR(m_swapchain_handle, timeout, semaphore->get_handle(), {});
 		return result.value;
 	}
 

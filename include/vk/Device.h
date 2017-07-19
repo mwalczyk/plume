@@ -65,12 +65,12 @@ namespace graphics
 			std::pair<vk::Queue, uint32_t> presentation() const { return m_presentation_queue; }
 
 		private:
-
-			std::pair<vk::Queue, uint32_t> m_graphics_queue = { VK_NULL_HANDLE, 0 };
-			std::pair<vk::Queue, uint32_t> m_compute_queue = { VK_NULL_HANDLE, 0 };
-			std::pair<vk::Queue, uint32_t> m_transfer_queue = { VK_NULL_HANDLE, 0 };
-			std::pair<vk::Queue, uint32_t> m_sparse_binding_queue = { VK_NULL_HANDLE, 0 };
-			std::pair<vk::Queue, uint32_t> m_presentation_queue = { VK_NULL_HANDLE, 0 };
+			
+			std::pair<vk::Queue, uint32_t> m_graphics_queue = { {}, 0 };
+			std::pair<vk::Queue, uint32_t> m_compute_queue = { {}, 0 };
+			std::pair<vk::Queue, uint32_t> m_transfer_queue = { {}, 0 };
+			std::pair<vk::Queue, uint32_t> m_sparse_binding_queue = { {}, 0 };
+			std::pair<vk::Queue, uint32_t> m_presentation_queue = { {}, 0 };
 
 			friend class Device;
 		};

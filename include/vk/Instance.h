@@ -72,11 +72,17 @@ namespace graphics
 			//! Specify a complete VkApplicationInfo structure that will be used to create this instance.
 			Options& application_info(const vk::ApplicationInfo& application_info) { m_application_info = application_info; return *this; }
 			
+			//! Specify the logging level that will be observed by the validation layers. By default, 
+			//! validation layers will only be enabled when building in debug mode, and they will observe
+			//! the VK_DEBUG_REPORT_ERROR_BIT_EXT and VK_DEBUG_REPORT_WARNING_BIT_EXT flags.
+			Options& set_logging_flags(VkDebugReportFlagsEXT debug_report_flags) { m_debug_report_flags = debug_report_flags; return *this; }
+
 		private:
 
 			std::vector<const char*> m_required_layers;
 			std::vector<const char*> m_required_extensions;
 			vk::ApplicationInfo m_application_info;
+			VkDebugReportFlagsEXT m_debug_report_flags;
 
 			friend class Instance;
 		};
@@ -99,7 +105,7 @@ namespace graphics
 	private:
 
 		bool check_instance_layer_support();
-		void setup_debug_report_callback();
+		void setup_debug_report_callback(VkDebugReportFlagsEXT debug_report_flags);
 
 		vk::Instance m_instance_handle;
 		VkDebugReportCallbackEXT m_debug_report_callback;

@@ -178,7 +178,7 @@ namespace graphics
 
 		// Aggregate all of the structures above to create a graphics pipeline.
 		vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info;
-		graphics_pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;
+		graphics_pipeline_create_info.basePipelineHandle = vk::Pipeline{};
 		graphics_pipeline_create_info.basePipelineIndex = -1;
 		graphics_pipeline_create_info.layout = m_pipeline_layout_handle;
 		graphics_pipeline_create_info.pColorBlendState = &options.m_color_blend_state_create_info;

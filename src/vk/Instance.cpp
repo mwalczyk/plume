@@ -31,14 +31,13 @@ namespace graphics
 
 	Instance::Options::Options()
 	{
-		m_required_layers = { "VK_LAYER_LUNARG_standard_validation" };
-		m_required_extensions = { "VK_EXT_debug_report" };
-		
 		m_application_info.apiVersion = VK_API_VERSION_1_0;
 		m_application_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		m_application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 		m_application_info.pApplicationName = "Spectrum Application";
 		m_application_info.pEngineName = "Spectrum Engine";
+
+		m_debug_report_flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
 	}
 
 	//! Proxy function for creating a debug callback object
@@ -82,13 +81,20 @@ namespace graphics
 			throw std::runtime_error("One or more of the requested validation layers are not supported on this platform");
 		}
 
-		// Append the instance extensions required by the windowing system
+		// Append the instance extensions required by the windowing system.
 #if defined(SPECTRUM_MSW)
 		m_required_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #elif defined(SPECTRUM_LINUX)
 		m_required_extensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 #endif
 		m_required_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+
+		// If building in debug mode, automatically enable the standard validation 
+		// layer and the debug report callback extension.
+#if defined(_DEBUG)
+		m_required_layers.push_back("VK_LAYER_LUNARG_standard_validation");
+		m_required_extensions.push_back("VK_EXT_debug_report");
+#endif
 
 		// Create the instance.
 		vk::InstanceCreateInfo instance_create_info;
@@ -100,11 +106,11 @@ namespace graphics
 
 		m_instance_handle = vk::createInstance(instance_create_info);
 
-		// Only set up the debug callback object if the VK_EXT_debug_report extension is present.
-		if (std::find(m_required_extensions.begin(), m_required_extensions.end(), "VK_EXT_debug_report") != m_required_extensions.end())
-		{
-			setup_debug_report_callback();
-		}
+		// Only set up the debug callback object if the VK_EXT_debug_report extension is present 
+		// (note that this needs to happen after initialization).
+#if defined(_DEBUG)
+		setup_debug_report_callback(options.m_debug_report_flags);
+#endif
 
 		// Store the handles to each of the present physical devices (note that this needs to happen after initialization).
 		m_physical_devices = m_instance_handle.enumeratePhysicalDevices();
@@ -127,7 +133,7 @@ namespace graphics
 			}
 		}
 		
-		return VK_NULL_HANDLE;
+		return{};
 	}
 
 	bool Instance::check_instance_layer_support()
@@ -145,10 +151,10 @@ namespace graphics
 		return true;
 	}
 
-	void Instance::setup_debug_report_callback()
+	void Instance::setup_debug_report_callback(VkDebugReportFlagsEXT debug_report_flags)
 	{
 		VkDebugReportCallbackCreateInfoEXT debug_report_callback_create_info = {};
-		debug_report_callback_create_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+		debug_report_callback_create_info.flags = debug_report_flags;
 		debug_report_callback_create_info.pfnCallback = debug_callback;
 		debug_report_callback_create_info.pUserData = nullptr;
 		debug_report_callback_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;

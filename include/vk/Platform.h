@@ -40,4 +40,4 @@
 	#define VK_USE_PLATFORM_XCB_KHR
 #endif
 
-#include "vulkan/vulkan.hpp"
+#include "vulkan.hpp"
