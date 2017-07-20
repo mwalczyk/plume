@@ -2,15 +2,12 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 // Fragment shader inputs
-layout(location = 0) in vec3 vsColor;
+layout(location = 0) in vec2 vs_texcoord;
 
 // Fragment shader outputs
-layout(location = 0) out vec4 oColor;
+layout(location = 0) out vec4 o_color;
 
-
-layout (set = 0, binding = 1) uniform sampler2D CombinedImageSampler;
-
-layout(std430, push_constant) uniform PushConstants
+layout(std430, push_constant) uniform push_constants
 {
 	float time;
 	vec2 mouse;
@@ -21,8 +18,7 @@ void main()
 {
 	float t = sin(constants.time);
 	float m = constants.mouse.x;
-	vec4 sampledColor = texture(CombinedImageSampler, vec2(0.0, 0.0));
 	vec3 c = constants.color;
 
-	oColor = vec4(vsColor, 1.0);
+	o_color = vec4(vs_texcoord, 1.0, 1.0);
 }

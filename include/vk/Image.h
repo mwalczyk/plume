@@ -134,56 +134,49 @@ namespace graphics
 	{
 	public:
 
-		class Options
-		{
-		public:
-			Options();
-
-			//! Set the image tiling mode: must be vk::ImageTiling::eOptimal if using multisampling.
-			Options& image_tiling(vk::ImageTiling image_tiling) { m_image_tiling = image_tiling; return *this; }
-			Options& sample_count(vk::SampleCountFlagBits sample_count_flag_bits) { m_sample_count_flag_bits = sample_count_flag_bits; return *this; }
-			Options& queue_family_indices(const std::vector<uint32_t>& queue_family_indices) { m_queue_family_indices = queue_family_indices; return *this; }
-			Options& mip_levels(uint32_t mip_levels) { m_mip_levels = mip_levels; return *this; }
-
-		private:
-
-			vk::ImageTiling m_image_tiling;
-			vk::SampleCountFlagBits m_sample_count_flag_bits;
-			std::vector<uint32_t> m_queue_family_indices;
-			uint32_t m_mip_levels;
-
-			friend class Image;
-		};
-
 		//! Factory method for returning a new ImageRef whose device local memory store will be empty.
-		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const Options& options = Options())
+		static ImageRef create(const DeviceRef& device, 
+			vk::ImageType image_type, 
+			vk::ImageUsageFlags image_usage_flags, 
+			vk::Format format, 
+			uint32_t width, uint32_t height, uint32_t depth, 
+			uint32_t mip_levels = 1,
+			vk::ImageTiling image_tiling = vk::ImageTiling::eLinear,
+			vk::SampleCountFlagBits sample_count = vk::SampleCountFlagBits::e1)
 		{
-			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, options);
+			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, mip_levels, image_tiling, sample_count);
 		}
 
 		//! Factory method for returning a new ImageRef that will be pre-initialized with the user supplied data.
 		template<class T>
-		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const std::vector<T>& data, const Options& options = Options())
+		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, const std::vector<T>& data)
 		{
-			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, data, options);
+			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, mip_levels, data);
 		}
 
 		//! Factory method for returning a new ImageRef from an LDR image file.
-		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options = Options())
+		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource)
 		{
-			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource, options);
+			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource);
 		}
 
 		//! Factory method for returning a new ImageRef from an HDR image file.
-		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource, const Options& options = Options())
+		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource)
 		{
-			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource, options);
+			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource);
 		}
 
-		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const Options& options = Options());
+		Image(const DeviceRef& device, 
+			vk::ImageType image_type, 
+			vk::ImageUsageFlags image_usage_flags,
+			vk::Format format, 
+			uint32_t width, uint32_t height, uint32_t depth, 
+			uint32_t mip_levels = 1, 
+			vk::ImageTiling image_tiling = vk::ImageTiling::eLinear, 
+			vk::SampleCountFlagBits sample_count = vk::SampleCountFlagBits::e1);
 
 		template<typename T>
-		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const std::vector<T>& pixels, const Options& options = Options()) :
+		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, const std::vector<T>& pixels) :
 			m_device(device),
 			m_image_type(image_type),
 			m_image_usage_flags(image_usage_flags),
@@ -191,7 +184,8 @@ namespace graphics
 			m_width(width),
 			m_height(height),
 			m_depth(depth),
-			m_mip_levels(options.m_mip_levels)
+			m_mip_levels(mip_levels),
+			m_is_array(false)
 		{
 			m_current_layout = vk::ImageLayout::ePreinitialized;
 
@@ -204,11 +198,11 @@ namespace graphics
 			image_create_info.initialLayout = m_current_layout;
 			image_create_info.imageType = m_image_type;
 			image_create_info.mipLevels = m_mip_levels;
-			image_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();
-			image_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
-			image_create_info.samples = options.m_sample_count_flag_bits;
+			image_create_info.pQueueFamilyIndices = nullptr;
+			image_create_info.queueFamilyIndexCount = 0;
+			image_create_info.samples = vk::SampleCountFlagBits::e1;
 			image_create_info.sharingMode = (image_create_info.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
-			image_create_info.tiling = options.m_image_tiling;
+			image_create_info.tiling = vk::ImageTiling::eLinear;
 			image_create_info.usage = m_image_usage_flags;
 
 			m_image_handle = m_device->get_handle().createImage(image_create_info);
@@ -249,28 +243,44 @@ namespace graphics
 			m_device_memory->unmap();
 		}
 
-		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource, const Options& options = Options()) :
-			Image(device, image_type, image_usage_flags, format, resource.width, resource.height, 1, resource.contents, options)
+		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource) :
+			Image(device, image_type, image_usage_flags, format, resource.width, resource.height, 1, 1, resource.contents)
 		{
 		}
 
-		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource, const Options& options = Options()) :
-			Image(device, image_type, image_usage_flags, format, resource.width, resource.height, 1, resource.contents, options)
+		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource) :
+			Image(device, image_type, image_usage_flags, format, resource.width, resource.height, 1, 1, resource.contents)
 		{
 		}
 
 		~Image();
 
+		//! Build an image view corresponding to the parent image. This version of the function assumes that the 
+		//! desired image view does not contain multiple array layers or mipmap levels. To access these features,
+		//! use `build_image_view_array`. Both functions assume that the desired image format is the same as the 
+		//! parent image's format.
 		vk::ImageView build_image_view() const;
+
+		//! Build an image view corresponding to the parent image. This version of the function lets you specify
+		//! multiple array layers or mipmap levels but assumes that the desired image format is the same as the 
+		//! parent image's format.
+		vk::ImageView build_image_view_array(uint32_t base_array_layer, uint32_t layer_count, uint32_t base_mip_level = 0, uint32_t level_count = 1) const;
 
 		inline vk::Image get_handle() const { return m_image_handle; }
 		inline vk::Format get_format() const { return m_format; }
-	    inline vk::DescriptorImageInfo build_descriptor_info(const SamplerRef& sampler, vk::ImageView image_view, vk::ImageLayout image_layout = vk::ImageLayout::eShaderReadOnlyOptimal) const { return { sampler->get_handle(), image_view, image_layout }; }
-		
+
+	    inline vk::DescriptorImageInfo build_descriptor_info(const SamplerRef& sampler, vk::ImageView image_view, vk::ImageLayout image_layout = vk::ImageLayout::eShaderReadOnlyOptimal) const 
+		{ 
+			return { sampler->get_handle(), image_view, image_layout }; 
+		}
+
+		inline vk::ImageLayout get_current_layout() const { return m_current_layout; }
+
 	protected:
 
 		//! Given the memory requirements of this image, allocate the appropriate type and size of device memory.
 		void initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags);
+		vk::ImageViewType image_view_type_from_parent() const;
 
 		DeviceRef m_device;
 		DeviceMemoryRef m_device_memory;
@@ -284,6 +294,9 @@ namespace graphics
 		uint32_t m_depth;
 		uint32_t m_channels;
 		uint32_t m_mip_levels;
+		vk::ImageTiling m_image_tiling;
+		vk::SampleCountFlagBits m_sample_count;
+		bool m_is_array;
 
 		friend class CommandBuffer;
 	};

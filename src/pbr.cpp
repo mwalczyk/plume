@@ -52,15 +52,21 @@ static const auto msaa = vk::SampleCountFlagBits::e8;
 
 int main()
 {
-	// Instance
+	/// vk::Instance
+	///
+	///
 	auto instance = graphics::Instance::create();
 	auto physical_devices = instance->get_physical_devices();
 
-	// Window and surface
+	/// vk::Window and vk::Surface
+	///
+	///
 	auto window = graphics::Window::create(instance, width, height);
 	auto surface = window->create_surface();
 
-	// Device
+	/// vk::Device
+	///
+	///
 	auto device_options = graphics::Device::Options().required_queue_flags(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer);
 	auto device = graphics::Device::create(physical_devices[0], device_options);
 	auto queue_family_properties = device->get_physical_device_queue_family_properties();
@@ -71,11 +77,15 @@ int main()
 	}
 	std::cout << device << std::endl;
 
-	// Swapchain
+	/// vk::Swapchain
+	///
+	///
 	auto swapchain = graphics::Swapchain::create(device, surface, width, height);
 	auto swapchain_image_views = swapchain->get_image_view_handles();
 
-	// Render pass
+	/// vk::RenderPass
+	///
+	///
 	auto ms_attachment = graphics::RenderPass::create_multisample_attachment(vk::Format::eB8G8R8A8Unorm, 0, msaa);
 	auto resolve_attachment = graphics::RenderPass::create_color_attachment(vk::Format::eB8G8R8A8Unorm, 1);
 	auto depth_attachment = graphics::RenderPass::create_depth_stencil_attachment(vk::Format::eD32SfloatS8Uint, 2, msaa);
@@ -95,18 +105,23 @@ int main()
 
 	auto render_pass = graphics::RenderPass::create(device, render_pass_options);
 
-	// CPU-side geometry
-	auto geometry = geo::Grid();
+	/// geo::Geometry
+	///
+	///
+	auto geometry = geo::Sphere();
 
-	// Buffers
+	/// vk::Buffer
+	///
+	///
 	auto vbo_0 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_positions());
-	auto vbo_1 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_texture_coordinates());
+	auto vbo_1 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_colors());
+	auto vbo_2 = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_normals());
 	auto ibo = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
 	
 	UniformBufferData ubo_data = {
 		glm::mat4(),
-		glm::lookAt({ 0.0f, 0.0, 2.0f }, { 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
+		glm::lookAt({ 0.0f, 0.0, 40.0f }, { 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
 		glm::perspective(45.0f, static_cast<float>(width / height), 0.1f, 1000.0f) 
 	};
 
@@ -114,63 +129,96 @@ int main()
 	memcpy(data, &ubo_data, sizeof(ubo_data));
 	ubo->get_device_memory()->unmap();
 
-	// Pipeline
+	const size_t grid_x = 15;
+	const size_t grid_y = 15;
+	const float grid_size = 16.0f;
+	std::vector<glm::vec3> instance_positions;
+	instance_positions.resize(grid_x * grid_y);
+	for (size_t x = 0; x < grid_x; ++x)	
+	{
+		float fx = static_cast<float>(x + 0.5f) / grid_x;
+		fx = (fx * 2.0f - 1.0f) * grid_size;
+
+		for (size_t y = 0; y < grid_y; ++y)
+		{
+			float fy = static_cast<float>(y + 0.5f) / grid_y;
+			fy = (fy * 2.0f - 1.0f) * grid_size;
+
+			instance_positions[x + grid_x * y] = glm::vec3(fx, fy, 0.0f);
+		}
+	}
+
+	auto vbo_instance = graphics::Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, instance_positions);
+
+	/// vk::Pipeline
+	///
+	///
 	vk::VertexInputBindingDescription binding_0 = { 0, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
-	vk::VertexInputBindingDescription binding_1 = { 1, sizeof(float) * 2 }; // input rate vertex: 3 floats between each vertex
-	vk::VertexInputAttributeDescription attr_0 = { 0, binding_0.binding, vk::Format::eR32G32B32Sfloat };	// 3 floats: position
-	vk::VertexInputAttributeDescription attr_1 = { 1, binding_1.binding, vk::Format::eR32G32Sfloat };		// 2 floats: texture coordinates	
+	vk::VertexInputBindingDescription binding_1 = { 1, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
+	vk::VertexInputBindingDescription binding_2 = { 2, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
+	vk::VertexInputBindingDescription binding_instance = { 3, sizeof(float) * 3, vk::VertexInputRate::eInstance }; // input rate instance: 3 floats between each instance
+	vk::VertexInputAttributeDescription attr_0 = { 0, binding_0.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: position
+	vk::VertexInputAttributeDescription attr_1 = { 1, binding_1.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: color
+	vk::VertexInputAttributeDescription attr_2 = { 2, binding_2.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: color
+	vk::VertexInputAttributeDescription attr_instance = { 3, binding_instance.binding, vk::Format::eR32G32B32Sfloat }; // 3 floats: instance position offset
 	
 	auto v_shader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/vert.spv"));
 	auto f_shader = graphics::ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/frag.spv"));
 
 	auto pipeline_options = graphics::Pipeline::Options()
-		.vertex_input_binding_descriptions({ binding_0, binding_1 })
-		.vertex_input_attribute_descriptions({ attr_0, attr_1 })
+		.vertex_input_binding_descriptions({ binding_0, binding_1, binding_2, binding_instance })
+		.vertex_input_attribute_descriptions({ attr_0, attr_1, attr_2, attr_instance })
 		.viewports({ window->get_fullscreen_viewport() })
 		.scissors({ window->get_fullscreen_scissor_rect2d() })
 		.attach_shader_stages({ v_shader, f_shader })
 		.primitive_topology(geometry.get_topology())
-		.cull_mode(vk::CullModeFlagBits::eNone)
 		.depth_test()
 		.samples(msaa)
 		.min_sample_shading(0.25f);
 	auto pipeline = graphics::Pipeline::create(device, render_pass, pipeline_options);
+	std::cout << pipeline << std::endl;
 
-	// Command pool
+	/// vk::CommandPool
+	///
+	///
 	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
-	// Images
+	/// vk::Image
+	///
+	///
+	auto ms_options = graphics::Image::Options()
+		.image_tiling(vk::ImageTiling::eOptimal)
+		.sample_count(msaa);
 	auto image_ms = graphics::Image::create(device,
 		vk::ImageType::e2D,
 		vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
 		swapchain->get_image_format(),
-		width, height, 1, 1,
-		vk::ImageTiling::eOptimal,
-		msaa);
+		width, height, 1,
+		ms_options);
 	auto image_ms_view = image_ms->build_image_view();
+
+	auto image_from_file = graphics::Image::create(device, 
+		vk::ImageType::e2D, 
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled, 
+		vk::Format::eR32G32B32A32Sfloat, 
+		ResourceManager::load_image_hdr("../assets/textures/techgate_diffuse.hdr"));
+	auto image_from_file_view = image_from_file->build_image_view();
+	auto sampler = graphics::Sampler::create(device);
 
 	auto image_depth = graphics::Image::create(device, 
 		vk::ImageType::e2D, 
 		vk::ImageUsageFlagBits::eDepthStencilAttachment, 
 		device->get_supported_depth_format(), 
-		width, height, 1, 1, 
-		vk::ImageTiling::eOptimal, 
-		msaa);
+		width, height, 1, 
+		ms_options);
 	auto image_depth_view = image_depth->build_image_view();
-	
-	auto image_sdf_map = graphics::Image::create(device,
-		vk::ImageType::e3D,
-		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-		swapchain->get_image_format(),
-		width, height, 32, 1,
-		vk::ImageTiling::eOptimal);
-	auto image_sdf_map_view = image_sdf_map->build_image_view();
 
 	{
 		auto temp_command_buffer = graphics::CommandBuffer::create(device, command_pool);
 		auto temp_command_buffer_handle = temp_command_buffer->get_handle();
 		temp_command_buffer->begin();
-		temp_command_buffer->transition_image_layout(image_depth, image_depth->get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		temp_command_buffer->transition_image_layout(image_from_file, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
+		temp_command_buffer->transition_image_layout(image_depth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		temp_command_buffer->end();
 
 		vk::SubmitInfo submit_info;
@@ -180,7 +228,9 @@ int main()
 		device->get_queue_families_mapping().graphics().first.waitIdle();
 	}
 
-	// Framebuffer
+	/// vk::Framebuffer
+	///
+	///
 	std::vector<graphics::FramebufferRef> framebuffers(swapchain_image_views.size());
 	for (size_t i = 0; i < swapchain_image_views.size(); ++i)
 	{
@@ -193,24 +243,41 @@ int main()
 		framebuffers[i] = graphics::Framebuffer::create(device, render_pass, image_views, width, height);
 	}
 
-	// Descriptor pool
-	auto descriptor_pool = graphics::DescriptorPool::create(device, { { vk::DescriptorType::eUniformBuffer, 1 } });
+	/// vk::DescriptorPool
+	///
+	///
+	auto descriptor_pool = graphics::DescriptorPool::create(device, { 
+		{ vk::DescriptorType::eUniformBuffer, 1 }, 
+		{ vk::DescriptorType::eCombinedImageSampler, 1 } 
+	});
 
-	// Descriptor set layouts
-	vk::DescriptorSetLayoutBinding layout_binding = {
+	/// vk::DescriptorSetLayout
+	///
+	///
+	std::array<vk::DescriptorSetLayoutBinding, 2> layout_bindings = {{
+		{	
 			0,											// binding (see shader code)
 			vk::DescriptorType::eUniformBuffer, 1,		// type and count
 			vk::ShaderStageFlagBits::eAll,				// shader usage stages
 			nullptr										// immutable samplers
-	};
+		},
+		{
+			1,
+			vk::DescriptorType::eCombinedImageSampler, 1,
+			vk::ShaderStageFlagBits::eAll,
+			nullptr
+		}
+	}};
 
 	vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
-	descriptor_set_layout_create_info.bindingCount = 1;
-	descriptor_set_layout_create_info.pBindings = &layout_binding;
+	descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(layout_bindings.size());
+	descriptor_set_layout_create_info.pBindings = layout_bindings.data();
 
 	vk::DescriptorSetLayout descriptor_set_layout = device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 
-	// Descriptor sets
+	/// vk::DescriptorSet
+	///
+	///
 	vk::DescriptorSetAllocateInfo descriptor_set_allocate_info = { 
 		descriptor_pool->get_handle(),	// descriptor pool
 		1,								// number of sets to allocate
@@ -218,13 +285,17 @@ int main()
 	};
 	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptor_set_allocate_info)[0];
 
-	auto d_buffer_info = ubo->build_descriptor_info();													
-	vk::WriteDescriptorSet w_descriptor_set_buffer = { descriptor_set, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };		
-	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer };
+	auto d_buffer_info = ubo->build_descriptor_info();														// ubo
+	auto d_image_info = image_from_file->build_descriptor_info(sampler, image_from_file_view);				// sampler
+	vk::WriteDescriptorSet w_descriptor_set_buffer = { descriptor_set, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };		// ubo
+	vk::WriteDescriptorSet w_descriptor_set_sampler = { descriptor_set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_image_info };		// sampler
+	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer, w_descriptor_set_sampler };
 
 	device->get_handle().updateDescriptorSets(w_descriptor_sets, {});
 
-	// Semaphores
+	/// vk::Semaphore
+	///
+	///
 	auto image_available_sem = graphics::Semaphore::create(device);
 	auto render_complete_sem = graphics::Semaphore::create(device);
 
@@ -251,11 +322,12 @@ int main()
 		command_buffer->begin();
 		command_buffer->begin_render_pass(render_pass, framebuffers[image_index], clear_vals);
 		command_buffer->bind_pipeline(pipeline);
-		command_buffer->bind_vertex_buffers({ vbo_0, vbo_1 });
+		command_buffer->bind_vertex_buffers({ vbo_0, vbo_1, vbo_2, vbo_instance });
 		command_buffer->bind_index_buffer(ibo);
 		command_buffer->update_push_constant_ranges(pipeline, "time", &elapsed);
+		command_buffer->update_push_constant_ranges(pipeline, "metallic", &metallic);
 		command_buffer->bind_descriptor_sets(pipeline, 0, { descriptor_set }, {});
-		command_buffer->draw_indexed(static_cast<uint32_t>(geometry.get_indices().size()), 1, 0, 0, 0);
+		command_buffer->draw_indexed(static_cast<uint32_t>(geometry.get_indices().size()), instance_positions.size(), 0, 0, 0);
 		command_buffer->end_render_pass();
 		command_buffer->end();
 

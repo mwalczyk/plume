@@ -84,14 +84,15 @@ namespace graphics
 		m_device->get_handle().bindImageMemory(m_image_handle, m_device_memory->get_handle(), 0);
 	}
 
-	Image::Options::Options()
-	{
-		m_image_tiling = vk::ImageTiling::eLinear;
-		m_sample_count_flag_bits = vk::SampleCountFlagBits::e1;
-		m_mip_levels = 1;
-	}
+	Image::Image(const DeviceRef& device, 
+		vk::ImageType image_type, 
+		vk::ImageUsageFlags image_usage_flags, 
+		vk::Format format, 
+		uint32_t width, uint32_t height, uint32_t depth,
+		uint32_t mip_levels,
+		vk::ImageTiling image_tiling,
+		vk::SampleCountFlagBits sample_count) :
 
-	Image::Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, const Options& options) :
 		m_device(device),
 		m_image_type(image_type),
 		m_image_usage_flags(image_usage_flags),
@@ -99,7 +100,9 @@ namespace graphics
 		m_width(width),
 		m_height(height),
 		m_depth(depth),
-		m_mip_levels(options.m_mip_levels)
+		m_mip_levels(mip_levels),
+		m_image_tiling(image_tiling),
+		m_sample_count(sample_count)
 	{
 		m_current_layout = vk::ImageLayout::eUndefined;
 
@@ -112,16 +115,35 @@ namespace graphics
 		image_create_info.initialLayout = m_current_layout;
 		image_create_info.imageType = m_image_type;
 		image_create_info.mipLevels = m_mip_levels;
-		image_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();
-		image_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
-		image_create_info.samples = options.m_sample_count_flag_bits;
+		image_create_info.pQueueFamilyIndices = nullptr;
+		image_create_info.queueFamilyIndexCount = 0;
+		image_create_info.samples = m_sample_count;
 		image_create_info.sharingMode = (image_create_info.pQueueFamilyIndices) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
-		image_create_info.tiling = options.m_image_tiling;
+		image_create_info.tiling = m_image_tiling;
 		image_create_info.usage = m_image_usage_flags;
 
 		m_image_handle = m_device->get_handle().createImage(image_create_info);
 
 		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+		// If the image was constructed with more than one array layer, set this flag to true
+		m_is_array = image_create_info.arrayLayers > 1;
+	}
+
+	vk::ImageViewType Image::image_view_type_from_parent() const
+	{
+		switch (m_image_type)
+		{
+		case vk::ImageType::e1D:
+			return m_is_array ? vk::ImageViewType::e1DArray : vk::ImageViewType::e1D;
+		case vk::ImageType::e2D:
+			return m_is_array ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
+		case vk::ImageType::e3D:
+			// Note that it is not possible to have an array of 3D textures
+			return vk::ImageViewType::e3D;
+
+		// TODO: cubemaps and cubemap arrays
+		}
 	}
 
 	vk::ImageView Image::build_image_view() const
@@ -134,8 +156,29 @@ namespace graphics
 		image_view_create_info.subresourceRange.baseMipLevel = 0;
 		image_view_create_info.subresourceRange.layerCount = 1;
 		image_view_create_info.subresourceRange.levelCount = 1;
-		image_view_create_info.viewType = vk::ImageViewType::e2D;
+		image_view_create_info.viewType = image_view_type_from_parent();
 		
+		return m_device->get_handle().createImageView(image_view_create_info);
+	}
+
+	vk::ImageView Image::build_image_view_array(uint32_t base_array_layer, uint32_t layer_count, uint32_t base_mip_level, uint32_t level_count) const
+	{
+		if (!m_is_array)
+		{
+			throw std::runtime_error("Attempting to build an image view that accesses multiple array layers \
+				of the parent image, but the parent image is not an array");
+		}
+
+		vk::ImageViewCreateInfo image_view_create_info;
+		image_view_create_info.format = m_format;
+		image_view_create_info.image = m_image_handle;
+		image_view_create_info.subresourceRange.aspectMask = utils::format_to_aspect_mask(m_format);
+		image_view_create_info.subresourceRange.baseArrayLayer = base_array_layer;
+		image_view_create_info.subresourceRange.baseMipLevel = base_mip_level;
+		image_view_create_info.subresourceRange.layerCount = layer_count;
+		image_view_create_info.subresourceRange.levelCount = level_count;
+		image_view_create_info.viewType = image_view_type_from_parent();
+
 		return m_device->get_handle().createImageView(image_view_create_info);
 	}
 
