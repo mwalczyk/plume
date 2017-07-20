@@ -99,14 +99,14 @@ namespace graphics
 		//! Constructs a generic attachment description and attachment reference for a depth stencil attachment with the specified 
 		//! image format and attachment index. The numeric index that is used to build each attachment reference corresponds to the 
 		//! index of a attachment description in the array that is used to construct the render pass. 
-		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> create_depth_stencil_attachment(vk::Format format, uint32_t attachment, vk::SampleCountFlagBits sample_count = vk::SampleCountFlagBits::e1);
+		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> create_depth_stencil_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count = 1);
 
 		//! Constructs a generic attachment description and attachment reference for a multisample color attachment with the specified 
 		//! image format and attachment index. The numeric index that is used to build each attachment reference corresponds to the 
 		//! index of a attachment description in the array that is used to construct the render pass. Note that this type of render pass
 		//! attachment is meant to be used with MSAA, as its contents will not be stored between subsequent subpasses for maximum
 		//! efficiency.
-		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> create_multisample_attachment(vk::Format format, uint32_t attachment, vk::SampleCountFlagBits sample_count = vk::SampleCountFlagBits::e4);
+		static std::pair<vk::AttachmentDescription, vk::AttachmentReference> create_multisample_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count = 4);
 
 		static vk::SubpassDescription create_subpass_description(const std::vector<vk::AttachmentReference>& color_attachment_references, const vk::AttachmentReference& depth_stencil_attachment_reference);
 		

@@ -36,6 +36,7 @@ namespace graphics
 		m_min_lod = m_max_lod = m_mip_lod_bias = 0.0f;
 		m_anistropy_enabled = VK_TRUE;
 		m_max_anistropy = 16.0f;
+		m_border_color = vk::BorderColor::eIntOpaqueBlack;
 	}
 
 	Sampler::Sampler(const DeviceRef& device, const Options& options) :
@@ -46,7 +47,7 @@ namespace graphics
 		sampler_create_info.addressModeV = options.m_address_mode_v;
 		sampler_create_info.addressModeW = options.m_address_mode_w;
 		sampler_create_info.anisotropyEnable = options.m_anistropy_enabled;
-		sampler_create_info.borderColor = vk::BorderColor::eIntOpaqueBlack;
+		sampler_create_info.borderColor = options.m_border_color;
 		sampler_create_info.compareEnable = VK_FALSE;
 		sampler_create_info.compareOp = vk::CompareOp::eAlways;
 		sampler_create_info.magFilter = options.m_mag_filter;
@@ -91,7 +92,7 @@ namespace graphics
 		uint32_t width, uint32_t height, uint32_t depth,
 		uint32_t mip_levels,
 		vk::ImageTiling image_tiling,
-		vk::SampleCountFlagBits sample_count) :
+		uint32_t sample_count) :
 
 		m_device(device),
 		m_image_type(image_type),
@@ -102,7 +103,7 @@ namespace graphics
 		m_depth(depth),
 		m_mip_levels(mip_levels),
 		m_image_tiling(image_tiling),
-		m_sample_count(sample_count)
+		m_sample_count(utils::sample_count_to_flags(sample_count))
 	{
 		m_current_layout = vk::ImageLayout::eUndefined;
 

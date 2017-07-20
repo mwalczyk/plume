@@ -48,7 +48,7 @@ float get_elapsed_seconds()
 
 static const uint32_t width = 800;
 static const uint32_t height = 800;
-static const auto msaa = vk::SampleCountFlagBits::e8;
+static const uint32_t msaa = 8;
 
 int main()
 {
@@ -160,7 +160,7 @@ int main()
 	
 	auto image_sdf_map = graphics::Image::create(device,
 		vk::ImageType::e3D,
-		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
 		swapchain->get_image_format(),
 		width, height, 32, 1,
 		vk::ImageTiling::eOptimal);
@@ -179,6 +179,33 @@ int main()
 		device->get_queue_families_mapping().graphics().first.submit(submit_info, {});
 		device->get_queue_families_mapping().graphics().first.waitIdle();
 	}
+	{
+		auto temp_command_buffer = graphics::CommandBuffer::create(device, command_pool);
+		auto temp_command_buffer_handle = temp_command_buffer->get_handle();
+		temp_command_buffer->begin();
+		temp_command_buffer->transition_image_layout(image_sdf_map, image_sdf_map->get_current_layout(), vk::ImageLayout::eGeneral);
+
+			vk::ImageSubresourceRange subresource = {};
+			subresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+			subresource.baseArrayLayer = 0;
+			subresource.layerCount = 1;
+			subresource.baseMipLevel = 0;
+			subresource.levelCount = 1;
+
+			vk::ClearColorValue color = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f };
+			temp_command_buffer_handle.clearColorImage(image_sdf_map->get_handle(), image_sdf_map->get_current_layout(), color, subresource);
+		
+		temp_command_buffer->end();
+
+		vk::SubmitInfo submit_info;
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &temp_command_buffer_handle;
+		device->get_queue_families_mapping().graphics().first.submit(submit_info, {});
+		device->get_queue_families_mapping().graphics().first.waitIdle();
+	}
+
+	// Sampler 
+	auto sampler = graphics::Sampler::create(device);
 
 	// Framebuffer
 	std::vector<graphics::FramebufferRef> framebuffers(swapchain_image_views.size());
@@ -194,20 +221,30 @@ int main()
 	}
 
 	// Descriptor pool
-	auto descriptor_pool = graphics::DescriptorPool::create(device, { { vk::DescriptorType::eUniformBuffer, 1 } });
+	auto descriptor_pool = graphics::DescriptorPool::create(device, { 
+		{ vk::DescriptorType::eUniformBuffer, 1 },
+		{ vk::DescriptorType::eCombinedImageSampler, 1 }
+	});
 
 	// Descriptor set layouts
-	vk::DescriptorSetLayoutBinding layout_binding = {
-			0,											// binding (see shader code)
-			vk::DescriptorType::eUniformBuffer, 1,		// type and count
-			vk::ShaderStageFlagBits::eAll,				// shader usage stages
-			nullptr										// immutable samplers
+	std::vector<vk::DescriptorSetLayoutBinding> layout_bindings = {
+		{
+			0,												// binding (see shader code)
+			vk::DescriptorType::eUniformBuffer, 1,			// type and count
+			vk::ShaderStageFlagBits::eAll,					// shader usage stages
+			nullptr											// immutable samplers
+		},
+		{
+			1,												// binding (see shader code)
+			vk::DescriptorType::eCombinedImageSampler, 1,	// type and count
+			vk::ShaderStageFlagBits::eAll,					// shader usage stages
+			nullptr											// immutable samplers
+		}
 	};
 
 	vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
-	descriptor_set_layout_create_info.bindingCount = 1;
-	descriptor_set_layout_create_info.pBindings = &layout_binding;
-
+	descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(layout_bindings.size());
+	descriptor_set_layout_create_info.pBindings = layout_bindings.data();
 	vk::DescriptorSetLayout descriptor_set_layout = device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 
 	// Descriptor sets
@@ -218,9 +255,11 @@ int main()
 	};
 	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptor_set_allocate_info)[0];
 
-	auto d_buffer_info = ubo->build_descriptor_info();													
-	vk::WriteDescriptorSet w_descriptor_set_buffer = { descriptor_set, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };		
-	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer };
+	auto d_buffer_info = ubo->build_descriptor_info();				
+	auto d_sampler_info = image_sdf_map->build_descriptor_info(sampler, image_sdf_map_view);
+	vk::WriteDescriptorSet w_descriptor_set_buffer =	{ descriptor_set, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };		
+	vk::WriteDescriptorSet w_descriptor_set_sampler =	{ descriptor_set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
+	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer, w_descriptor_set_sampler };
 
 	device->get_handle().updateDescriptorSets(w_descriptor_sets, {});
 

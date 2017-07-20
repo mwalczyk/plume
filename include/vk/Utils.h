@@ -72,6 +72,32 @@ namespace graphics
 
 			return image_aspect_flags;
 		}
+
+		//! Translates a sample count (integer) into the correspond vk::SampleCountFlagBits. 
+		//! A `count` of 4 would return vk::SampleCountFlagBits::e4, for example.
+		inline vk::SampleCountFlagBits sample_count_to_flags(uint32_t count)
+		{
+			switch (count)
+			{
+			case 1:
+				return vk::SampleCountFlagBits::e1;
+			case 2:
+				return vk::SampleCountFlagBits::e2;
+			case 4: 
+				return vk::SampleCountFlagBits::e4;
+			case 8:
+				return vk::SampleCountFlagBits::e8;
+			case 16:
+				return vk::SampleCountFlagBits::e16;
+			case 32:
+				return vk::SampleCountFlagBits::e32;
+			case 64:
+				return vk::SampleCountFlagBits::e64;
+			default:
+				std::cout << "Warning - the sample count passed to `sample_count_to_flags` was invalid: returning vk::SampleCountFlagBits::e1 \n";
+				return vk::SampleCountFlagBits::e1;
+			}
+		}
 	
 	} // namespace utils
 

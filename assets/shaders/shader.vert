@@ -23,5 +23,7 @@ layout (location = 0) out vec2 vs_texcoord;
 void main()
 {
 	vs_texcoord = texcoord;
-  gl_Position = ubo.projection * ubo.view * ubo.model * vec4(position, 1.0);
+
+	//gl_Position = ubo.projection * ubo.view * ubo.model * vec4(position, 1.0);
+	gl_Position = vec4(position, 1.0);
 }

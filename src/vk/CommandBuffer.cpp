@@ -175,11 +175,18 @@ namespace graphics
 			image_memory_barrier.srcAccessMask = {};
 			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 		}
+		else if (from == vk::ImageLayout::eUndefined && to == vk::ImageLayout::eGeneral)
+		{
+			// TODO: what are these suppose to be?
+			image_memory_barrier.srcAccessMask = {};
+			image_memory_barrier.dstAccessMask = {};
+		}
 		else 
 		{
 			throw std::invalid_argument("Unsupported layout transition");
 		}
 
+		// TODO: the image might be layered
 		image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		image_memory_barrier.image = image->get_handle();
 		image_memory_barrier.newLayout = to;

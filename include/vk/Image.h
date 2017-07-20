@@ -94,6 +94,9 @@ namespace graphics
 				return *this;
 			}
 
+			//! Sets the border color used by the sampler.
+			Options& border_color(vk::BorderColor border_color = vk::BorderColor::eIntOpaqueWhite) { m_border_color = border_color; }
+
 		private:
 			
 			vk::SamplerAddressMode m_address_mode_u;
@@ -106,6 +109,7 @@ namespace graphics
 			float m_mip_lod_bias;
 			vk::Bool32 m_anistropy_enabled;
 			float m_max_anistropy;
+			vk::BorderColor m_border_color;
 
 			friend class Sampler;
 		};
@@ -142,7 +146,7 @@ namespace graphics
 			uint32_t width, uint32_t height, uint32_t depth, 
 			uint32_t mip_levels = 1,
 			vk::ImageTiling image_tiling = vk::ImageTiling::eLinear,
-			vk::SampleCountFlagBits sample_count = vk::SampleCountFlagBits::e1)
+			uint32_t sample_count = 1)
 		{
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, mip_levels, image_tiling, sample_count);
 		}
@@ -173,7 +177,7 @@ namespace graphics
 			uint32_t width, uint32_t height, uint32_t depth, 
 			uint32_t mip_levels = 1, 
 			vk::ImageTiling image_tiling = vk::ImageTiling::eLinear, 
-			vk::SampleCountFlagBits sample_count = vk::SampleCountFlagBits::e1);
+			uint32_t sample_count = 1);
 
 		template<typename T>
 		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, const std::vector<T>& pixels) :
