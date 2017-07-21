@@ -73,9 +73,15 @@ namespace graphics
 
 		//! Retrieve the list of attachments associated with this framebuffer.
 		inline const std::vector<vk::ImageView>& get_image_views() const { return m_image_views; }
+
+		// TODO: this should validate that the render pass and framebuffer are comptabile
 		bool is_compatible(const RenderPassRef& render_pass);
 
 	private:
+
+		// TODO: this should ensure that all of the image views passed into the constructor correspond to 
+		// images with the same dimensions as the framebuffer
+		bool check_image_view_dimensions();
 
 		DeviceRef m_device;
 		RenderPassRef m_render_pass;

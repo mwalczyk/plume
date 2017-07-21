@@ -99,7 +99,7 @@ namespace graphics
 		std::vector<vk::Buffer> buffer_handles(buffers.size());
 		std::transform(buffers.begin(), buffers.end(), buffer_handles.begin(), [](const BufferRef& buffer) { return buffer->get_handle(); } );
 
-		// For now, set all buffer offsets to 0.
+		// TODO: for now, set all buffer offsets to 0.
 		std::vector<vk::DeviceSize> offsets(buffers.size(), 0);
 
 		m_command_buffer_handle.bindVertexBuffers(first_binding, buffer_handles, offsets);
@@ -142,6 +142,7 @@ namespace graphics
 		if (m_is_inside_render_pass)
 		{
 			m_command_buffer_handle.endRenderPass();
+			m_is_inside_render_pass = false;
 		}
 	}
 

@@ -143,12 +143,12 @@ namespace graphics
 			vk::ImageType image_type, 
 			vk::ImageUsageFlags image_usage_flags, 
 			vk::Format format, 
-			uint32_t width, uint32_t height, uint32_t depth, 
+			vk::Extent3D dimensions, 
 			uint32_t mip_levels = 1,
 			vk::ImageTiling image_tiling = vk::ImageTiling::eLinear,
 			uint32_t sample_count = 1)
 		{
-			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, mip_levels, image_tiling, sample_count);
+			return std::make_shared<Image>(device, image_type, image_usage_flags, format, dimensions, mip_levels, image_tiling, sample_count);
 		}
 
 		//! Factory method for returning a new ImageRef that will be pre-initialized with the user supplied data.
@@ -174,20 +174,18 @@ namespace graphics
 			vk::ImageType image_type, 
 			vk::ImageUsageFlags image_usage_flags,
 			vk::Format format, 
-			uint32_t width, uint32_t height, uint32_t depth, 
+			vk::Extent3D dimensions,
 			uint32_t mip_levels = 1, 
 			vk::ImageTiling image_tiling = vk::ImageTiling::eLinear, 
 			uint32_t sample_count = 1);
 
 		template<typename T>
-		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, const std::vector<T>& pixels) :
+		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, vk::Extent3D dimensions, uint32_t mip_levels, const std::vector<T>& pixels) :
 			m_device(device),
 			m_image_type(image_type),
 			m_image_usage_flags(image_usage_flags),
 			m_format(format),
-			m_width(width),
-			m_height(height),
-			m_depth(depth),
+			m_dimensions(dimensions),
 			m_mip_levels(mip_levels),
 			m_is_array(false)
 		{
@@ -195,9 +193,9 @@ namespace graphics
 
 			vk::ImageCreateInfo image_create_info;
 			image_create_info.arrayLayers = 1;
-			image_create_info.extent.width = m_width;
-			image_create_info.extent.height = m_height;
-			image_create_info.extent.depth = m_depth;
+			image_create_info.extent.width = m_dimensions.width;
+			image_create_info.extent.height = m_dimensions.height;
+			image_create_info.extent.depth = m_dimensions.depth;
 			image_create_info.format = m_format;
 			image_create_info.initialLayout = m_current_layout;
 			image_create_info.imageType = m_image_type;
@@ -230,17 +228,17 @@ namespace graphics
 
 			// The subresource has no additional padding, so we can directly copy the pixel data into the image.
 			// This usually happens when the requested image is a power-of-two texture.
-			VkDeviceSize image_size = m_width * m_height * channels;
-			if (subresource_layout.rowPitch == m_width * channels)
+			VkDeviceSize image_size = m_dimensions.width * m_dimensions.height * channels;
+			if (subresource_layout.rowPitch == m_dimensions.width * channels)
 			{
 				memcpy(mapped_ptr, pixels.data(), static_cast<size_t>(image_size));
 			}
 			else
 			{
 				uint8_t* data_as_bytes = reinterpret_cast<uint8_t*>(mapped_ptr);
-				for (size_t i = 0; i < m_height; ++i)
+				for (size_t i = 0; i < m_dimensions.height; ++i)
 				{
-					memcpy(&data_as_bytes[i * subresource_layout.rowPitch], &pixels[i * m_width * channels], m_width * channels * bit_multipler); 
+					memcpy(&data_as_bytes[i * subresource_layout.rowPitch], &pixels[i * m_dimensions.width * channels], m_dimensions.width * channels * bit_multipler);
 				}
 			}
 
@@ -248,12 +246,12 @@ namespace graphics
 		}
 
 		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource) :
-			Image(device, image_type, image_usage_flags, format, resource.width, resource.height, 1, 1, resource.contents)
+			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents)
 		{
 		}
 
 		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource) :
-			Image(device, image_type, image_usage_flags, format, resource.width, resource.height, 1, 1, resource.contents)
+			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents)
 		{
 		}
 
@@ -293,9 +291,7 @@ namespace graphics
 		vk::ImageUsageFlags m_image_usage_flags;
 		vk::Format m_format;
 		vk::ImageLayout m_current_layout;
-		uint32_t m_width;
-		uint32_t m_height;
-		uint32_t m_depth;
+		vk::Extent3D m_dimensions;
 		uint32_t m_channels;
 		uint32_t m_mip_levels;
 		vk::ImageTiling m_image_tiling;

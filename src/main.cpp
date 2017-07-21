@@ -144,7 +144,7 @@ int main()
 		vk::ImageType::e2D,
 		vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
 		swapchain->get_image_format(),
-		width, height, 1, 1,
+		{ width, height, 1 }, 1,
 		vk::ImageTiling::eOptimal,
 		msaa);
 	auto image_ms_view = image_ms->build_image_view();
@@ -153,7 +153,7 @@ int main()
 		vk::ImageType::e2D, 
 		vk::ImageUsageFlagBits::eDepthStencilAttachment, 
 		device->get_supported_depth_format(), 
-		width, height, 1, 1, 
+		{ width, height, 1 }, 1,
 		vk::ImageTiling::eOptimal, 
 		msaa);
 	auto image_depth_view = image_depth->build_image_view();
@@ -162,7 +162,7 @@ int main()
 		vk::ImageType::e3D,
 		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
 		swapchain->get_image_format(),
-		width, height, 32, 1,
+		{ width, height, 32 }, 1,
 		vk::ImageTiling::eOptimal);
 	auto image_sdf_map_view = image_sdf_map->build_image_view();
 
@@ -217,7 +217,7 @@ int main()
 			image_depth_view			// attachment 2: depth-stencil
 		};
 
-		framebuffers[i] = graphics::Framebuffer::create(device, render_pass, image_views, width, height);
+		framebuffers[i] = graphics::Framebuffer::create(device, render_pass, image_views, width * 2, height);
 	}
 
 	// Descriptor pool

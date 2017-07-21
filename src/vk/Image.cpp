@@ -85,11 +85,11 @@ namespace graphics
 		m_device->get_handle().bindImageMemory(m_image_handle, m_device_memory->get_handle(), 0);
 	}
 
-	Image::Image(const DeviceRef& device, 
-		vk::ImageType image_type, 
-		vk::ImageUsageFlags image_usage_flags, 
-		vk::Format format, 
-		uint32_t width, uint32_t height, uint32_t depth,
+	Image::Image(const DeviceRef& device,
+		vk::ImageType image_type,
+		vk::ImageUsageFlags image_usage_flags,
+		vk::Format format,
+		vk::Extent3D dimensions,
 		uint32_t mip_levels,
 		vk::ImageTiling image_tiling,
 		uint32_t sample_count) :
@@ -98,9 +98,7 @@ namespace graphics
 		m_image_type(image_type),
 		m_image_usage_flags(image_usage_flags),
 		m_format(format),
-		m_width(width),
-		m_height(height),
-		m_depth(depth),
+		m_dimensions(dimensions),
 		m_mip_levels(mip_levels),
 		m_image_tiling(image_tiling),
 		m_sample_count(utils::sample_count_to_flags(sample_count))
@@ -109,9 +107,9 @@ namespace graphics
 
 		vk::ImageCreateInfo image_create_info;
 		image_create_info.arrayLayers = 1;
-		image_create_info.extent.width = m_width;
-		image_create_info.extent.height = m_height;
-		image_create_info.extent.depth = m_depth;
+		image_create_info.extent.width = m_dimensions.width;
+		image_create_info.extent.height = m_dimensions.height;
+		image_create_info.extent.depth = m_dimensions.depth;
 		image_create_info.format = m_format;
 		image_create_info.initialLayout = m_current_layout;
 		image_create_info.imageType = m_image_type;
