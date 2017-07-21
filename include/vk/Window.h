@@ -93,7 +93,7 @@ namespace graphics
 		~Window();
 
 		SurfaceRef create_surface();
-		inline GLFWwindow* getWindowHandle() const { return m_window_handle; }
+		inline GLFWwindow* get_window_handle() const { return m_window_handle; }
 		inline uint32_t get_width() const { return m_width; }
 		inline uint32_t get_height() const { return m_height; }
 		inline const std::string& get_title() const { return m_title; }

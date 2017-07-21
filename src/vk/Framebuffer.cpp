@@ -37,6 +37,14 @@ namespace graphics
 		m_height(height),
 		m_layers(layers)
 	{
+		// TODO: this paradigm doesn't work because the swapchain creates its own images and image views that 
+		// can't be properly wrapped into the ImageRef and ImageViewRef classes. Maybe the Framebuffer class 
+		// should accept the a Swapchain as an additional argument?
+
+		// Gather all of the image view handles.
+		// std::vector<vk::ImageView> image_view_handles(image_views.size());
+		// std::transform(image_views.begin(), image_views.end(), image_view_handles.begin(), [](const ImageViewRef& image_view) { return image_view->get_handle(); });
+
 		vk::FramebufferCreateInfo framebuffer_create_info;
 		framebuffer_create_info.attachmentCount = static_cast<uint32_t>(m_image_views.size());
 		framebuffer_create_info.height = m_height;

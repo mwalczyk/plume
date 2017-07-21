@@ -137,7 +137,7 @@ int main()
 	auto pipeline = graphics::Pipeline::create(device, render_pass, pipeline_options);
 
 	// Command pool
-	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second);
 
 	// Images
 	auto image_ms = graphics::Image::create(device,
@@ -147,7 +147,7 @@ int main()
 		{ width, height, 1 }, 1,
 		vk::ImageTiling::eOptimal,
 		msaa);
-	auto image_ms_view = image_ms->build_image_view();
+	auto image_ms_view = graphics::ImageView::create(device, image_ms);
 
 	auto image_depth = graphics::Image::create(device, 
 		vk::ImageType::e2D, 
@@ -156,7 +156,7 @@ int main()
 		{ width, height, 1 }, 1,
 		vk::ImageTiling::eOptimal, 
 		msaa);
-	auto image_depth_view = image_depth->build_image_view();
+	auto image_depth_view = graphics::ImageView::create(device, image_depth);
 	
 	auto image_sdf_map = graphics::Image::create(device,
 		vk::ImageType::e3D,
@@ -164,7 +164,7 @@ int main()
 		swapchain->get_image_format(),
 		{ width, height, 32 }, 1,
 		vk::ImageTiling::eOptimal);
-	auto image_sdf_map_view = image_sdf_map->build_image_view();
+	auto image_sdf_map_view = graphics::ImageView::create(device, image_sdf_map);
 
 	{
 		auto temp_command_buffer = graphics::CommandBuffer::create(device, command_pool);
@@ -212,12 +212,12 @@ int main()
 	for (size_t i = 0; i < swapchain_image_views.size(); ++i)
 	{
 		std::vector<vk::ImageView> image_views = { 
-			image_ms_view,				// attachment 0: multisample color 
-			swapchain_image_views[i],	// attachment 1: resolve color (swapchain)
-			image_depth_view			// attachment 2: depth-stencil
+			image_ms_view->get_handle(),			// attachment 0: multisample color 
+			swapchain_image_views[i],				// attachment 1: resolve color (swapchain)
+			image_depth_view->get_handle()			// attachment 2: depth-stencil
 		};
 
-		framebuffers[i] = graphics::Framebuffer::create(device, render_pass, image_views, width * 2, height);
+		framebuffers[i] = graphics::Framebuffer::create(device, render_pass, image_views, width, height);
 	}
 
 	// Descriptor pool
@@ -256,7 +256,7 @@ int main()
 	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptor_set_allocate_info)[0];
 
 	auto d_buffer_info = ubo->build_descriptor_info();				
-	auto d_sampler_info = image_sdf_map->build_descriptor_info(sampler, image_sdf_map_view);
+	auto d_sampler_info = image_sdf_map_view->build_descriptor_info(sampler);
 	vk::WriteDescriptorSet w_descriptor_set_buffer =	{ descriptor_set, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };		
 	vk::WriteDescriptorSet w_descriptor_set_sampler =	{ descriptor_set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
 	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer, w_descriptor_set_sampler };

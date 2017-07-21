@@ -33,6 +33,7 @@
 #include "Noncopyable.h"
 #include "Device.h"
 #include "Semaphore.h"
+#include "Image.h"
 
 namespace graphics
 {

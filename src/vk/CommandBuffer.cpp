@@ -63,6 +63,11 @@ namespace graphics
 
 	void CommandBuffer::begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values)
 	{
+		if (m_is_inside_render_pass)
+		{
+			throw std::runtime_error("This command buffer is already inside of a render pass");
+		}
+
 		m_is_inside_render_pass = true;
 
 		vk::RenderPassBeginInfo render_pass_begin_info;
@@ -112,11 +117,15 @@ namespace graphics
 
 	void CommandBuffer::update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const void* data)
 	{
+		// TODO: is it possible to use a template with copy here instead of a pointer to the data?
+
 		m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), stage_flags, offset, size, data);
 	}
 
 	void CommandBuffer::update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const void* data)
 	{
+		// TODO: is it possible to use a template with copy here instead of a pointer to the data?
+
 		auto pushConstantsMember = pipeline->get_push_constants_member(name);
 
 		m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, data);

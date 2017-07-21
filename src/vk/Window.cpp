@@ -43,6 +43,8 @@ namespace graphics
 		m_title(options.m_title),
 		m_window_mode(options.m_mode)
 	{
+		// TODO: handle window resizing and headless rendering
+
 		glfwInit();
 
 		// Disable context creation (only needed for OpenGL / ES not Vulkan).

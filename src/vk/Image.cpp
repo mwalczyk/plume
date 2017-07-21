@@ -37,6 +37,10 @@ namespace graphics
 		m_anistropy_enabled = VK_TRUE;
 		m_max_anistropy = 16.0f;
 		m_border_color = vk::BorderColor::eIntOpaqueBlack;
+		m_mipmap_mode = vk::SamplerMipmapMode::eLinear;
+		m_unnormalized_coordinates = VK_FALSE;
+		m_compare_op_enable = VK_FALSE;
+		m_compare_op = vk::CompareOp::eAlways;
 	}
 
 	Sampler::Sampler(const DeviceRef& device, const Options& options) :
@@ -48,16 +52,16 @@ namespace graphics
 		sampler_create_info.addressModeW = options.m_address_mode_w;
 		sampler_create_info.anisotropyEnable = options.m_anistropy_enabled;
 		sampler_create_info.borderColor = options.m_border_color;
-		sampler_create_info.compareEnable = VK_FALSE;
-		sampler_create_info.compareOp = vk::CompareOp::eAlways;
+		sampler_create_info.compareEnable = options.m_compare_op_enable; 
+		sampler_create_info.compareOp = options.m_compare_op;
 		sampler_create_info.magFilter = options.m_mag_filter;
 		sampler_create_info.maxAnisotropy = options.m_max_anistropy;
 		sampler_create_info.maxLod = options.m_max_lod;
 		sampler_create_info.minFilter = options.m_min_filter;
 		sampler_create_info.minLod = options.m_min_lod;
 		sampler_create_info.mipLodBias = options.m_mip_lod_bias;
-		sampler_create_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
-		sampler_create_info.unnormalizedCoordinates = VK_FALSE;
+		sampler_create_info.mipmapMode = options.m_mipmap_mode;
+		sampler_create_info.unnormalizedCoordinates = options.m_unnormalized_coordinates;
 
 		m_sampler_handle = m_device->get_handle().createSampler(sampler_create_info);
 	}
@@ -105,6 +109,7 @@ namespace graphics
 	{
 		m_current_layout = vk::ImageLayout::eUndefined;
 
+		// TODO: images should be able to be shared across multiple queue families.
 		vk::ImageCreateInfo image_create_info;
 		image_create_info.arrayLayers = 1;
 		image_create_info.extent.width = m_dimensions.width;
@@ -145,40 +150,55 @@ namespace graphics
 		}
 	}
 
-	vk::ImageView Image::build_image_view() const
+	ImageView::ImageView(const DeviceRef& device, const ImageRefWeak& image, uint32_t base_array_layer, uint32_t layer_count, uint32_t base_mip_level, uint32_t level_count)
 	{
-		vk::ImageViewCreateInfo image_view_create_info;
-		image_view_create_info.format = m_format;
-		image_view_create_info.image = m_image_handle;
-		image_view_create_info.subresourceRange.aspectMask = utils::format_to_aspect_mask(m_format);
-		image_view_create_info.subresourceRange.baseArrayLayer = 0;
-		image_view_create_info.subresourceRange.baseMipLevel = 0;
-		image_view_create_info.subresourceRange.layerCount = 1;
-		image_view_create_info.subresourceRange.levelCount = 1;
-		image_view_create_info.viewType = image_view_type_from_parent();
-		
-		return m_device->get_handle().createImageView(image_view_create_info);
+		vk::ImageSubresourceRange subresource_range = {
+			utils::format_to_aspect_mask(image.lock()->m_format),
+			base_mip_level,
+			level_count,
+			base_array_layer,
+			layer_count
+		};
+
+		ImageView(device, image, subresource_range);
 	}
 
-	vk::ImageView Image::build_image_view_array(uint32_t base_array_layer, uint32_t layer_count, uint32_t base_mip_level, uint32_t level_count) const
+	ImageView::ImageView(const DeviceRef& device, const ImageRefWeak& image, const vk::ImageSubresourceRange& subresource_range) :
+		m_device(device),
+		m_image(image),
+		m_subresource_range(subresource_range)
 	{
-		if (!m_is_array)
+		if (image.expired())
+		{
+			throw std::runtime_error("Attempting to build an image view for an image that has already expired");
+		}
+
+		// In order to use the contents of the weak pointer, we must convert it to a shared pointer. At this 
+		// point, we have already verified that the parent image has not yet expired, so this is a safe operation.
+		auto shared_image_lock = image.lock();
+
+		if (!shared_image_lock->m_is_array && m_subresource_range.layerCount > 1)
 		{
 			throw std::runtime_error("Attempting to build an image view that accesses multiple array layers \
 				of the parent image, but the parent image is not an array");
 		}
 
 		vk::ImageViewCreateInfo image_view_create_info;
-		image_view_create_info.format = m_format;
-		image_view_create_info.image = m_image_handle;
-		image_view_create_info.subresourceRange.aspectMask = utils::format_to_aspect_mask(m_format);
-		image_view_create_info.subresourceRange.baseArrayLayer = base_array_layer;
-		image_view_create_info.subresourceRange.baseMipLevel = base_mip_level;
-		image_view_create_info.subresourceRange.layerCount = layer_count;
-		image_view_create_info.subresourceRange.levelCount = level_count;
-		image_view_create_info.viewType = image_view_type_from_parent();
+		image_view_create_info.format = shared_image_lock->m_format;
+		image_view_create_info.image = shared_image_lock->m_image_handle;
+		image_view_create_info.subresourceRange.aspectMask = m_subresource_range.aspectMask;
+		image_view_create_info.subresourceRange.baseArrayLayer = m_subresource_range.baseArrayLayer;
+		image_view_create_info.subresourceRange.baseMipLevel = m_subresource_range.baseMipLevel;
+		image_view_create_info.subresourceRange.layerCount = m_subresource_range.layerCount;
+		image_view_create_info.subresourceRange.levelCount = m_subresource_range.levelCount;
+		image_view_create_info.viewType = shared_image_lock->image_view_type_from_parent();
 
-		return m_device->get_handle().createImageView(image_view_create_info);
+		m_image_view_handle = m_device->get_handle().createImageView(image_view_create_info);
+	}
+
+	ImageView::~ImageView()
+	{
+		m_device->get_handle().destroyImageView(m_image_view_handle);
 	}
 
 } // namespace graphics

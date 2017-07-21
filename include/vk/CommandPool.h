@@ -58,12 +58,13 @@ namespace graphics
 		//!		from this pool can be individually reset. Note that if this flag is not set, then all 
 		//!		command buffers must be reset together.
 		//!
-		static CommandPoolRef create(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags)
+		//! Both flags will be set by default.
+		static CommandPoolRef create(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient)
 		{
 			return std::make_shared<CommandPool>(device, queue_family_index, command_pool_create_flags);
 		}
 
-		CommandPool(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags);
+		CommandPool(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
 		~CommandPool();
 
 		inline vk::CommandPool get_handle() const { return m_command_pool_handle; };

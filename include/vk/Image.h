@@ -95,7 +95,20 @@ namespace graphics
 			}
 
 			//! Sets the border color used by the sampler.
-			Options& border_color(vk::BorderColor border_color = vk::BorderColor::eIntOpaqueWhite) { m_border_color = border_color; }
+			Options& border_color(vk::BorderColor border_color = vk::BorderColor::eIntOpaqueWhite) { m_border_color = border_color; return *this; }
+
+			//! Sets the mipmap mode used by the sampler. Possible values are vk::SamplerMipmapMode::eLinear
+			//! (default) and vk::SamplerMipmapMode::eNearest.
+			Options& mipmap_mode(vk::SamplerMipmapMode mipmap_mode) { m_mipmap_mode = mipmap_mode; return *this; }
+
+			//! By default, the sampler assumes that the application is using normalized texture coordinates.
+			//! Calling this function disables this behavior. Note that enabling this features places significant
+			//! restrictions on the corresponding image view that will be sampled in the shader. See the spec for 
+			//! details.
+			Options& enable_unnormalized_coordinates() { m_unnormalized_coordinates = VK_TRUE;  return *this; }
+
+			//! Enables and sets the comparison function that is applied to fetched data before filtering.
+			Options& compare_op(vk::CompareOp compare_op) { m_compare_op_enable = VK_TRUE; m_compare_op = compare_op; return *this; }
 
 		private:
 			
@@ -110,6 +123,10 @@ namespace graphics
 			vk::Bool32 m_anistropy_enabled;
 			float m_max_anistropy;
 			vk::BorderColor m_border_color;
+			vk::SamplerMipmapMode m_mipmap_mode;
+			vk::Bool32 m_unnormalized_coordinates;
+			vk::Bool32 m_compare_op_enable;
+			vk::CompareOp m_compare_op;
 
 			friend class Sampler;
 		};
@@ -133,6 +150,7 @@ namespace graphics
 
 	class Image;
 	using ImageRef = std::shared_ptr<Image>;
+	using ImageRefWeak = std::weak_ptr<Image>;
 
 	class Image : public Noncopyable
 	{
@@ -257,28 +275,11 @@ namespace graphics
 
 		~Image();
 
-		//! Build an image view corresponding to the parent image. This version of the function assumes that the 
-		//! desired image view does not contain multiple array layers or mipmap levels. To access these features,
-		//! use `build_image_view_array`. Both functions assume that the desired image format is the same as the 
-		//! parent image's format.
-		vk::ImageView build_image_view() const;
-
-		//! Build an image view corresponding to the parent image. This version of the function lets you specify
-		//! multiple array layers or mipmap levels but assumes that the desired image format is the same as the 
-		//! parent image's format.
-		vk::ImageView build_image_view_array(uint32_t base_array_layer, uint32_t layer_count, uint32_t base_mip_level = 0, uint32_t level_count = 1) const;
-
 		inline vk::Image get_handle() const { return m_image_handle; }
 		inline vk::Format get_format() const { return m_format; }
-
-	    inline vk::DescriptorImageInfo build_descriptor_info(const SamplerRef& sampler, vk::ImageView image_view, vk::ImageLayout image_layout = vk::ImageLayout::eShaderReadOnlyOptimal) const 
-		{ 
-			return { sampler->get_handle(), image_view, image_layout }; 
-		}
-
 		inline vk::ImageLayout get_current_layout() const { return m_current_layout; }
 
-	protected:
+	private:
 
 		//! Given the memory requirements of this image, allocate the appropriate type and size of device memory.
 		void initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags);
@@ -298,7 +299,54 @@ namespace graphics
 		vk::SampleCountFlagBits m_sample_count;
 		bool m_is_array;
 
+		friend class ImageView;
 		friend class CommandBuffer;
+	};
+
+	class ImageView;
+	using ImageViewRef = std::shared_ptr<ImageView>;
+
+	class ImageView : public Noncopyable
+	{
+	public:
+
+		//! Factory method for returning a new ImageViewRef from a parent ImageRef.
+		static ImageViewRef create(const DeviceRef& device, const ImageRefWeak& image, uint32_t base_array_layer = 0, uint32_t layer_count = 1, uint32_t base_mip_level = 0, uint32_t level_count = 1)
+		{
+			vk::ImageSubresourceRange subresource_range = {
+				utils::format_to_aspect_mask(image.lock()->m_format),
+				base_mip_level, 
+				level_count,
+				base_array_layer, 
+				layer_count
+			};
+
+			return std::make_shared<ImageView>(device, image, subresource_range);
+		}
+
+		static ImageViewRef create(const DeviceRef& device, const ImageRefWeak& image, const vk::ImageSubresourceRange& subresource_range)
+		{
+			return std::make_shared<ImageView>(device, image, subresource_range);
+		}
+
+		ImageView(const DeviceRef& device, const ImageRefWeak& image, uint32_t base_array_layer = 0, uint32_t layer_count = 1, uint32_t base_mip_level = 0, uint32_t level_count = 1);
+		ImageView(const DeviceRef& device, const ImageRefWeak& image, const vk::ImageSubresourceRange& subresource_range);
+		~ImageView();
+
+		inline vk::DescriptorImageInfo build_descriptor_info(const SamplerRef& sampler, vk::ImageLayout image_layout = vk::ImageLayout::eShaderReadOnlyOptimal) const
+		{
+			return{ sampler->get_handle(), m_image_view_handle, image_layout };
+		}
+
+		inline vk::ImageView get_handle() const { return m_image_view_handle; }
+		inline bool is_valid() const { return !m_image.expired(); }
+
+	private:
+
+		DeviceRef m_device;
+		ImageRefWeak m_image;
+		vk::ImageSubresourceRange m_subresource_range;
+		vk::ImageView m_image_view_handle;
 	};
 
 } // namespace graphics
