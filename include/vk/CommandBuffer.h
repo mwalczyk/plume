@@ -87,7 +87,34 @@ namespace graphics
 		//! Determine whether or not this command buffer is a primary or secondary command buffer.
 		inline bool is_primary() const { return m_command_buffer_level == vk::CommandBufferLevel::ePrimary; }
 
+		//! Returns `true` if this command buffer is currently being recorded into (i.e. `begin()` has 
+		//! been called).
+		inline bool is_recording() const { return m_is_recording; }
+
+		//! Returns `true` if this command buffer has entered a render pass (i.e. `begin_render_pass()` 
+		//! has been called).
+		inline bool is_inside_render_pass() const { return m_is_inside_render_pass; }
+		
+
+		//! Puts the command buffer back into its original state but does not necessarily interact
+		//! with the command pool from which it was allocated. Therefore, if the command buffer
+		//! dynamically allocates resources from the pool as it grows, it can hang on to those
+		//! resources and avoid the cost of reallocation the second and subsequent times it's rebuilt.
+		inline void reset()
+		{
+			m_is_recording = false;
+			m_is_inside_render_pass = false;
+			m_command_buffer_handle.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
+		}
+
 		//! Start recording into the command buffer. Puts the command buffer into a recording state.
+		//! Valid flags are:
+		//!
+		//! vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+		//! vk::CommandBufferUsageFlagBits::eSimultaneousUse
+		//!
+		//! Note that vk::CommandBufferUsageFlagBits::eRenderPassContinue is only valid for secondary
+		//! command buffers.
 		void begin(vk::CommandBufferUsageFlags command_buffer_usage_flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 		
 		//! Begin recording the commands for a render pass instance. 

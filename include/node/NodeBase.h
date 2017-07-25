@@ -16,63 +16,82 @@
 namespace node
 {
 
+	class NodeGraph;
+	using NodeGraphRef = std::shared_ptr<NodeGraph>;
+
 	class NodeBase;
 	using NodeBaseRef = std::shared_ptr<NodeBase>;
-
-	//! To properly render the entire network of nodes, the node manager traverses the network and draws
-	//! each node as a rectangle:
-	//!
-	//! 1) Begin the render pass, which consists of a single subpass involving a framebuffer with one 
-	//!    color attachment
-	//! 2) Bind the vertex buffer for the rectangle mesh
-	//! 3) Bind the index buffer for the rectangle mesh
-	//! 4) Bind the top-level descriptor set that contains the transformation matrices for the entire 
-	//!	   networke
-	//! 5) For each node that is visible in the network editor:
-	//!		a. Update the per-node descriptor set that contains the transformation matrices (translation and
-	//!		   scale) for the current node
-	//!		b. Bind the current node's pipeline derivative
-	//!		c. Draw the mesh
-	//! 6) For each node connection (wire) that is visible in the network editor: TODO
-	//! 7) End the render pass
-	//! 8) Submit the command buffer for processing
-	class NodeManager
-	{
-	public:
-
-		NodeManager(const graphics::DeviceRef& device, const graphics::WindowRef& window);
-
-		void record_draw_commands(graphics::CommandBufferRef& command_buffer);
-
-	private:
-
-		std::vector<NodeBaseRef> m_nodes;
-		graphics::DeviceRef m_device;
-		graphics::WindowRef m_window;
-		graphics::BufferRef m_position_buffer;
-		graphics::BufferRef m_index_buffer;
-		graphics::BufferRef m_uniform_buffer;
-		graphics::DescriptorPoolRef m_descriptor_pool;
-		vk::DescriptorSet m_descriptor_set;
-		glm::mat4 m_projection_matrix;
-	};
 
 	class NodeBase
 	{
 	public:
 
-		NodeBase();
-		NodeBase(glm::vec2 position, glm::vec2 size);
-		
-	private:
+		enum class Family
+		{
+			GENERATOR,			// Box, sphere, torus, etc.
+			MODIFIER,			// Repeat, etc.
+			OPERATOR,			// Union, intersection, smooth minimum, etc.
+			DEFORMATION			// Sinusoidal, noise, etc.
+		};
 
-		glm::vec2 m_position;
-		glm::vec2 m_size;
-		bool m_dirty;
-		bool m_selected;
-		std::string m_name;
+		struct Internals
+		{
+			glm::vec2 position;	// Position of this node in the network editor
+			glm::vec2 size;		// Size of the rectangle used to draw this node
+			std::string name;	// Display name of this node
+			size_t uuid;		// Unique identifier corresponding to this node
+			bool selected;		// Flag indicating whether or not the user has this node selected
+		};
+
+		NodeBase();
+
+		NodeBase(const NodeGraphRef& graph, const Internals& internals);
+
+		NodeBase(const NodeBase& other) : 
+			NodeBase(other.m_graph, other.m_internals) 
+		{ 
+			++s_uuid; 
+		}
+
+		virtual ~NodeBase();
+
+		//! Pure virtual functions must be overriden by all derived classes: all nodes should
+		//! be able to advertise which family they belong to and what shader code they generate.
+		virtual Family get_family() const = 0;	
+		virtual std::string get_shader_code() const = 0;
+
+		virtual const Internals& get_internals() const final { return m_internals; }
+		virtual const std::vector<NodeBaseRef>& get_inputs() const final { return m_inputs; }
+		virtual const std::vector<NodeBaseRef>& get_outputs() const final { return m_outputs; }
+
+	protected:
+
+		NodeGraphRef m_graph;
+		Internals m_internals;
 		std::vector<NodeBaseRef> m_inputs;
 		std::vector<NodeBaseRef> m_outputs;
+
+		// TODO: the default name that will be given to this node (should be a combination of
+		// the node family, node function, and UUID)
+		static const std::string s_default_name_prefix;
+
+		// TODO: include boost::uuid
+		static size_t s_uuid;	
+	};
+
+	class NodeSDFSphere : public NodeBase
+	{
+	public:
+
+		virtual Family get_family() const override
+		{
+			return NodeBase::Family::GENERATOR;
+		};
+		
+		virtual std::string get_shader_code() const = 0;
+
+	private:
+
 	};
 
 } // namespace node

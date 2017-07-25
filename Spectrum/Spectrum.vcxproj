@@ -202,6 +202,7 @@
     <ClCompile Include="..\src\Geometry.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\node\NodeBase.cpp" />
+    <ClCompile Include="..\src\node\NodeGraph.cpp" />
     <ClCompile Include="..\src\ResourceManager.cpp" />
     <ClCompile Include="..\src\vk\Buffer.cpp" />
     <ClCompile Include="..\src\vk\CommandBuffer.cpp" />
@@ -224,6 +225,7 @@
     <ClInclude Include="..\include\Application.h" />
     <ClInclude Include="..\include\Geometry.h" />
     <ClInclude Include="..\include\node\NodeBase.h" />
+    <ClInclude Include="..\include\node\NodeGraph.h" />
     <ClInclude Include="..\include\ResourceManager.h" />
     <ClInclude Include="..\include\spirv-cross\GLSL.std.450.h" />
     <ClInclude Include="..\include\spirv-cross\spirv.hpp" />
