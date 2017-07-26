@@ -38,9 +38,12 @@
 
 namespace graphics
 {
-
 	class Device;
 	using DeviceRef = std::shared_ptr<Device>;
+
+	// TODO: forward declaring this class for the `one_time_submit()` function causes a whole bunch of errors...
+	//class CommandBuffer;
+	//using CommandBufferRef = std::shared_ptr<CommandBuffer>;
 
 	class Device : public Noncopyable
 	{
@@ -53,66 +56,67 @@ namespace graphics
 			std::vector<vk::PresentModeKHR> m_present_modes;
 		};
 
-		class QueueFamiliesMapping
+		enum class QueueType
 		{
-		public:
-			QueueFamiliesMapping() = default;		
-
-			std::pair<vk::Queue, uint32_t> graphics() const { return m_graphics_queue; }
-			std::pair<vk::Queue, uint32_t> compute() const { return m_compute_queue; }
-			std::pair<vk::Queue, uint32_t> transfer() const { return m_transfer_queue; }
-			std::pair<vk::Queue, uint32_t> sparse_binding() const { return m_sparse_binding_queue; }
-			std::pair<vk::Queue, uint32_t> presentation() const { return m_presentation_queue; }
-
-		private:
-			
-			std::pair<vk::Queue, uint32_t> m_graphics_queue = { {}, 0 };
-			std::pair<vk::Queue, uint32_t> m_compute_queue = { {}, 0 };
-			std::pair<vk::Queue, uint32_t> m_transfer_queue = { {}, 0 };
-			std::pair<vk::Queue, uint32_t> m_sparse_binding_queue = { {}, 0 };
-			std::pair<vk::Queue, uint32_t> m_presentation_queue = { {}, 0 };
-
-			friend class Device;
+			GRAPHICS,
+			COMPUTE,
+			TRANSFER,
+			SPARSE_BINDING,
+			PRESENTATION
 		};
 
-		class Options
+		struct QueueInternals
 		{
-		public:
-
-			Options();
-
-			Options& required_queue_flags(vk::QueueFlags required_queue_flags) { m_required_queue_flags = required_queue_flags; return *this; }
-			Options& required_device_extensions(const std::vector<const char*>& required_device_extensions) { m_required_device_extensions = required_device_extensions; return *this; }
-			Options& use_swapchain(bool use_swapchain) { m_use_swapchain = use_swapchain; return *this; }
-
-		private:
-
-			vk::QueueFlags m_required_queue_flags;
-			std::vector<const char*> m_required_device_extensions;
-			bool m_use_swapchain;
-
-			friend class Device;
+			uint32_t index = 0;
+			vk::Queue handle = {};
 		};
 
 		//! Factory method for returning a new DeviceRef.
-		static DeviceRef create(vk::PhysicalDevice physical_device, const Options& options = Options())
+		static DeviceRef create(vk::PhysicalDevice physical_device,
+			vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
+			bool use_swapchain = true,
+			const std::vector<const char*>& required_device_extensions = {})
 		{
-			return std::make_shared<Device>(physical_device, options);
+			return std::make_shared<Device>(physical_device, required_queue_flags, use_swapchain, required_device_extensions);
 		}
 
 		//! Construct a logical device around a physical device (GPU).
-		Device(vk::PhysicalDevice physical_device, const Options& options = Options());
+		Device(vk::PhysicalDevice physical_device, 
+			vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
+			bool use_swapchain = true, 
+			const std::vector<const char*>& required_device_extensions = {});
+
 		~Device();
 
 		inline vk::Device get_handle() const { return m_device_handle; };
 		inline vk::PhysicalDevice get_physical_device_handle() const { return m_physical_device_handle; }
+		
 		inline vk::PhysicalDeviceProperties get_physical_device_properties() const { return m_physical_device_properties; }
 		inline vk::PhysicalDeviceFeatures get_physical_device_features() const { return m_physical_device_features;  }
 		inline vk::PhysicalDeviceMemoryProperties get_physical_device_memory_properties() const { return m_physical_device_memory_properties; }
-		inline const QueueFamiliesMapping& get_queue_families_mapping() const { return m_queue_families_mapping; }
+		
+		inline const std::map<QueueType, QueueInternals>& get_queue_families_mapping() const { return m_queue_families_mapping; }
+		inline uint32_t get_queue_family_index(QueueType type) { return m_queue_families_mapping[type].index; }
+		inline vk::Queue get_queue_handle(QueueType type) { return m_queue_families_mapping[type].handle; }
+
+		void one_time_submit(QueueType type, vk::CommandBuffer command_buffer_handle)
+		{
+			//vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
+
+			vk::SubmitInfo submit_info;
+			submit_info.commandBufferCount = 1;
+			submit_info.pCommandBuffers = &command_buffer_handle;
+
+			get_queue_handle(type).submit(submit_info, {});
+			get_queue_handle(type).waitIdle();
+		}
+
 		inline const std::vector<vk::QueueFamilyProperties>& get_physical_device_queue_family_properties() const { return m_physical_device_queue_family_properties; }
 		inline const std::vector<vk::ExtensionProperties>& get_physical_device_extension_properties() const { return m_physical_device_extension_properties; }
 		
+		//! Wait for all commands submitted to all queues to finish.
+		inline void wait_idle() { m_device_handle.waitIdle(); }
+
 		//! Format features are properties of the physical device.
 		inline vk::FormatProperties get_physical_device_format_properties(vk::Format format) const { return m_physical_device_handle.getFormatProperties(format); }
 		
@@ -126,6 +130,15 @@ namespace graphics
 
 	private:
 
+		std::map<QueueType, QueueInternals> m_queue_families_mapping = 
+		{
+			{ QueueType::GRAPHICS, {} },
+			{ QueueType::COMPUTE, {} },
+			{ QueueType::TRANSFER, {} },
+			{ QueueType::SPARSE_BINDING, {} },
+			{ QueueType::PRESENTATION, {} }
+		};
+
 		uint32_t find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const;
 
 		vk::Device m_device_handle;
@@ -135,7 +148,6 @@ namespace graphics
 		vk::PhysicalDeviceMemoryProperties m_physical_device_memory_properties;
 		std::vector<vk::QueueFamilyProperties> m_physical_device_queue_family_properties;
 		std::vector<vk::ExtensionProperties> m_physical_device_extension_properties;
-		QueueFamiliesMapping m_queue_families_mapping;
 		std::vector<const char*> m_required_device_extensions;
 	};
 

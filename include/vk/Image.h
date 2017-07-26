@@ -275,6 +275,20 @@ namespace graphics
 
 		~Image();
 
+		//! Helper function for creating an image subresource range that corresponds to the first layer 
+		//! and mipmap level of an arbitrary image.
+		static vk::ImageSubresourceRange build_single_layer_subresource(vk::ImageAspectFlags image_aspect_flags = vk::ImageAspectFlagBits::eColor)
+		{
+			vk::ImageSubresourceRange image_subresource = {};
+			image_subresource.aspectMask = image_aspect_flags;
+			image_subresource.baseArrayLayer = 0;
+			image_subresource.layerCount = 1;
+			image_subresource.baseMipLevel = 0;
+			image_subresource.levelCount = 1;
+
+			return image_subresource;
+		}
+
 		inline vk::Image get_handle() const { return m_image_handle; }
 		inline vk::Format get_format() const { return m_format; }
 		inline vk::ImageLayout get_current_layout() const { return m_current_layout; }

@@ -34,7 +34,6 @@
 
 namespace graphics
 {
-
 	class CommandPool;
 	using CommandPoolRef = std::shared_ptr<CommandPool>;
 
@@ -68,6 +67,13 @@ namespace graphics
 		~CommandPool();
 
 		inline vk::CommandPool get_handle() const { return m_command_pool_handle; };
+
+		// TODO: this should notify all command buffers that have been allocated from this pool, which means
+		// that the command pool class needs to maintain a list of all command buffer objects.
+		inline void reset_pool() 
+		{ 
+			m_device->get_handle().resetCommandPool(m_command_pool_handle, vk::CommandPoolResetFlagBits::eReleaseResources); 
+		}
 
 	private:
 

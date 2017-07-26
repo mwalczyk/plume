@@ -61,8 +61,7 @@ int main()
 	auto surface = window->create_surface();
 
 	// Device
-	auto device_options = graphics::Device::Options().required_queue_flags(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer);
-	auto device = graphics::Device::create(physical_devices[0], device_options);
+	auto device = graphics::Device::create(physical_devices[0]);
 	auto queue_family_properties = device->get_physical_device_queue_family_properties();
 	for (size_t i = 0; i < queue_family_properties.size(); ++i)
 	{
@@ -137,7 +136,7 @@ int main()
 	auto pipeline = graphics::Pipeline::create(device, render_pass, pipeline_options);
 
 	// Command pool
-	auto command_pool = graphics::CommandPool::create(device, device->get_queue_families_mapping().graphics().second);
+	auto command_pool = graphics::CommandPool::create(device, device->get_queue_family_index(graphics::Device::QueueType::GRAPHICS));
 
 	// Images
 	auto image_ms = graphics::Image::create(device,
@@ -166,43 +165,29 @@ int main()
 		vk::ImageTiling::eOptimal);
 	auto image_sdf_map_view = graphics::ImageView::create(device, image_sdf_map);
 
-	{
-		auto temp_command_buffer = graphics::CommandBuffer::create(device, command_pool);
-		auto temp_command_buffer_handle = temp_command_buffer->get_handle();
-		temp_command_buffer->begin();
-		temp_command_buffer->transition_image_layout(image_depth, image_depth->get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
-		temp_command_buffer->end();
+	auto temp_command_buffer = graphics::CommandBuffer::create(device, command_pool);
 
-		vk::SubmitInfo submit_info;
-		submit_info.commandBufferCount = 1;
-		submit_info.pCommandBuffers = &temp_command_buffer_handle;
-		device->get_queue_families_mapping().graphics().first.submit(submit_info, {});
-		device->get_queue_families_mapping().graphics().first.waitIdle();
-	}
 	{
-		auto temp_command_buffer = graphics::CommandBuffer::create(device, command_pool);
-		auto temp_command_buffer_handle = temp_command_buffer->get_handle();
-		temp_command_buffer->begin();
+		graphics::ScopedRecord scoped(temp_command_buffer);
+		temp_command_buffer->transition_image_layout(image_depth, image_depth->get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	}
+
+	device->one_time_submit(graphics::Device::QueueType::GRAPHICS, temp_command_buffer->get_handle());
+
+	temp_command_buffer->reset();
+
+	{
+		graphics::ScopedRecord scoped(temp_command_buffer);
 		temp_command_buffer->transition_image_layout(image_sdf_map, image_sdf_map->get_current_layout(), vk::ImageLayout::eGeneral);
 
-			vk::ImageSubresourceRange subresource = {};
-			subresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-			subresource.baseArrayLayer = 0;
-			subresource.layerCount = 1;
-			subresource.baseMipLevel = 0;
-			subresource.levelCount = 1;
-
-			vk::ClearColorValue color = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f };
-			temp_command_buffer_handle.clearColorImage(image_sdf_map->get_handle(), image_sdf_map->get_current_layout(), color, subresource);
-		
-		temp_command_buffer->end();
-
-		vk::SubmitInfo submit_info;
-		submit_info.commandBufferCount = 1;
-		submit_info.pCommandBuffers = &temp_command_buffer_handle;
-		device->get_queue_families_mapping().graphics().first.submit(submit_info, {});
-		device->get_queue_families_mapping().graphics().first.waitIdle();
+		vk::ClearColorValue color = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f };
+		temp_command_buffer->get_handle().clearColorImage(image_sdf_map->get_handle(), 
+														  image_sdf_map->get_current_layout(), 
+														  color, 
+														  graphics::Image::build_single_layer_subresource());
 	}
+
+	device->one_time_submit(graphics::Device::QueueType::GRAPHICS, temp_command_buffer->get_handle());
 
 	// Sampler 
 	auto sampler = graphics::Sampler::create(device);
@@ -310,7 +295,7 @@ int main()
 		submit_info.pCommandBuffers = &command_buffer_handle;
 		submit_info.signalSemaphoreCount = 1;
 		submit_info.pSignalSemaphores = signal_sems;
-		device->get_queue_families_mapping().graphics().first.submit(submit_info, {});
+		device->get_queue_handle(graphics::Device::QueueType::GRAPHICS).submit(submit_info, {});
 
 		// Submit the result back to the swapchain for presentation:  make sure to wait for rendering to finish before attempting to present.
 		vk::SwapchainKHR swapchains[] = { swapchain->get_handle() };
@@ -323,8 +308,8 @@ int main()
 		present_info.pResults = nullptr;
 
 		// This is equivalent to submitting a fence to a queue and waiting with an infinite timeout for that fence to signal.
-		device->get_queue_families_mapping().graphics().first.waitIdle();
-		device->get_queue_families_mapping().presentation().first.presentKHR(present_info);
+		device->get_queue_handle(graphics::Device::QueueType::GRAPHICS).waitIdle();
+		device->get_queue_handle(graphics::Device::QueueType::PRESENTATION).presentKHR(present_info);
 	}
 
 	return 0;

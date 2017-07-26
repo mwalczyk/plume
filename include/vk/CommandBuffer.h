@@ -172,4 +172,24 @@ namespace graphics
 		bool m_is_inside_render_pass;
 	};
 
+	class ScopedRecord
+	{
+	public:
+
+		ScopedRecord(const CommandBufferRef& command_buffer) :
+			m_command_buffer(command_buffer)
+		{
+			m_command_buffer->begin();
+		}
+
+		~ScopedRecord()
+		{
+			m_command_buffer->end();
+		}
+
+	private:
+
+		CommandBufferRef m_command_buffer;
+	};
+
 } // namespace graphics

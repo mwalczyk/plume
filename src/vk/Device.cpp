@@ -28,16 +28,9 @@
 
 namespace graphics
 {
-
-	Device::Options::Options()
-	{
-		m_required_queue_flags = vk::QueueFlagBits::eGraphics;
-		m_use_swapchain = true;
-	}
-
-	Device::Device(vk::PhysicalDevice physical_device, const Options& options) :
+	Device::Device(vk::PhysicalDevice physical_device, vk::QueueFlags required_queue_flags, bool use_swapchain, const std::vector<const char*>& required_device_extensions) :
 		m_physical_device_handle(physical_device),
-		m_required_device_extensions(options.m_required_device_extensions)
+		m_required_device_extensions(required_device_extensions)
 	{		
 		// Store the general properties, features, and memory properties of the chosen physical device.
 		m_physical_device_properties = m_physical_device_handle.getProperties();
@@ -54,73 +47,73 @@ namespace graphics
 		const float default_queue_priority = 0.0f;
 		const uint32_t default_queue_count = 1;
 		std::vector<vk::DeviceQueueCreateInfo> device_queue_create_infos;
-		if (options.m_required_queue_flags & vk::QueueFlagBits::eGraphics)
+		if (required_queue_flags & vk::QueueFlagBits::eGraphics)
 		{
-			m_queue_families_mapping.m_graphics_queue.second = find_queue_family_index(vk::QueueFlagBits::eGraphics);
+			m_queue_families_mapping[QueueType::GRAPHICS].index = find_queue_family_index(vk::QueueFlagBits::eGraphics);
 
 			vk::DeviceQueueCreateInfo device_queue_create_info = {};
 			device_queue_create_info.pQueuePriorities = &default_queue_priority;
 			device_queue_create_info.queueCount = default_queue_count;
-			device_queue_create_info.queueFamilyIndex = m_queue_families_mapping.m_graphics_queue.second;
+			device_queue_create_info.queueFamilyIndex = m_queue_families_mapping[QueueType::GRAPHICS].index;
 
 			device_queue_create_infos.push_back(device_queue_create_info);
 
 			// For now, perform presentation with the same queue as graphics operations.
-			if (options.m_use_swapchain)
+			if (use_swapchain)
 			{
-				m_queue_families_mapping.m_presentation_queue.second = m_queue_families_mapping.m_graphics_queue.second;
+				m_queue_families_mapping[QueueType::PRESENTATION].index = m_queue_families_mapping[QueueType::GRAPHICS].index;
 			}
 		}
-		if (options.m_required_queue_flags & vk::QueueFlagBits::eCompute)
+		if (required_queue_flags & vk::QueueFlagBits::eCompute)
 		{
-			m_queue_families_mapping.m_compute_queue.second = find_queue_family_index(vk::QueueFlagBits::eCompute);
+			m_queue_families_mapping[QueueType::COMPUTE].index = find_queue_family_index(vk::QueueFlagBits::eCompute);
 
-			if (m_queue_families_mapping.m_compute_queue.second != m_queue_families_mapping.m_graphics_queue.second)
+			if (m_queue_families_mapping[QueueType::COMPUTE].index != m_queue_families_mapping[QueueType::GRAPHICS].index)
 			{
 				// Create a dedicated queue for compute operations.
 				vk::DeviceQueueCreateInfo device_queue_create_info = {};
 				device_queue_create_info.pQueuePriorities = &default_queue_priority;
 				device_queue_create_info.queueCount = default_queue_count;
-				device_queue_create_info.queueFamilyIndex = m_queue_families_mapping.m_compute_queue.second;
+				device_queue_create_info.queueFamilyIndex = m_queue_families_mapping[QueueType::COMPUTE].index;
 
 				device_queue_create_infos.push_back(device_queue_create_info);
 			}
 			else
 			{
 				// Reuse the graphics queue for compute operations.
-				m_queue_families_mapping.m_compute_queue.second = m_queue_families_mapping.m_graphics_queue.second;
+				m_queue_families_mapping[QueueType::COMPUTE].index = m_queue_families_mapping[QueueType::GRAPHICS].index;
 			}
 		}
-		if (options.m_required_queue_flags & vk::QueueFlagBits::eTransfer)
+		if (required_queue_flags & vk::QueueFlagBits::eTransfer)
 		{
-			m_queue_families_mapping.m_transfer_queue.second = find_queue_family_index(vk::QueueFlagBits::eTransfer);
+			m_queue_families_mapping[QueueType::TRANSFER].index = find_queue_family_index(vk::QueueFlagBits::eTransfer);
 
-			if (m_queue_families_mapping.m_transfer_queue.second != m_queue_families_mapping.m_graphics_queue.second &&
-				m_queue_families_mapping.m_transfer_queue.second != m_queue_families_mapping.m_compute_queue.second)
+			if (m_queue_families_mapping[QueueType::TRANSFER].index != m_queue_families_mapping[QueueType::GRAPHICS].index &&
+				m_queue_families_mapping[QueueType::TRANSFER].index != m_queue_families_mapping[QueueType::COMPUTE].index)
 			{
 				// Create a dedicated queue for transfer operations.
 				vk::DeviceQueueCreateInfo device_queue_create_info = {};
 				device_queue_create_info.pQueuePriorities = &default_queue_priority;
 				device_queue_create_info.queueCount = default_queue_count;
-				device_queue_create_info.queueFamilyIndex = m_queue_families_mapping.m_transfer_queue.second;
+				device_queue_create_info.queueFamilyIndex = m_queue_families_mapping[QueueType::TRANSFER].index;
 
 				device_queue_create_infos.push_back(device_queue_create_info);
 			}
 			else
 			{
 				// Reuse the graphics queue for transfer operations.
-				m_queue_families_mapping.m_transfer_queue.second = m_queue_families_mapping.m_graphics_queue.second;
+				m_queue_families_mapping[QueueType::TRANSFER].index = m_queue_families_mapping[QueueType::GRAPHICS].index;
 			}
 		}
-		if (options.m_required_queue_flags & vk::QueueFlagBits::eSparseBinding)
+		if (required_queue_flags & vk::QueueFlagBits::eSparseBinding)
 		{
-			m_queue_families_mapping.m_sparse_binding_queue.second = find_queue_family_index(vk::QueueFlagBits::eSparseBinding);
+			m_queue_families_mapping[QueueType::SPARSE_BINDING].index = find_queue_family_index(vk::QueueFlagBits::eSparseBinding);
 
-			// TODO
+			// TODO: create a queue for sparse bindings.
 		}
 
 		// Automatically add the swapchain extension if needed.
-		if (options.m_use_swapchain)
+		if (use_swapchain)
 		{
 			m_required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		}
@@ -138,18 +131,18 @@ namespace graphics
 		m_device_handle = m_physical_device_handle.createDevice(device_create_info);
 
 		// Store handles to each of the newly created queues.
-		m_queue_families_mapping.m_graphics_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_graphics_queue.second, 0);
-		m_queue_families_mapping.m_compute_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_compute_queue.second, 0);
-		m_queue_families_mapping.m_transfer_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_transfer_queue.second, 0);
-		m_queue_families_mapping.m_sparse_binding_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_sparse_binding_queue.second, 0);
-		m_queue_families_mapping.m_presentation_queue.first = m_device_handle.getQueue(m_queue_families_mapping.m_presentation_queue.second, 0);
+		m_queue_families_mapping[QueueType::GRAPHICS].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::GRAPHICS].index, 0);
+		m_queue_families_mapping[QueueType::COMPUTE].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::COMPUTE].index, 0);
+		m_queue_families_mapping[QueueType::TRANSFER].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::TRANSFER].index, 0);
+		m_queue_families_mapping[QueueType::SPARSE_BINDING].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::SPARSE_BINDING].index, 0);
+		m_queue_families_mapping[QueueType::PRESENTATION].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::PRESENTATION].index, 0);
 	}
 
 	Device::~Device()
 	{
 		// The logical device is likely to be the last object created (aside from objects used at
 		// runtime). Before destroying the device, ensure that it is not executing any work.
-		m_device_handle.waitIdle();
+		wait_idle();
 		
 		// Note that queues are created along with the logical device. All queues associated with 
 		// this device will automatically be destroyed when vkDestroyDevice is called.
@@ -253,11 +246,11 @@ namespace graphics
 		std::cout << "\tVendor ID: " << device->m_physical_device_properties.vendorID << std::endl;
 
 		stream << "Queue family details:" << std::endl;
-		stream << "\tQueue family - graphics index: " << device->m_queue_families_mapping.graphics().second << std::endl;
-		stream << "\tQueue family - compute index: " << device->m_queue_families_mapping.compute().second << std::endl;
-		stream << "\tQueue family - transfer index: " << device->m_queue_families_mapping.transfer().second << std::endl;
-		stream << "\tQueue family - sparse binding index: " << device->m_queue_families_mapping.sparse_binding().second << std::endl;
-		stream << "\tQueue family - present index: " << device->m_queue_families_mapping.presentation().second << std::endl;
+		stream << "\tQueue family - graphics index: " << device->m_queue_families_mapping[Device::QueueType::GRAPHICS].index << std::endl;
+		stream << "\tQueue family - compute index: " << device->m_queue_families_mapping[Device::QueueType::COMPUTE].index << std::endl;
+		stream << "\tQueue family - transfer index: " << device->m_queue_families_mapping[Device::QueueType::TRANSFER].index << std::endl;
+		stream << "\tQueue family - sparse binding index: " << device->m_queue_families_mapping[Device::QueueType::SPARSE_BINDING].index << std::endl;
+		stream << "\tQueue family - present index: " << device->m_queue_families_mapping[Device::QueueType::PRESENTATION].index << std::endl;
 
 		return stream;
 	}
