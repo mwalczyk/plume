@@ -236,6 +236,7 @@
     <ClInclude Include="..\include\spirv-cross\spirv_glsl.hpp" />
     <ClInclude Include="..\include\spirv-cross\spirv_msl.hpp" />
     <ClInclude Include="..\include\vk\Buffer.h" />
+    <ClInclude Include="..\include\vk\Colors.h" />
     <ClInclude Include="..\include\vk\CommandBuffer.h" />
     <ClInclude Include="..\include\vk\CommandPool.h" />
     <ClInclude Include="..\include\vk\DescriptorPool.h" />

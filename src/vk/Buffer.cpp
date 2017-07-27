@@ -28,27 +28,26 @@
 
 namespace graphics
 {
-	
-	Buffer::Options::Options()
-	{
-		m_memory_property_flags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-	}
 
-	Buffer::Buffer(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const Options& options) :
+	Buffer::Buffer(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<Device::QueueType> queues) :
 		m_device(device),
 		m_buffer_usage_flags(buffer_usage_flags),
 		m_requested_size(size)
 	{
 		vk::SharingMode sharing_mode = vk::SharingMode::eExclusive;
-		if (options.m_queue_family_indices.size())
+		if (queues.size() > 1)
 		{
 			std::cout << "This buffer is used by multiple queue families: setting its share mode to vk::SharingMode::eConcurrent\n";
 			sharing_mode = vk::SharingMode::eConcurrent;
 		}
 
+		// Gather all of the queue family indices based on the requested queue types.
+		std::vector<uint32_t> queue_family_indices(queues.size());
+		std::transform(queues.begin(), queues.end(), queue_family_indices.begin(), [&](Device::QueueType type) { return m_device->get_queue_family_index(type); });
+
 		vk::BufferCreateInfo buffer_create_info;
-		buffer_create_info.pQueueFamilyIndices = options.m_queue_family_indices.data();	// Ignored if the sharing mode is exclusive.
-		buffer_create_info.queueFamilyIndexCount = static_cast<uint32_t>(options.m_queue_family_indices.size());
+		buffer_create_info.pQueueFamilyIndices = queue_family_indices.data();	// Ignored if the sharing mode is exclusive.
+		buffer_create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_family_indices.size());
 		buffer_create_info.sharingMode = sharing_mode;
 		buffer_create_info.size = m_requested_size;
 		buffer_create_info.usage = m_buffer_usage_flags;
@@ -59,7 +58,7 @@ namespace graphics
 		m_memory_requirements = m_device->get_handle().getBufferMemoryRequirements(m_buffer_handle);
 
 		// Allocate device memory.
-		m_device_memory = DeviceMemory::create(m_device, m_memory_requirements, options.m_memory_property_flags);
+		m_device_memory = DeviceMemory::create(m_device, m_memory_requirements, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
 		// Fill the buffer with the data that was passed into the constructor.
 		if (data)

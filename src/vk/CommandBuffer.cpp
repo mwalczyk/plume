@@ -115,22 +115,6 @@ namespace graphics
 		m_command_buffer_handle.bindIndexBuffer(buffer->get_handle(), offset, index_type);
 	}
 
-	void CommandBuffer::update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const void* data)
-	{
-		// TODO: is it possible to use a template with copy here instead of a pointer to the data?
-
-		m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), stage_flags, offset, size, data);
-	}
-
-	void CommandBuffer::update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const void* data)
-	{
-		// TODO: is it possible to use a template with copy here instead of a pointer to the data?
-
-		auto pushConstantsMember = pipeline->get_push_constants_member(name);
-
-		m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, data);
-	}
-
 	void CommandBuffer::bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets)
 	{
 		m_command_buffer_handle.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->get_pipeline_layout_handle(), first_set, static_cast<uint32_t>(descriptor_sets.size()), descriptor_sets.data(), static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
@@ -153,6 +137,24 @@ namespace graphics
 			m_command_buffer_handle.endRenderPass();
 			m_is_inside_render_pass = false;
 		}
+	}
+
+	void CommandBuffer::clear_color_image(const ImageRef& image, vk::ClearColorValue clear_value, vk::ImageSubresourceRange image_subresource_range)
+	{
+		if (utils::is_depth_format(image->get_format()))
+		{
+			throw std::runtime_error("Attempting to clear a depth/stencil image with `clear_color_image`");
+		}
+		m_command_buffer_handle.clearColorImage(image->get_handle(), image->get_current_layout(), clear_value, image_subresource_range);
+	}
+
+	void CommandBuffer::clear_depth_image(const ImageRef& image, vk::ClearDepthStencilValue clear_value, vk::ImageSubresourceRange image_subresource_range)
+	{
+		if (!utils::is_depth_format(image->get_format()))
+		{
+			throw std::runtime_error("Attempting to clear a color image with `clear_depth_image`");
+		}
+		m_command_buffer_handle.clearDepthStencilImage(image->get_handle(), image->get_current_layout(), clear_value, image_subresource_range);
 	}
 
 	void CommandBuffer::transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to)

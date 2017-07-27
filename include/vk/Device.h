@@ -41,9 +41,14 @@ namespace graphics
 	class Device;
 	using DeviceRef = std::shared_ptr<Device>;
 
-	// TODO: forward declaring this class for the `one_time_submit()` function causes a whole bunch of errors...
-	//class CommandBuffer;
-	//using CommandBufferRef = std::shared_ptr<CommandBuffer>;
+	class CommandBuffer;
+	using CommandBufferRef = std::shared_ptr<CommandBuffer>;
+
+	class Semaphore;
+	using SemaphoreRef = std::shared_ptr<Semaphore>;
+
+	class Swapchain;
+	using SwapchainRef = std::shared_ptr<Swapchain>;
 
 	class Device : public Noncopyable
 	{
@@ -73,15 +78,17 @@ namespace graphics
 
 		//! Factory method for returning a new DeviceRef.
 		static DeviceRef create(vk::PhysicalDevice physical_device,
+			const SurfaceRef& surface,
 			vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
 			bool use_swapchain = true,
 			const std::vector<const char*>& required_device_extensions = {})
 		{
-			return std::make_shared<Device>(physical_device, required_queue_flags, use_swapchain, required_device_extensions);
+			return std::make_shared<Device>(physical_device, surface, required_queue_flags, use_swapchain, required_device_extensions);
 		}
 
 		//! Construct a logical device around a physical device (GPU).
-		Device(vk::PhysicalDevice physical_device, 
+		Device(vk::PhysicalDevice physical_device,
+			const SurfaceRef& surface,
 			vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
 			bool use_swapchain = true, 
 			const std::vector<const char*>& required_device_extensions = {});
@@ -99,17 +106,14 @@ namespace graphics
 		inline uint32_t get_queue_family_index(QueueType type) { return m_queue_families_mapping[type].index; }
 		inline vk::Queue get_queue_handle(QueueType type) { return m_queue_families_mapping[type].handle; }
 
-		void one_time_submit(QueueType type, vk::CommandBuffer command_buffer_handle)
-		{
-			//vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
+		void one_time_submit(QueueType type, const CommandBufferRef& command_buffer);
 
-			vk::SubmitInfo submit_info;
-			submit_info.commandBufferCount = 1;
-			submit_info.pCommandBuffers = &command_buffer_handle;
+		void submit_with_semaphores(QueueType type, const CommandBufferRef& command_buffer,
+			const std::vector<SemaphoreRef>& wait,
+			const std::vector<SemaphoreRef>& signal,
+			const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput });
 
-			get_queue_handle(type).submit(submit_info, {});
-			get_queue_handle(type).waitIdle();
-		}
+		void present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait);
 
 		inline const std::vector<vk::QueueFamilyProperties>& get_physical_device_queue_family_properties() const { return m_physical_device_queue_family_properties; }
 		inline const std::vector<vk::ExtensionProperties>& get_physical_device_extension_properties() const { return m_physical_device_extension_properties; }
@@ -140,6 +144,8 @@ namespace graphics
 		};
 
 		uint32_t find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const;
+
+		SurfaceRef m_surface;
 
 		vk::Device m_device_handle;
 		vk::PhysicalDevice m_physical_device_handle;

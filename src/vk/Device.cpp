@@ -25,11 +25,15 @@
 */
 
 #include "Device.h"
+#include "CommandBuffer.h"
+#include "Semaphore.h"
+#include "Swapchain.h"
 
 namespace graphics
 {
-	Device::Device(vk::PhysicalDevice physical_device, vk::QueueFlags required_queue_flags, bool use_swapchain, const std::vector<const char*>& required_device_extensions) :
+	Device::Device(vk::PhysicalDevice physical_device, const SurfaceRef& surface, vk::QueueFlags required_queue_flags, bool use_swapchain, const std::vector<const char*>& required_device_extensions) :
 		m_physical_device_handle(physical_device),
+		m_surface(surface),
 		m_required_device_extensions(required_device_extensions)
 	{		
 		// Store the general properties, features, and memory properties of the chosen physical device.
@@ -116,6 +120,18 @@ namespace graphics
 		if (use_swapchain)
 		{
 			m_required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+			// Make sure that at least one queue family from the supplied physical device actually 
+			// supports presentation with respect to the requested surface.
+			for (size_t i = 0; i < m_physical_device_queue_family_properties.size(); ++i)
+			{
+				vk::Bool32 support = m_physical_device_handle.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface->get_handle());
+				if (support) 
+				{  
+					// TODO: is this necessary?
+					break;
+				}
+			}
 		}
 
 		// Create the logical device: note that device layers were deprecated, and device layer 
@@ -234,6 +250,64 @@ namespace graphics
 		}
 
 		return support_details; 
+	}
+
+	void Device::submit_with_semaphores(QueueType type, const CommandBufferRef& command_buffer,
+		const std::vector<SemaphoreRef>& wait,
+		const std::vector<SemaphoreRef>& signal,
+		const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags)
+	{
+		vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
+
+		// Gather all semaphore handles.
+		std::vector<vk::Semaphore> wait_handles(wait.size());
+		std::transform(wait.begin(), wait.end(), wait_handles.begin(), [](const SemaphoreRef& semaphore) { return semaphore->get_handle(); });
+
+		std::vector<vk::Semaphore> signal_handles(signal.size());
+		std::transform(signal.begin(), signal.end(), signal_handles.begin(), [](const SemaphoreRef& semaphore) { return semaphore->get_handle(); });
+
+		vk::SubmitInfo submit_info = {};
+		submit_info.waitSemaphoreCount = static_cast<uint32_t>(wait_handles.size());
+		submit_info.pWaitSemaphores = wait_handles.data();
+		submit_info.pWaitDstStageMask = pipeline_stage_flags.data();
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &command_buffer_handle;
+		submit_info.signalSemaphoreCount = static_cast<uint32_t>(signal_handles.size());
+		submit_info.pSignalSemaphores = signal_handles.data();
+
+		// TODO: this should support fences.
+		get_queue_handle(type).submit(submit_info, {});
+	}
+
+	void Device::one_time_submit(QueueType type, const CommandBufferRef& command_buffer)
+	{
+		vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
+
+		vk::SubmitInfo submit_info = {};
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &command_buffer_handle;
+
+		get_queue_handle(type).submit(submit_info, {});
+		get_queue_handle(type).waitIdle();
+	}
+
+	void Device::present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait)
+	{
+		// Gather all semaphore handles.
+		std::vector<vk::Semaphore> wait_handles(wait.size());
+		std::transform(wait.begin(), wait.end(), wait_handles.begin(), [](const SemaphoreRef& semaphore) { return semaphore->get_handle(); });
+
+		std::vector<vk::SwapchainKHR> swapchain_handles = { swapchain->get_handle() };
+
+		vk::PresentInfoKHR present_info = {};
+		present_info.waitSemaphoreCount = static_cast<uint32_t>(wait_handles.size());
+		present_info.pWaitSemaphores = wait_handles.data();
+		present_info.swapchainCount = static_cast<uint32_t>(swapchain_handles.size());
+		present_info.pSwapchains = swapchain_handles.data();
+		present_info.pImageIndices = &image_index;
+		present_info.pResults = nullptr;
+
+		get_queue_handle(QueueType::PRESENTATION).presentKHR(present_info);
 	}
 
 	std::ostream& operator<<(std::ostream& stream, const DeviceRef& device)

@@ -74,10 +74,8 @@ namespace graphics
 		switch (mode)
 		{
 		case spv::ExecutionModelVertex:
-			std::cout << "Vertex SHADER MODE\n";
 			return vk::ShaderStageFlagBits::eVertex;
 		case spv::ExecutionModelFragment:
-			std::cout << "Fragment SHADER MODE\n";
 			return vk::ShaderStageFlagBits::eFragment;
 		case spv::ExecutionModelGeometry:
 			return vk::ShaderStageFlagBits::eGeometry;

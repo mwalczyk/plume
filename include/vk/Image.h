@@ -158,13 +158,13 @@ namespace graphics
 
 		//! Factory method for returning a new ImageRef whose device local memory store will be empty.
 		static ImageRef create(const DeviceRef& device, 
-			vk::ImageType image_type, 
-			vk::ImageUsageFlags image_usage_flags, 
-			vk::Format format, 
-			vk::Extent3D dimensions, 
-			uint32_t mip_levels = 1,
-			vk::ImageTiling image_tiling = vk::ImageTiling::eLinear,
-			uint32_t sample_count = 1)
+							   vk::ImageType image_type, 
+							   vk::ImageUsageFlags image_usage_flags, 
+							   vk::Format format, 
+							   vk::Extent3D dimensions, 
+							   uint32_t mip_levels = 1,
+							   vk::ImageTiling image_tiling = vk::ImageTiling::eLinear,
+							   uint32_t sample_count = 1)
 		{
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, dimensions, mip_levels, image_tiling, sample_count);
 		}
@@ -189,13 +189,13 @@ namespace graphics
 		}
 
 		Image(const DeviceRef& device, 
-			vk::ImageType image_type, 
-			vk::ImageUsageFlags image_usage_flags,
-			vk::Format format, 
-			vk::Extent3D dimensions,
-			uint32_t mip_levels = 1, 
-			vk::ImageTiling image_tiling = vk::ImageTiling::eLinear, 
-			uint32_t sample_count = 1);
+			  vk::ImageType image_type, 
+			  vk::ImageUsageFlags image_usage_flags,
+			  vk::Format format, 
+			  vk::Extent3D dimensions,
+			  uint32_t mip_levels = 1, 
+			  vk::ImageTiling image_tiling = vk::ImageTiling::eLinear, 
+			  uint32_t sample_count = 1);
 
 		template<typename T>
 		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, vk::Extent3D dimensions, uint32_t mip_levels, const std::vector<T>& pixels) :
@@ -264,14 +264,10 @@ namespace graphics
 		}
 
 		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource) :
-			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents)
-		{
-		}
+			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents) {}
 
 		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource) :
-			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents)
-		{
-		}
+			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents) {}
 
 		~Image();
 
@@ -285,6 +281,24 @@ namespace graphics
 			image_subresource.layerCount = 1;
 			image_subresource.baseMipLevel = 0;
 			image_subresource.levelCount = 1;
+
+			return image_subresource;
+		}
+
+		//! Helper function for creating an image subresource range that involves multiple layers and/or 
+		//! mipmap levels of an arbitrary image.
+		static vk::ImageSubresourceRange build_multiple_layer_subresource(uint32_t base_layer, 
+																	      uint32_t layer_count, 
+																		  uint32_t base_level,
+																		  uint32_t level_count,
+																		  vk::ImageAspectFlags image_aspect_flags = vk::ImageAspectFlagBits::eColor)
+		{
+			vk::ImageSubresourceRange image_subresource = {};
+			image_subresource.aspectMask = image_aspect_flags;
+			image_subresource.baseArrayLayer = base_layer;
+			image_subresource.layerCount = layer_count;
+			image_subresource.baseMipLevel = base_level;
+			image_subresource.levelCount = level_count;
 
 			return image_subresource;
 		}

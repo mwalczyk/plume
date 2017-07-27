@@ -49,46 +49,35 @@ namespace graphics
 	{
 	public:
 
-		class Options
-		{
-		public:
-			Options();
-
-			//! List the indices of all queue families that will access the contents of the buffer.
-			Options& queue_family_indices(const std::vector<uint32_t> queue_family_indices) {  m_queue_family_indices = queue_family_indices; return *this; }
-
-			//! Set the required memory properties (i.e. vk::MemoryPropertyFlagBits::eHostCoherent) of 
-			//! the device memory that will be bound to the buffer. 
-			Options& memory_property_flags(vk::MemoryPropertyFlags memory_property_flags) { m_memory_property_flags = memory_property_flags; return *this; }
-
-		private:
-
-			std::vector<uint32_t> m_queue_family_indices;
-			vk::MemoryPropertyFlags m_memory_property_flags;
-
-			friend class Buffer;
-		};
-
 		//! Factory method for returning a new BufferRef that will be filled with the supplied vector of data.
 		template<class T>
-		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const Options& options = Options())
+		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const std::vector<Device::QueueType> queues)
 		{
-			return std::make_shared<Buffer>(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), options);
+			return std::make_shared<Buffer>(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues);
 		}
 
 		//! Factory method for returning a new BufferRef that will be filled with the supplied data.
-		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const Options& options = Options())
+		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<Device::QueueType> queues)
 		{
-			return std::make_shared<Buffer>(device, buffer_usage_flags, size, data, options);
+			return std::make_shared<Buffer>(device, buffer_usage_flags, size, data, queues);
 		}
 
-		Buffer(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const Options& options = Options());
+		Buffer(const DeviceRef& device, 
+			vk::BufferUsageFlags buffer_usage_flags,		
+			size_t size, 
+			const void* data, 
+			const std::vector<Device::QueueType> queues);
+
 		~Buffer();
 
 		inline vk::Buffer get_handle() const { return m_buffer_handle; }
 		inline DeviceMemoryRef get_device_memory() const { return m_device_memory; }
 		inline vk::BufferUsageFlags get_buffer_usage_flags() const { return m_buffer_usage_flags; }
-		inline vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const { return { m_buffer_handle, offset, range };  }
+
+		inline vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const 
+		{ 
+			return { m_buffer_handle, offset, range };  
+		}
 
 		//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
 		//! allocation size, which can be queried from the buffer's device memory reference.

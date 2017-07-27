@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include "Platform.h"
 
 namespace graphics

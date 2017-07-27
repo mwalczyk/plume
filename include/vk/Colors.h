@@ -26,20 +26,21 @@
 
 #pragma once
 
-#include "Buffer.h"
-#include "Colors.h"
-#include "CommandBuffer.h"
-#include "CommandPool.h"
-#include "DescriptorPool.h"
-#include "Device.h"
-#include "Framebuffer.h"
-#include "Image.h"
-#include "Instance.h"
-#include "Pipeline.h"
-#include "RenderPass.h"
-#include "Semaphore.h"
-#include "ShaderModule.h"
-#include "Surface.h"
-#include "Swapchain.h"
-#include "Window.h"
-#include "Utils.h"
+#include "Platform.h"
+
+namespace graphics
+{
+	namespace clear
+	{
+		vk::ClearColorValue RED =	std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f };
+		vk::ClearColorValue GREEN = std::array<float, 4>{ 0.0f, 0.0f, 1.0f, 1.0f };
+		vk::ClearColorValue BLUE =	std::array<float, 4>{ 0.0f, 1.0f, 0.0f, 1.0f };
+		vk::ClearColorValue WHITE = std::array<float, 4>{ 1.0f, 1.0f, 1.0f, 1.0f };
+		vk::ClearColorValue BLACK = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };
+
+		vk::ClearDepthStencilValue DEPTH_ZERO = { 0.0f, 0 };
+		vk::ClearDepthStencilValue DEPTH_ONE =	{ 1.0f, 0 };
+		vk::ClearDepthStencilValue DEPTH_ZERO_STENCIL_ONE = { 0.0f, 1 };
+		vk::ClearDepthStencilValue DEPTH_ONE_STENCIL_ONE =	{ 1.0f, 1 };
+	}
+}

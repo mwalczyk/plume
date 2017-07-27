@@ -36,4 +36,5 @@ void main()
 	vec3 samp = texture(sfd_map, vec3(uv, layer)).rgb;
 	//vec3(uv, layer)
 	o_color = vec4(samp * (layer / number_of_layers), 1.0);
+	o_color.r *= t * 0.5 + 0.5;
 }

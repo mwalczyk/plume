@@ -94,7 +94,7 @@ namespace graphics
 		//! Returns `true` if this command buffer has entered a render pass (i.e. `begin_render_pass()` 
 		//! has been called).
 		inline bool is_inside_render_pass() const { return m_is_inside_render_pass; }
-		
+
 
 		//! Puts the command buffer back into its original state but does not necessarily interact
 		//! with the command pool from which it was allocated. Therefore, if the command buffer
@@ -116,10 +116,10 @@ namespace graphics
 		//! Note that vk::CommandBufferUsageFlagBits::eRenderPassContinue is only valid for secondary
 		//! command buffers.
 		void begin(vk::CommandBufferUsageFlags command_buffer_usage_flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		
+
 		//! Begin recording the commands for a render pass instance. 
 		void begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values = { vk::ClearColorValue(std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }) });
-		
+
 		//! Advance to the current render pass' next subpass.
 		void next_subpass();
 
@@ -128,22 +128,36 @@ namespace graphics
 
 		//! Bind a pipeline for use in subsequent graphics or compute operations.
 		void bind_pipeline(const PipelineRef& pipeline);
-		
+
 		//! Binds the specified vertex buffers for use in subsequent draw commands.
 		void bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding = 0);
-		
+
 		//! Binds the specified index buffer for use in subsequent indexed draw commands.
 		void bind_index_buffer(const BufferRef& buffer, uint32_t offset = 0, vk::IndexType index_type = vk::IndexType::eUint32);
 
 		//! Update a series of push constants, starting at the specified offset. Note that 
 		//! all push constants are undefined at the start of a command buffer.
-		void update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const void* data);
+		template<class T>
+		void update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const T& data)
+		{
+			m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), stage_flags, offset, size, &data);
+		}
+
+		//! During shader reflection, the pipeline object grabs and stores information about the available push
+		//! constants. This let's us refer to a push constant by its string name.
+		template<class T>
+		void update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const T& data)
+		{
+			auto pushConstantsMember = pipeline->get_push_constants_member(name);
+
+			m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, &data);
+		}
 
 		//! Update a single push constant with the specified name inside of one or more of
 		//! the specified pipeline's shader modules. Note that all push constants are undefined 
 		//! at the start of a command buffer.
-		void update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const void* data);
-		
+		//void update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const void* data);
+
 		//! Binds the specified descriptor sets.
 		void bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets);
 
@@ -152,9 +166,20 @@ namespace graphics
 
 		//! Issue an indexed draw command.
 		void draw_indexed(uint32_t tIndexCount, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance);
-		
+
 		//! Stop recording the commands for a render pass' final subpass.
 		void end_render_pass();
+
+		//! Clear a color image with the specified clear value.
+		void clear_color_image(const ImageRef& image, 
+			vk::ClearColorValue clear_value = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }, 
+			vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource());
+
+		//! Clear a depth/stencil image with the specified clear value.
+		void clear_depth_image(const ImageRef& image,
+			vk::ClearDepthStencilValue clear_value = { 1.0f, 0 },
+			vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
+
 
 		//! Use an image memory barrier to transition an image from one layout to another.
 		void transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to);
@@ -172,16 +197,18 @@ namespace graphics
 		bool m_is_inside_render_pass;
 	};
 
-	class ScopedRecord
+	class ScopedRecord : Noncopyable
 	{
 	public:
 
+		// On construction, begin recording into the specified command buffer
 		ScopedRecord(const CommandBufferRef& command_buffer) :
 			m_command_buffer(command_buffer)
 		{
 			m_command_buffer->begin();
 		}
 
+		// On destruction, end recording into the specified command buffer
 		~ScopedRecord()
 		{
 			m_command_buffer->end();

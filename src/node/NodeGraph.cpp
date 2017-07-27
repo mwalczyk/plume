@@ -24,9 +24,9 @@ namespace node
 		m_projection_matrix = glm::ortho(0.0f, static_cast<float>(m_window->get_width()), static_cast<float>(m_window->get_height()), 0.0f, -1.0f, 1.0f);
 
 		// Setup buffers 
-		m_position_buffer = graphics::Buffer::create(m_device, vk::BufferUsageFlagBits::eVertexBuffer, s_positions);
-		m_index_buffer = graphics::Buffer::create(m_device, vk::BufferUsageFlagBits::eIndexBuffer, s_indices);
-		m_uniform_buffer = graphics::Buffer::create(m_device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(glm::mat4), glm::value_ptr(m_projection_matrix));
+		m_position_buffer = graphics::Buffer::create(m_device, vk::BufferUsageFlagBits::eVertexBuffer, s_positions, { graphics::Device::QueueType::GRAPHICS });
+		m_index_buffer = graphics::Buffer::create(m_device, vk::BufferUsageFlagBits::eIndexBuffer, s_indices, { graphics::Device::QueueType::GRAPHICS });
+		m_uniform_buffer = graphics::Buffer::create(m_device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(glm::mat4), glm::value_ptr(m_projection_matrix), { graphics::Device::QueueType::GRAPHICS });
 
 		// Setup the descriptor pool
 		m_descriptor_pool = graphics::DescriptorPool::create(m_device, { { vk::DescriptorType::eUniformBuffer, 1 } });
