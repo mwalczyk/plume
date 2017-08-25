@@ -95,15 +95,14 @@ int main()
 
 	vk::VertexInputBindingDescription binding_0 = { 0, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
 	vk::VertexInputBindingDescription binding_1 = { 1, sizeof(float) * 2 }; // input rate vertex: 3 floats between each vertex
-	vk::VertexInputAttributeDescription attr_0 = { 0, binding_0.binding, vk::Format::eR32G32B32Sfloat };	// 3 floats: position
-	vk::VertexInputAttributeDescription attr_1 = { 1, binding_1.binding, vk::Format::eR32G32Sfloat };		// 2 floats: texture coordinates	
+	std::vector<vk::VertexInputAttributeDescription> attrs = geometry.get_vertex_input_attribute_descriptions();
 	
 	auto v_shader = ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/vert.spv"));
 	auto f_shader = ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/frag.spv"));
 
 	auto pipeline_options = Pipeline::Options()
 		.vertex_input_binding_descriptions({ binding_0, binding_1 })
-		.vertex_input_attribute_descriptions({ attr_0, attr_1 })
+		.vertex_input_attribute_descriptions(attrs)
 		.viewports({ window->get_fullscreen_viewport() })
 		.scissors({ window->get_fullscreen_scissor_rect2d() })
 		.attach_shader_stages({ v_shader, f_shader })
@@ -200,30 +199,17 @@ int main()
 		{ vk::DescriptorType::eCombinedImageSampler, 1 }
 	});
 
-	std::vector<vk::DescriptorSetLayoutBinding> layout_bindings = {
-		{
-			0,												// binding (see shader code)
-			vk::DescriptorType::eUniformBuffer, 1,			// type and count
-			vk::ShaderStageFlagBits::eAll,					// shader usage stages
-			nullptr											// immutable samplers
-		},
-		{
-			1,												// binding (see shader code)
-			vk::DescriptorType::eCombinedImageSampler, 1,	// type and count
-			vk::ShaderStageFlagBits::eAll,					// shader usage stages
-			nullptr											// immutable samplers
-		}
-	};
-
-	vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
-	descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(layout_bindings.size());
-	descriptor_set_layout_create_info.pBindings = layout_bindings.data();
-	vk::DescriptorSetLayout descriptor_set_layout = device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+	// TODO: write a method in the DescriptorPool class that allocates a descriptor set from 
+	// a LayoutBuilder and keeps track of the number of active sets / per-descriptor resources
+	auto layout_builder = LayoutBuilder::create(device);
+	layout_builder->add_next_binding(vk::DescriptorType::eUniformBuffer);
+	layout_builder->add_next_binding(vk::DescriptorType::eCombinedImageSampler);
+	vk::DescriptorSetLayout layout = layout_builder->build_layout();
 
 	vk::DescriptorSetAllocateInfo descriptor_set_allocate_info = { 
 		descriptor_pool->get_handle(),	// descriptor pool
 		1,								// number of sets to allocate
-		&descriptor_set_layout			// descriptor set layout
+		&layout							// descriptor set layout
 	};
 	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptor_set_allocate_info)[0];
 
@@ -267,17 +253,17 @@ int main()
 			command_buffer->bind_vertex_buffers({ vbo_0, vbo_1 });
 			command_buffer->bind_index_buffer(ibo);
 			command_buffer->update_push_constant_ranges(pipeline, "time", get_elapsed_seconds());
-			command_buffer->bind_descriptor_sets(pipeline, 0, { descriptor_set }, {});
+			command_buffer->bind_descriptor_sets(pipeline, 0, descriptor_set);
 			command_buffer->draw_indexed(static_cast<uint32_t>(geometry.get_indices().size()), 1, 0, 0, 0);
 			command_buffer->end_render_pass();
 		}
-		device->submit_with_semaphores(Device::QueueType::GRAPHICS, command_buffer, { image_available_sem }, { render_complete_sem });
+		device->submit_with_semaphores(Device::QueueType::GRAPHICS, command_buffer, image_available_sem, render_complete_sem);
 
 		// Wait for rendering to finish before attempting to present...
-		device->get_queue_handle(Device::QueueType::GRAPHICS).waitIdle();
+		device->wait_idle_queue(Device::QueueType::GRAPHICS);
 		
 		// Present the rendered image to the swapchain.
-		device->present(swapchain, image_index, { render_complete_sem });
+		device->present(swapchain, image_index, render_complete_sem);
 	}
 
 	return 0;

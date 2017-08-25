@@ -37,9 +37,9 @@ public:
 
 	virtual void run()
 	{
-		while (!mWindow->shouldWindowClose())
+		while (!m_window->should_close())
 		{
-			mWindow->pollEvents();
+			m_window->poll_events();
 			draw();
 		}
 		exit();
@@ -48,29 +48,29 @@ public:
 	virtual void setup();
 	virtual void draw();
 	virtual void exit();
-	void setInstance(const vk::InstanceRef &tInstance) { mInstance = tInstance; }
-	void setWindow(const vk::WindowRef &tWindow) { mWindow = tWindow; }
-	vk::InstanceRef getInstance() const { return mInstance; }
-	vk::WindowRef getWindow() const { return mWindow; }
-	inline uint32_t getWidth() const { return mWidth; }
-	inline uint32_t getHeight() const { return mHeight; }
+	void set_instance(const graphics::InstanceRef &tInstance) { m_instance = tInstance; }
+	void set_window(const graphics::WindowRef &tWindow) { m_window = tWindow; }
+	graphics::InstanceRef get_instance() const { return m_instance; }
+	graphics::WindowRef get_window() const { return m_window; }
+	inline uint32_t get_width() const { return m_width; }
+	inline uint32_t get_height() const { return m_height; }
 
 private:
 
-	vk::InstanceRef mInstance;
-	vk::WindowRef mWindow;
-	uint32_t mWidth;
-	uint32_t mHeight;
+	graphics::InstanceRef m_instance;
+	graphics::WindowRef m_window;
+	uint32_t m_width;
+	uint32_t m_height;
 };
 
 #define DECLARE_MAIN(ApplicationDerived, ...)										\						
 int main()																			\
 {																					\
-	vk::InstanceRef instance = vk::Instance::create();								\
-	vk::WindowRef window = vk::Window::create(instance, 800, 800);					\
+	graphics::InstanceRef instance = graphics::Instance::create();					\
+	graphics::WindowRef window = graphics::Window::create(instance, 800, 800);		\
 	Application *application = static_cast<Application*>(new ApplicationDerived);	\
-	application->setInstance(instance);												\
-	application->setWindow(window);													\
+	application->set_instance(instance);											\
+	application->set_window(window);												\
 	application->setup();															\
 	application->run();																\
 	delete application;																\

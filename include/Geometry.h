@@ -52,6 +52,12 @@ namespace geo
 
 	using VertexAttributeSet = std::vector<VertexAttribute>;
 
+	enum class AttributeMode
+	{
+		MODE_INTERLEAVED,
+		MODE_SEPARATE
+	};
+
 	class Geometry
 	{
 	public:
@@ -68,7 +74,8 @@ namespace geo
 		inline const std::vector<glm::vec3>& get_normals() const { return m_normals; }
 		inline const std::vector<glm::vec2>& get_texture_coordinates() const { return m_texture_coordinates; }
 		inline const std::vector<uint32_t>& get_indices() const { return m_indices; }
-		inline VertexAttributeSet get_active_vertex_attributes() const { return m_attribute_set; }
+
+		std::vector<vk::VertexInputAttributeDescription> get_vertex_input_attribute_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_SEPARATE);
 
 		float* get_vertex_attribute(VertexAttribute attribute);
 
@@ -84,8 +91,6 @@ namespace geo
 		std::vector<glm::vec3> m_normals;
 		std::vector<glm::vec2> m_texture_coordinates;
 		std::vector<uint32_t> m_indices;
-
-		VertexAttributeSet m_attribute_set;
 	};
 
 	class IcoSphere: public Geometry
@@ -95,9 +100,6 @@ namespace geo
 		IcoSphere();
 
 		inline vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleList; }
-
-	private:
-
 	};
 
 	class Grid : public Geometry
@@ -107,7 +109,6 @@ namespace geo
 		Grid();
 
 		inline vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
-
 	};
 
 	class Circle : public Geometry
@@ -118,7 +119,6 @@ namespace geo
 		Circle(float radius, uint32_t subdivisions = 30);
 
 		inline vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleFan; }
-
 	};
 
 	class Sphere : public Geometry

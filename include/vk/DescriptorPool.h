@@ -37,6 +37,65 @@
 namespace graphics
 {
 
+	class LayoutBuilder;
+	using LayoutBuilderRef = std::shared_ptr<LayoutBuilder>;
+
+	//! A simple class for creating and aggregating vk::DescriptorSetLayoutBinding structs, which are used
+	//! to create a vk::DescriptorSetLayout. Each descriptor has a binding, which is a unique, numeric index 
+	//! specified in the shader. The LayoutBuilder class creates vk::DescriptorSetLayoutBinding structs 
+	//! starting at the index specified in the constructor. Each time the `add_next_binding()` method is 
+	//! called, this index is incremented by one. 
+	class LayoutBuilder
+	{
+	public:
+
+		//! Factory method for returning a new LayoutBuilderRef. 
+		static LayoutBuilderRef create(const DeviceRef& device, uint32_t start = 0)
+		{
+			return std::make_shared<LayoutBuilder>(device, start);
+		}
+
+		LayoutBuilder(const DeviceRef& device, uint32_t start = 0) :
+			m_device(device),
+			m_current_binding(start)
+		{
+		}
+		
+		void add_next_binding(vk::DescriptorType type, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		{
+			m_layout_bindings.push_back({
+				m_current_binding,								// binding (as it appears in the shader code)
+				type,											// descriptor type (i.e. vk::DescriptorType::eUniformBuffer)
+				count,											// descriptor count (if the descriptor is an array)
+				stages,											// shader usage stages
+				nullptr											// immutable samplers 
+			});
+
+			m_current_binding++;
+		}
+
+		vk::DescriptorSetLayout build_layout()
+		{
+			vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
+			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(m_layout_bindings.size());
+			descriptor_set_layout_create_info.pBindings = m_layout_bindings.data();
+
+			return m_device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+		}
+
+		inline void skip(uint32_t skip_count) { m_current_binding += skip_count; }
+		inline void reset() { m_current_binding = 0; m_layout_bindings.clear(); }
+		inline void reset_and_start_at(uint32_t start) { m_current_binding = start; m_layout_bindings.clear(); }
+		inline size_t get_bindings_count() const { return m_layout_bindings.size(); }
+		inline const std::vector<vk::DescriptorSetLayoutBinding>& get_bindings() const { return m_layout_bindings; }
+
+	private:
+
+		DeviceRef m_device;
+		uint32_t m_current_binding;
+		std::vector<vk::DescriptorSetLayoutBinding> m_layout_bindings;
+	};
+
 	class DescriptorPool;
 	using DescriptorPoolRef = std::shared_ptr<DescriptorPool>;
 

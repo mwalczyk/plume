@@ -115,7 +115,7 @@ namespace graphics
 		m_command_buffer_handle.bindIndexBuffer(buffer->get_handle(), offset, index_type);
 	}
 
-	void CommandBuffer::bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets)
+	void CommandBuffer::bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const vk::ArrayProxy<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets)
 	{
 		m_command_buffer_handle.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->get_pipeline_layout_handle(), first_set, static_cast<uint32_t>(descriptor_sets.size()), descriptor_sets.data(), static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
 	}
@@ -213,6 +213,14 @@ namespace graphics
 		// This class is a friend of the image class - store its new layout.
 		image->m_current_layout = to;
 
+		// The `srcStageMask` and `dstStageMask` specify which pipeline stages wrote to the resource
+		// last and which stages will read from the resource next, respectively. That is, they specify
+		// the source and destination for the data flow represented by the barrier. The stage 
+		// vk::PipelineStageFlagBits::eTopOfPipe is considered to be hit as soon as the device starts
+		// processing the command.
+		//
+		// The `dependencyFlags` parameter specifies a set of flags that describe how the dependency 
+		// represented by the barrier affects the resources referenced by the barrier. 
 		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTopOfPipe, {}, {}, {}, image_memory_barrier);
 	}
 

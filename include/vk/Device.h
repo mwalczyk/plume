@@ -109,15 +109,18 @@ namespace graphics
 		void one_time_submit(QueueType type, const CommandBufferRef& command_buffer);
 
 		void submit_with_semaphores(QueueType type, const CommandBufferRef& command_buffer,
-			const std::vector<SemaphoreRef>& wait,
-			const std::vector<SemaphoreRef>& signal,
+			const vk::ArrayProxy<SemaphoreRef>& wait,
+			const vk::ArrayProxy<SemaphoreRef>& signal,
 			const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput });
 
-		void present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait);
+		void present(const SwapchainRef& swapchain, uint32_t image_index, const vk::ArrayProxy<SemaphoreRef>& wait);
 
 		inline const std::vector<vk::QueueFamilyProperties>& get_physical_device_queue_family_properties() const { return m_physical_device_queue_family_properties; }
 		inline const std::vector<vk::ExtensionProperties>& get_physical_device_extension_properties() const { return m_physical_device_extension_properties; }
 		
+		//! Wait for all commands submitted on a particular queue to finish.
+		inline void wait_idle_queue(QueueType type) { get_queue_handle(type).waitIdle(); }
+
 		//! Wait for all commands submitted to all queues to finish.
 		inline void wait_idle() { m_device_handle.waitIdle(); }
 

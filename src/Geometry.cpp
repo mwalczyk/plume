@@ -28,6 +28,20 @@
 
 namespace geo
 {
+	vk::Format attribute_to_format(VertexAttribute attribute)
+	{
+		switch (attribute)
+		{
+		case VertexAttribute::ATTRIBUTE_POSITION:
+		case VertexAttribute::ATTRIBUTE_COLOR:
+		case VertexAttribute::ATTRIBUTE_NORMAL:
+			return vk::Format::eR32G32B32Sfloat;
+		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES:
+			return vk::Format::eR32G32Sfloat;
+		default:
+			return vk::Format::eR32G32Sfloat;
+		}
+	}
 
 	float* Geometry::get_vertex_attribute(VertexAttribute attribute) 
 	{
@@ -61,6 +75,35 @@ namespace geo
 		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return 3;
 		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return 2;
 		}
+	}
+
+	std::vector<vk::VertexInputAttributeDescription> Geometry::get_vertex_input_attribute_descriptions(uint32_t start_binding, AttributeMode mode)
+	{
+		static const VertexAttributeSet active_attributes =
+		{
+			VertexAttribute::ATTRIBUTE_POSITION,
+			VertexAttribute::ATTRIBUTE_COLOR,
+			VertexAttribute::ATTRIBUTE_NORMAL,
+			VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES
+		};
+
+		std::vector<vk::VertexInputAttributeDescription> input_attribute_descriptions;
+		uint32_t attribute_location = 0;
+		uint32_t attribute_binding = start_binding;
+
+		for (const auto& available_attribute : active_attributes)
+		{
+			vk::Format attribute_format = attribute_to_format(available_attribute);
+
+			input_attribute_descriptions.push_back({ attribute_location, attribute_binding, attribute_format });
+
+			if (mode == AttributeMode::MODE_SEPARATE)
+			{
+				attribute_binding++;
+			}
+			attribute_location++;
+		}
+		return input_attribute_descriptions;
 	}
 
 	IcoSphere::IcoSphere()

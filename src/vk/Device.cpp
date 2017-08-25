@@ -253,8 +253,8 @@ namespace graphics
 	}
 
 	void Device::submit_with_semaphores(QueueType type, const CommandBufferRef& command_buffer,
-		const std::vector<SemaphoreRef>& wait,
-		const std::vector<SemaphoreRef>& signal,
+		const vk::ArrayProxy<SemaphoreRef>& wait,
+		const vk::ArrayProxy<SemaphoreRef>& signal,
 		const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags)
 	{
 		vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
@@ -291,7 +291,7 @@ namespace graphics
 		get_queue_handle(type).waitIdle();
 	}
 
-	void Device::present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait)
+	void Device::present(const SwapchainRef& swapchain, uint32_t image_index, const vk::ArrayProxy<SemaphoreRef>& wait)
 	{
 		// Gather all semaphore handles.
 		std::vector<vk::Semaphore> wait_handles(wait.size());
