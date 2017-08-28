@@ -77,10 +77,10 @@ int main()
 	*
 	***********************************************************************************/
 	auto geometry = geo::Grid();
-	auto vbo_0 =	Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_positions(), { Device::QueueType::GRAPHICS });
-	auto vbo_1 =	Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_texture_coordinates(), { Device::QueueType::GRAPHICS });
-	auto ibo =		Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices(), { Device::QueueType::GRAPHICS });
-	auto ubo =		Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr, { Device::QueueType::GRAPHICS });
+	auto vbo_0 =	Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_positions());
+	auto vbo_1 =	Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_texture_coordinates());
+	auto ibo =		Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
+	auto ubo =		Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
 	
 	UniformBufferData ubo_data = 
 	{
@@ -93,15 +93,14 @@ int main()
 	memcpy(data, &ubo_data, sizeof(ubo_data));
 	ubo->get_device_memory()->unmap();
 
-	vk::VertexInputBindingDescription binding_0 = { 0, sizeof(float) * 3 }; // input rate vertex: 3 floats between each vertex
-	vk::VertexInputBindingDescription binding_1 = { 1, sizeof(float) * 2 }; // input rate vertex: 3 floats between each vertex
+	std::vector<vk::VertexInputBindingDescription> binds = geometry.get_vertex_input_binding_descriptions();
 	std::vector<vk::VertexInputAttributeDescription> attrs = geometry.get_vertex_input_attribute_descriptions();
 	
 	auto v_shader = ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/vert.spv"));
 	auto f_shader = ShaderModule::create(device, ResourceManager::load_file("../assets/shaders/frag.spv"));
 
 	auto pipeline_options = Pipeline::Options()
-		.vertex_input_binding_descriptions({ binding_0, binding_1 })
+		.vertex_input_binding_descriptions(binds)
 		.vertex_input_attribute_descriptions(attrs)
 		.viewports({ window->get_fullscreen_viewport() })
 		.scissors({ window->get_fullscreen_scissor_rect2d() })

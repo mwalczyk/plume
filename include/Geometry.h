@@ -47,7 +47,11 @@ namespace geo
 		ATTRIBUTE_POSITION,
 		ATTRIBUTE_COLOR,
 		ATTRIBUTE_NORMAL,
-		ATTRIBUTE_TEXTURE_COORDINATES
+		ATTRIBUTE_TEXTURE_COORDINATES,
+		ATTRIBUTE_CUSTOM_0,
+		ATTRIBUTE_CUSTOM_1,
+		ATTRIBUTE_CUSTOM_2,
+		ATTRIBUTE_CUSTOM_3
 	};
 
 	using VertexAttributeSet = std::vector<VertexAttribute>;
@@ -65,7 +69,9 @@ namespace geo
 		virtual ~Geometry() = default;
 
 		virtual vk::PrimitiveTopology get_topology() const = 0;
-		virtual size_t get_vertex_attribute_dimensions(VertexAttribute attribute) const;
+		virtual uint32_t get_vertex_attribute_dimensions(VertexAttribute attribute) const;
+		virtual uint32_t get_vertex_attribute_size(VertexAttribute attribute) const;
+		//virtual VertexAttributeSet get_available_attributes() const = 0;
 
 		inline size_t get_vertex_count() const { return m_positions.size(); }
 
@@ -76,6 +82,7 @@ namespace geo
 		inline const std::vector<uint32_t>& get_indices() const { return m_indices; }
 
 		std::vector<vk::VertexInputAttributeDescription> get_vertex_input_attribute_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_SEPARATE);
+		std::vector<vk::VertexInputBindingDescription> get_vertex_input_binding_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_SEPARATE);
 
 		float* get_vertex_attribute(VertexAttribute attribute);
 

@@ -49,15 +49,17 @@ namespace graphics
 	{
 	public:
 
+		static const vk::BufferUsageFlags BUFFER_USAGE_ALL;
+
 		//! Factory method for returning a new BufferRef that will be filled with the supplied vector of data.
 		template<class T>
-		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const std::vector<Device::QueueType> queues)
+		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const std::vector<Device::QueueType> queues = { Device::QueueType::GRAPHICS })
 		{
 			return std::make_shared<Buffer>(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues);
 		}
 
 		//! Factory method for returning a new BufferRef that will be filled with the supplied data.
-		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<Device::QueueType> queues)
+		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<Device::QueueType> queues = { Device::QueueType::GRAPHICS })
 		{
 			return std::make_shared<Buffer>(device, buffer_usage_flags, size, data, queues);
 		}
@@ -66,7 +68,7 @@ namespace graphics
 			vk::BufferUsageFlags buffer_usage_flags,		
 			size_t size, 
 			const void* data, 
-			const std::vector<Device::QueueType> queues);
+			const std::vector<Device::QueueType> queues = { Device::QueueType::GRAPHICS });
 
 		~Buffer();
 

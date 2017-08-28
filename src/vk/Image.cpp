@@ -71,6 +71,15 @@ namespace graphics
 		m_device->get_handle().destroySampler(m_sampler_handle);
 	}
 
+	static const vk::ImageUsageFlags IMAGE_USAGE_ALL = vk::ImageUsageFlagBits::eColorAttachment |
+		vk::ImageUsageFlagBits::eDepthStencilAttachment |
+		vk::ImageUsageFlagBits::eInputAttachment |
+		vk::ImageUsageFlagBits::eSampled |
+		vk::ImageUsageFlagBits::eStorage |
+		vk::ImageUsageFlagBits::eTransferDst |
+		vk::ImageUsageFlagBits::eTransferSrc |
+		vk::ImageUsageFlagBits::eTransientAttachment;
+
 	Image::~Image()
 	{
 		m_device->get_handle().destroyImage(m_image_handle);

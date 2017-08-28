@@ -156,6 +156,8 @@ namespace graphics
 	{
 	public:
 
+		static const vk::ImageUsageFlags IMAGE_USAGE_ALL;
+
 		//! Factory method for returning a new ImageRef whose device local memory store will be empty.
 		static ImageRef create(const DeviceRef& device, 
 							   vk::ImageType image_type, 

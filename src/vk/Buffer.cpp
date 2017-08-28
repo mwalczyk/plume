@@ -29,6 +29,16 @@
 namespace graphics
 {
 
+	static const vk::BufferUsageFlags BUFFER_USAGE_ALL = vk::BufferUsageFlagBits::eIndexBuffer |
+		vk::BufferUsageFlagBits::eIndirectBuffer |
+		vk::BufferUsageFlagBits::eStorageBuffer |
+		vk::BufferUsageFlagBits::eStorageTexelBuffer |
+		vk::BufferUsageFlagBits::eTransferDst |
+		vk::BufferUsageFlagBits::eTransferSrc |
+		vk::BufferUsageFlagBits::eUniformBuffer |
+		vk::BufferUsageFlagBits::eUniformTexelBuffer |
+		vk::BufferUsageFlagBits::eVertexBuffer;
+
 	Buffer::Buffer(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<Device::QueueType> queues) :
 		m_device(device),
 		m_buffer_usage_flags(buffer_usage_flags),

@@ -28,6 +28,14 @@
 
 namespace geo
 {
+	static const VertexAttributeSet active_attributes =
+	{
+		VertexAttribute::ATTRIBUTE_POSITION,
+		VertexAttribute::ATTRIBUTE_COLOR,
+		//VertexAttribute::ATTRIBUTE_NORMAL,
+		//VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES
+	};
+
 	vk::Format attribute_to_format(VertexAttribute attribute)
 	{
 		switch (attribute)
@@ -66,27 +74,24 @@ namespace geo
 		std::generate(m_colors.begin(), m_colors.end(), [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
 	}
 
-	size_t Geometry::get_vertex_attribute_dimensions(VertexAttribute attribute) const
+	uint32_t Geometry::get_vertex_attribute_dimensions(VertexAttribute attribute) const
 	{
 		switch (attribute)
 		{
-		case geo::VertexAttribute::ATTRIBUTE_POSITION: return 3;
-		case geo::VertexAttribute::ATTRIBUTE_COLOR: return 3;
+		case geo::VertexAttribute::ATTRIBUTE_POSITION: 
+		case geo::VertexAttribute::ATTRIBUTE_COLOR: 
 		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return 3;
 		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return 2;
 		}
 	}
 
+	uint32_t Geometry::get_vertex_attribute_size(VertexAttribute attribute) const
+	{
+		return get_vertex_attribute_dimensions(attribute) * sizeof(float);
+	}
+
 	std::vector<vk::VertexInputAttributeDescription> Geometry::get_vertex_input_attribute_descriptions(uint32_t start_binding, AttributeMode mode)
 	{
-		static const VertexAttributeSet active_attributes =
-		{
-			VertexAttribute::ATTRIBUTE_POSITION,
-			VertexAttribute::ATTRIBUTE_COLOR,
-			VertexAttribute::ATTRIBUTE_NORMAL,
-			VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES
-		};
-
 		std::vector<vk::VertexInputAttributeDescription> input_attribute_descriptions;
 		uint32_t attribute_location = 0;
 		uint32_t attribute_binding = start_binding;
@@ -104,6 +109,24 @@ namespace geo
 			attribute_location++;
 		}
 		return input_attribute_descriptions;
+	}
+
+	std::vector<vk::VertexInputBindingDescription> Geometry::get_vertex_input_binding_descriptions(uint32_t start_binding, AttributeMode mode)
+	{
+		std::vector<vk::VertexInputBindingDescription> binding_descriptions;
+		uint32_t attribute_binding = start_binding;
+
+		for (const auto& available_attribute : active_attributes)
+		{
+			// TOOD: this does not take into account any custom attributes that might be instanced, i.e. vk::VertexInputRate::eInstance
+			binding_descriptions.push_back({ attribute_binding, get_vertex_attribute_size(available_attribute) });
+
+			if (mode == AttributeMode::MODE_SEPARATE)
+			{
+				attribute_binding++;
+			}
+		}
+		return binding_descriptions;
 	}
 
 	IcoSphere::IcoSphere()
