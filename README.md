@@ -2,14 +2,14 @@
 
 ![Logo](https://github.com/mwalczyk/VulkanToolkit/blob/master/logo.png)
 
-A work-in-progress framework and abstraction layer around the Vulkan graphics API. Currently being developed with version 1.0.39.1.
+A work-in-progress framework and abstraction layer around the Vulkan graphics API. Currently being developed with version 1.0.54.0.
 
 ## Cloning
 
 Spectrum uses several submodules:
-- [Shaderc](https://github.com/google/shaderc) for runtime shader compilation (from GLSL to SPIR-V)
-- [GLM](https://github.com/g-truc/glm) for mathematics
-- [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross) for shader reflection
+- [shaderc](https://github.com/google/shaderc) for runtime shader compilation (from GLSL to SPIR-V)
+- [glm](https://github.com/g-truc/glm) for mathematics
+- [spirv-cross](https://github.com/KhronosGroup/SPIRV-Cross) for shader reflection
 - [stb](https://github.com/nothings/stb) for image loading
 After cloning the main repository, make sure to initialize submodules by executing the following command from the top-level
 directory:
@@ -28,13 +28,12 @@ Spectrum's syntax, structure, and design patterns were greatly influenced by sev
 open source projects:
 
 - [Cinder](https://github.com/cinder/Cinder)
-- [Nyorain's VPP Toolkit](https://github.com/nyorain/vpp)
-- [Dynamic Static's Vulkan Toolkit](https://github.com/DynamicStatic/Dynamic_Static_Graphics)
-- [Alexander Overvoorde's Vulkan Tutorial](https://vulkan-tutorial.com/)
-- [gan74's Yave Engine](https://github.com/gan74/Yave)
-- [Jian Ru's Laugh Engine](https://github.com/jian-ru/laugh_engine)
-- [AMD's Anvil](https://github.com/GPUOpen-LibrariesAndSDKs/Anvil)
-- [Andy Thomson's Vookoo Toolkit](https://github.com/andy-thomason/Vookoo)
+- [VPP](https://github.com/nyorain/vpp)
+- [Dynamic Static Graphics](https://github.com/DynamicStatic/Dynamic_Static_Graphics)
+- [Yave](https://github.com/gan74/Yave)
+- [Laugh](https://github.com/jian-ru/laugh_engine)
+- [Anvil](https://github.com/GPUOpen-LibrariesAndSDKs/Anvil)
+- [Vookoo](https://github.com/andy-thomason/Vookoo)
 
 See the [Spectrum C++ style guide](https://github.com/mwalczyk/spectrum_cpp_style) for more information.
 
