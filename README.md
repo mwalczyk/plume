@@ -6,11 +6,19 @@ A work-in-progress framework and abstraction layer around the Vulkan graphics AP
 
 ## Cloning
 
-Spectrum uses several submodules (GLM, SPIRV-Cross, STB, etc.). After cloning the main
-repository, make sure to initialize submodules by executing the following command from the top-level
+Spectrum uses several submodules:
+- [Shaderc](https://github.com/google/shaderc) for runtime shader compilation (from GLSL to SPIR-V)
+- [GLM](https://github.com/g-truc/glm) for mathematics
+- [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross) for shader reflection
+- [stb](https://github.com/nothings/stb) for image loading
+After cloning the main repository, make sure to initialize submodules by executing the following command from the top-level
 directory:
 
 `git submodule update --init --recursive`
+
+Existing submodules can be updated recursively by executing the following command from the top-level directory:
+
+`git submodule update --recursive --remote`
 
 More information on working with submodules can be found [here](https://github.com/blog/2104-working-with-submodules).
 
@@ -26,16 +34,11 @@ open source projects:
 - [gan74's Yave Engine](https://github.com/gan74/Yave)
 - [Jian Ru's Laugh Engine](https://github.com/jian-ru/laugh_engine)
 - [AMD's Anvil](https://github.com/GPUOpen-LibrariesAndSDKs/Anvil)
-
-Other resources that were helpful throughout the development of Spectrum:
-
-- [Nvidia Vulkan Renderer Example](https://github.com/nvpro-samples/gl_vk_chopper)
+- [Andy Thomson's Vookoo Toolkit](https://github.com/andy-thomason/Vookoo)
 
 See the [Spectrum C++ style guide](https://github.com/mwalczyk/spectrum_cpp_style) for more information.
 
 ## Roadmap:
 
-- [ ] Add support for headless rendering and multiple windows
-- [ ] Add a "notes" section to each header file, explaining each Vulkan object and its usage
-- [ ] Implement a standard material model for physically based shading with IBL
-- [ ] Implement forward / deferred rendering modes
+Many parts of Vulkan have not been implemented in Spectrum. As such, this project should be considered
+experimental and breaking changes will happen often.

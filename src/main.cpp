@@ -1,7 +1,7 @@
 #include "Vk.h"
 #include "Geometry.h"
 
-#include "glm/glm/gtc/matrix_transform.hpp"
+#include "gtc/matrix_transform.hpp"
 
 struct UniformBufferData
 {

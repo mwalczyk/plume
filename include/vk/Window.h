@@ -38,8 +38,8 @@
 #include "Surface.h"
 
 #include "glfw3.h"
-#include "glm/glm/glm.hpp"
-#include "glm/glm/gtc/type_ptr.hpp"
+#include "glm.hpp"
+#include "gtc/type_ptr.hpp"
 
 namespace graphics
 {
