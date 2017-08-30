@@ -92,9 +92,19 @@ namespace graphics
 		m_rasterization_state_create_info.polygonMode = vk::PolygonMode::eFill;
 		m_rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
 
+		// Set up the default dynamic state.
+		static std::vector<vk::DynamicState> default_dynamic_state = { 
+			vk::DynamicState::eLineWidth
+		};
+		m_dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(default_dynamic_state.size());
+		m_dynamic_state_create_info.pDynamicStates = default_dynamic_state.data();
+
 		// Set up the default viewport state.
 		m_viewports = { 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 1.0f };
 		m_scissors = { { 0, 0 }, { 640, 480 } };
+		
+		// Set the default subpass index.
+		m_subpass_index = 0;
 	}
    
 	vk::PipelineColorBlendAttachmentState Pipeline::create_alpha_blending_attachment_state()
@@ -140,11 +150,7 @@ namespace graphics
 		{
 			throw std::runtime_error("At least one vertex shader stage is required to build a graphics pipeline");
 		}
-
-		vk::PipelineDynamicStateCreateInfo dynamic_state_create_info;
-		dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(options.m_dynamic_states.size());
-		dynamic_state_create_info.pDynamicStates = options.m_dynamic_states.data();
-
+		
 		vk::PipelineVertexInputStateCreateInfo vertex_input_state_create_info;
 		vertex_input_state_create_info.pVertexAttributeDescriptions = options.m_vertex_input_attribute_descriptions.data();
 		vertex_input_state_create_info.pVertexBindingDescriptions = options.m_vertex_input_binding_descriptions.data();
@@ -183,7 +189,7 @@ namespace graphics
 		graphics_pipeline_create_info.layout = m_pipeline_layout_handle;
 		graphics_pipeline_create_info.pColorBlendState = &options.m_color_blend_state_create_info;
 		graphics_pipeline_create_info.pDepthStencilState = &options.m_depth_stencil_state_create_info;
-		graphics_pipeline_create_info.pDynamicState = (options.m_dynamic_states.size() > 0) ? &dynamic_state_create_info : nullptr;
+		graphics_pipeline_create_info.pDynamicState = (options.m_dynamic_state_create_info.dynamicStateCount > 0) ? &options.m_dynamic_state_create_info : nullptr;
 		graphics_pipeline_create_info.pInputAssemblyState = &options.m_input_assembly_state_create_info;
 		graphics_pipeline_create_info.pMultisampleState = &options.m_multisample_state_create_info;
 		graphics_pipeline_create_info.pRasterizationState = &options.m_rasterization_state_create_info;
@@ -193,7 +199,7 @@ namespace graphics
 		graphics_pipeline_create_info.pViewportState = &viewport_state_create_info;
 		graphics_pipeline_create_info.renderPass = m_render_pass->get_handle();
 		graphics_pipeline_create_info.stageCount = static_cast<uint32_t>(shader_stage_create_infos.size());
-		graphics_pipeline_create_info.subpass = 0;
+		graphics_pipeline_create_info.subpass = options.m_subpass_index;
 
 		m_pipeline_handle = m_device->get_handle().createGraphicsPipeline({}, graphics_pipeline_create_info);
 	}

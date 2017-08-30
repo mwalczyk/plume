@@ -88,6 +88,7 @@ namespace graphics
 			//! final_color = final_color & color_write_mask;
 			Options& color_blend_attachment_states(const std::vector<vk::PipelineColorBlendAttachmentState>& color_blend_attachment_states) 
 			{
+				// TODO: this will not work when a temporary vector is passed to the function.
 				m_color_blend_state_create_info.attachmentCount = static_cast<uint32_t>(color_blend_attachment_states.size());
 				m_color_blend_state_create_info.pAttachments = color_blend_attachment_states.data();
 				return *this; 
@@ -111,7 +112,13 @@ namespace graphics
 			Options& stencil_test(vk::Bool32 enabled = VK_TRUE) { m_depth_stencil_state_create_info.stencilTestEnable = enabled; return *this; }
 
 			//! A limited amount of the pipeline state can be changed without recreating the entire pipeline.
-			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) { m_dynamic_states = dynamic_states; return *this; }
+			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) 
+			{
+				// TODO: this will not work when a temporary vector is passed to the function.
+				m_dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
+				m_dynamic_state_create_info.pDynamicStates = dynamic_states.data();
+				return *this; 
+			}
 
 			//! Enable or disable primitive restart.
 			Options& primitive_restart(vk::Bool32 primitive_restart) { m_input_assembly_state_create_info.primitiveRestartEnable = primitive_restart; return *this; }
@@ -153,11 +160,14 @@ namespace graphics
 			Options& viewports(const std::vector<vk::Viewport>& viewports) { m_viewports = viewports; return *this; }
 
 			//! Set the rectangular regions of the framebuffer output that will be visible.
-			Options& scissors(const std::vector<vk::Rect2D>& scissors){ m_scissors = scissors; return *this; }
+			Options& scissors(const std::vector<vk::Rect2D>& scissors) { m_scissors = scissors; return *this; }
 			
 			//! Add a shader stage to the pipeline. Note that all graphics pipeline objects must contain a vertex shader.
 			Options& attach_shader_stages(const std::vector<ShaderModuleRef>& modules) { m_shader_stages = modules; return *this; }
 			
+			//! Specify which subpass of the render pass that this pipeline will be associated with.
+			Options& subpass_index(uint32_t index) { m_subpass_index = index; return *this; }
+
 		private:
 
 			vk::PipelineColorBlendStateCreateInfo m_color_blend_state_create_info;
@@ -166,13 +176,14 @@ namespace graphics
 			vk::PipelineMultisampleStateCreateInfo m_multisample_state_create_info;
 			vk::PipelineRasterizationStateCreateInfo m_rasterization_state_create_info;
 			vk::PipelineTessellationStateCreateInfo m_tessellation_state_create_info;
+			vk::PipelineDynamicStateCreateInfo m_dynamic_state_create_info;
 
-			std::vector<vk::DynamicState> m_dynamic_states;
 			std::vector<vk::VertexInputBindingDescription> m_vertex_input_binding_descriptions;
 			std::vector<vk::VertexInputAttributeDescription> m_vertex_input_attribute_descriptions;
 			std::vector<vk::Viewport> m_viewports;
 			std::vector<vk::Rect2D> m_scissors;
 			std::vector<ShaderModuleRef> m_shader_stages;
+			uint32_t m_subpass_index;
 
 			friend class Pipeline;
 		};

@@ -151,7 +151,6 @@ int main()
 	*
 	***********************************************************************************/
 	auto command_pool = CommandPool::create(device, device->get_queue_family_index(Device::QueueType::GRAPHICS));
-
 	auto temp_command_buffer = CommandBuffer::create(device, command_pool);
 
 	{
