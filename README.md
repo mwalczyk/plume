@@ -11,6 +11,7 @@ Spectrum uses several submodules:
 - [glm](https://github.com/g-truc/glm) for mathematics
 - [spirv-cross](https://github.com/KhronosGroup/SPIRV-Cross) for shader reflection
 - [stb](https://github.com/nothings/stb) for image loading
+
 After cloning the main repository, make sure to initialize submodules by executing the following command from the top-level
 directory:
 
