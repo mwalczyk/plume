@@ -167,11 +167,11 @@ namespace graphics
 
 		// Get all of the values in the push constant ranges map. 
 		std::vector<vk::PushConstantRange> push_constant_ranges;
-		std::transform(m_push_constants_mapping.begin(), m_push_constants_mapping.end(), std::back_inserter(push_constant_ranges), [](const auto& val) {return val.second; });
+		std::transform(m_push_constants_mapping.begin(), m_push_constants_mapping.end(), std::back_inserter(push_constant_ranges), [](const auto& val) { return val.second; });
 
 		// Get all of the values in the descriptor set layouts map.
 		std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
-		std::transform(m_descriptor_set_layouts_mapping.begin(), m_descriptor_set_layouts_mapping.end(), std::back_inserter(descriptor_set_layouts), [](const auto& val) {return val.second; });
+		std::transform(m_descriptor_set_layouts_mapping.begin(), m_descriptor_set_layouts_mapping.end(), std::back_inserter(descriptor_set_layouts), [](const auto& val) { return val.second; });
 
 		// Encapsulate any descriptor sets and push constant ranges into a pipeline layout.
 		vk::PipelineLayoutCreateInfo pipeline_layout_create_info;
@@ -282,7 +282,8 @@ namespace graphics
 				it->second.offset == push_constant.offset &&
 				it->second.size == push_constant.size)
 			{
-				it->second.stageFlags |= module->get_stage();
+				// TODO: this isn't working
+				// it->second.stageFlags |= module->get_stage();
 				continue;
 			}
 

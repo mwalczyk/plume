@@ -66,6 +66,33 @@ namespace graphics
 	{
 	public:
 
+		//! A struct for aggregating the parameters passed to non-indexed drawing commands.
+		struct DrawParamsNonIndexed
+		{
+			DrawParamsNonIndexed(uint32_t vertex_count) :
+				m_vertex_count(vertex_count)
+			{}
+
+			uint32_t m_vertex_count = 1;	// The number of vertices to draw.
+			uint32_t m_instance_count = 1;	// The number of instances to draw.
+			uint32_t m_first_vertex = 0;	// The index of the first vertex to draw.
+			uint32_t m_first_instance = 0;	// The instance ID of the first instance to draw.
+		};
+
+		//! A struct for aggregating the parameters passed to indexed drawing commands.
+		struct DrawParamsIndexed
+		{
+			DrawParamsIndexed(uint32_t index_count) :
+				m_index_count(index_count)
+			{}
+
+			uint32_t m_index_count = 1;		// The number of vertices to draw.
+			uint32_t m_instance_count = 1;	// The number of instances to draw.
+			uint32_t m_first_index = 0;		// The base index within the index buffer.
+			uint32_t m_vertex_offset = 0;	// The value added to the vertex index before indexing into the vertex buffer.
+			uint32_t m_first_instance = 0;	// The instance ID of the first instance to draw.
+		};
+
 		//! Factory method for returning a new CommandBufferRef. Allocates a single command buffer from
 		//! the specified command pool. The vk::CommandBufferLevel can be either:
 		//!
@@ -153,19 +180,14 @@ namespace graphics
 			m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, &data);
 		}
 
-		//! Update a single push constant with the specified name inside of one or more of
-		//! the specified pipeline's shader modules. Note that all push constants are undefined 
-		//! at the start of a command buffer.
-		//void update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const void* data);
-
 		//! Binds the specified descriptor sets.
-		void bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const vk::ArrayProxy<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets = {});
+		void bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets = {});
 
 		//! Issue a non-indexed draw command.
-		void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
+		void draw(const DrawParamsNonIndexed& draw_params);
 
 		//! Issue an indexed draw command.
-		void draw_indexed(uint32_t tIndexCount, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance);
+		void draw_indexed(const DrawParamsIndexed& draw_params);
 
 		//! Stop recording the commands for a render pass' final subpass.
 		void end_render_pass();

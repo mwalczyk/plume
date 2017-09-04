@@ -115,19 +115,26 @@ namespace graphics
 		m_command_buffer_handle.bindIndexBuffer(buffer->get_handle(), offset, index_type);
 	}
 
-	void CommandBuffer::bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const vk::ArrayProxy<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets)
+	void CommandBuffer::bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets)
 	{
 		m_command_buffer_handle.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->get_pipeline_layout_handle(), first_set, static_cast<uint32_t>(descriptor_sets.size()), descriptor_sets.data(), static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
 	}
 
-	void CommandBuffer::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
+	void CommandBuffer::draw(const DrawParamsNonIndexed& draw_params)
 	{
-		m_command_buffer_handle.draw(vertex_count, instance_count, first_vertex, first_instance);
+		m_command_buffer_handle.draw(draw_params.m_vertex_count, 
+									 draw_params.m_instance_count, 
+									 draw_params.m_first_vertex, 
+									 draw_params.m_first_instance);
 	}
 
-	void CommandBuffer::draw_indexed(uint32_t tIndexCount, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance)
+	void CommandBuffer::draw_indexed(const DrawParamsIndexed& draw_params)
 	{
-		m_command_buffer_handle.drawIndexed(tIndexCount, instance_count, first_index, vertex_offset, first_instance);
+		m_command_buffer_handle.drawIndexed(draw_params.m_index_count, 
+											draw_params.m_instance_count,
+											draw_params.m_first_index,
+											draw_params.m_vertex_offset,
+											draw_params.m_first_instance);
 	}
 
 	void CommandBuffer::end_render_pass()

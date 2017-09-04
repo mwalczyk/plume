@@ -253,10 +253,21 @@ namespace graphics
 	}
 
 	void Device::submit_with_semaphores(QueueType type, const CommandBufferRef& command_buffer,
-		const vk::ArrayProxy<SemaphoreRef>& wait,
-		const vk::ArrayProxy<SemaphoreRef>& signal,
+		const std::vector<SemaphoreRef>& wait,
+		const std::vector<SemaphoreRef>& signal,
 		const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags)
 	{
+		// If the command buffer was (erroneously) left in a recorded state,
+		// end recording.
+		if (command_buffer->is_inside_render_pass())
+		{
+			command_buffer->end_render_pass();
+		}
+		if (command_buffer->is_recording())
+		{
+			command_buffer->end();
+		}
+
 		vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
 
 		// Gather all semaphore handles.
@@ -281,6 +292,17 @@ namespace graphics
 
 	void Device::one_time_submit(QueueType type, const CommandBufferRef& command_buffer)
 	{
+		// If the command buffer was (erroneously) left in a recorded state,
+		// end recording.
+		if (command_buffer->is_inside_render_pass())
+		{
+			command_buffer->end_render_pass();
+		}
+		if (command_buffer->is_recording())
+		{
+			command_buffer->end();
+		}
+
 		vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
 
 		vk::SubmitInfo submit_info = {};

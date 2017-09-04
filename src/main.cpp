@@ -108,9 +108,9 @@ int main()
 		.primitive_topology(geometry.get_topology())
 		.cull_mode(vk::CullModeFlagBits::eNone)
 		.depth_test()
-		.samples(msaa)
-		.min_sample_shading(0.25f);
+		.samples(msaa);
 	auto pipeline = Pipeline::create(device, render_pass, pipeline_options);
+	std::cout << pipeline << std::endl;
 
    /***********************************************************************************
 	*
@@ -251,11 +251,11 @@ int main()
 			command_buffer->bind_vertex_buffers({ vbo_0, vbo_1 });
 			command_buffer->bind_index_buffer(ibo);
 			command_buffer->update_push_constant_ranges(pipeline, "time", get_elapsed_seconds());
-			command_buffer->bind_descriptor_sets(pipeline, 0, descriptor_set);
-			command_buffer->draw_indexed(static_cast<uint32_t>(geometry.get_indices().size()), 1, 0, 0, 0);
+			command_buffer->bind_descriptor_sets(pipeline, 0, { descriptor_set });
+			command_buffer->draw_indexed(static_cast<uint32_t>(geometry.num_indices()));
 			command_buffer->end_render_pass();
 		}
-		device->submit_with_semaphores(Device::QueueType::GRAPHICS, command_buffer, image_available_sem, render_complete_sem);
+		device->submit_with_semaphores(Device::QueueType::GRAPHICS, command_buffer, { image_available_sem }, { render_complete_sem });
 
 		// Wait for rendering to finish before attempting to present...
 		device->wait_idle_queue(Device::QueueType::GRAPHICS);

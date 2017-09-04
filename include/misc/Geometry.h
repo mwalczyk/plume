@@ -79,7 +79,14 @@ namespace geo
 		inline const std::vector<glm::vec3>& get_colors() const { return m_colors; }
 		inline const std::vector<glm::vec3>& get_normals() const { return m_normals; }
 		inline const std::vector<glm::vec2>& get_texture_coordinates() const { return m_texture_coordinates; }
+
+		inline size_t num_positions() const { return m_positions.size(); }
+		inline size_t num_colors() const { return m_colors.size(); }
+		inline size_t num_normals() const { return m_normals.size(); }
+		inline size_t num_texture_coordinates() const { return m_texture_coordinates.size(); }
+
 		inline const std::vector<uint32_t>& get_indices() const { return m_indices; }
+		inline size_t num_indices() const { return m_indices.size(); }
 
 		std::vector<vk::VertexInputAttributeDescription> get_vertex_input_attribute_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_SEPARATE);
 		std::vector<vk::VertexInputBindingDescription> get_vertex_input_binding_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_SEPARATE);
