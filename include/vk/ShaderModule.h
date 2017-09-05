@@ -51,6 +51,7 @@ namespace graphics
 	public:
 
 		//! A struct representing a memmber within a push constants block inside of a GLSL shader. For example:
+		//!
 		//! layout (std430, push_constant) uniform PushConstants
 		//! {
 		//!		float time;		<--- this
@@ -67,6 +68,7 @@ namespace graphics
 		};
 
 		//! A struct representing an input to a shader stage. For example:
+		//!
 		//! layout (location = 0) in vec3 inPosition;
 		struct StageInput
 		{
@@ -76,6 +78,7 @@ namespace graphics
 		};
 
 		//! A struct representing a descriptor inside of a GLSL shader. For example:
+		//!
 		//! layout (set = 0, binding = 1) uniform UniformBufferObject	<--- this
 		//! {
 		//!		mat4 model;

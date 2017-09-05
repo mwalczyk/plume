@@ -123,7 +123,8 @@ namespace graphics
 		m_shader_stage = spv_to_vk_execution_mode(compiler_glsl.get_execution_model());
 		m_entry_points = compiler_glsl.get_entry_points();
 
-		// Push constants
+		// Push constants: note that there can only be one push constant block,
+		// so the outer for-loop below will only ever execute once.
 		for (const auto &resource : shader_resources.push_constant_buffers)
 		{
 			auto ranges = compiler_glsl.get_active_buffer_ranges(resource.id);
@@ -155,6 +156,7 @@ namespace graphics
 		// Stage outputs
 		for (const auto &resource : shader_resources.stage_outputs)
 		{
+			// TODO
 		}
 
 		// Sampled images
@@ -178,11 +180,13 @@ namespace graphics
 		// Atomic counters
 		for (const auto &resource : shader_resources.atomic_counters)
 		{
+			// TODO
 		}
 
 		// Subpass inputs
 		for (const auto &resource : shader_resources.subpass_inputs)
 		{
+			// TODO
 		}
 
 		// Storage buffers (SSBOs)
