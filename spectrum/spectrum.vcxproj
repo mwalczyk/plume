@@ -232,6 +232,7 @@
     <ClInclude Include="..\deps\spirv-cross\spirv_msl.hpp" />
     <ClInclude Include="..\include\misc\Application.h" />
     <ClInclude Include="..\include\misc\Geometry.h" />
+    <ClInclude Include="..\include\misc\Log.h" />
     <ClInclude Include="..\include\misc\ResourceManager.h" />
     <ClInclude Include="..\include\vk\Buffer.h" />
     <ClInclude Include="..\include\vk\Colors.h" />

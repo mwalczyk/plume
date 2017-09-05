@@ -45,52 +45,48 @@ namespace graphics
 	{
 	public:
 
-		class Options
+		//! Factory method for returning a new SwapchainRef. This constructor will automatically
+		//! choose the optimal swapchain image format and presentation mode.
+		static SwapchainRef create(DeviceWeakRef device, 
+			const SurfaceRef& surface, 
+			uint32_t width, 
+			uint32_t height)
 		{
-		public:
-
-			Options();
-			
-			//! Set the preferred presentation mode (defaults is vk::PresentModeKHR::eMailbox).
-			Options& present_mode(vk::PresentModeKHR present_mode) { m_present_mode = present_mode; return *this; }
-
-			//! Set the preferred swapchain image format (defaults is vk::Format::eB8G8R8A8Unorm).
-			Options& format(vk::Format format) { m_format = format; return *this; }
-
-		private:
-
-			vk::PresentModeKHR m_present_mode;
-			vk::Format m_format;
-			vk::ColorSpaceKHR m_color_space;
-
-			friend class Swapchain;
-		};
-
-		//! Factory method for returning a new SwapchainRef.
-		static SwapchainRef create(const DeviceRef& device, const SurfaceRef& surface, uint32_t width, uint32_t height, const Options& options = Options())
-		{
-			return std::make_shared<Swapchain>(device, surface, width, height, options);
+			return std::make_shared<Swapchain>(device, surface, width, height);
 		}
 
-		Swapchain(const DeviceRef& device, const SurfaceRef& surface, uint32_t width, uint32_t height, const Options& options = Options());
+		Swapchain(DeviceWeakRef device, 
+			const SurfaceRef& surface,
+			uint32_t width,
+			uint32_t height);
+		
 		~Swapchain();
 
-		inline vk::SwapchainKHR get_handle() const { return m_swapchain_handle; };
-		inline const std::vector<vk::Image>& get_image_handles() const { return m_image_handles; }
-		inline const std::vector<vk::ImageView>& get_image_view_handles() const { return m_image_view_handles; }
-		inline size_t get_image_count() const { return m_image_handles.size(); }
-		inline vk::Extent2D get_image_extent() const { return m_swapchain_image_extent; }
-		inline vk::Format get_image_format() const { return m_swapchain_image_format; }
+		vk::SwapchainKHR get_handle() const { return m_swapchain_handle; };
+		
+		const std::vector<vk::Image>& get_image_handles() const { return m_image_handles; }
+		
+		const std::vector<vk::ImageView>& get_image_view_handles() const { return m_image_view_handles; }
+		
+		size_t get_image_count() const { return m_image_handles.size(); }
+		
+		vk::Extent2D get_image_extent() const { return m_swapchain_image_extent; }
+		
+		vk::Format get_image_format() const { return m_swapchain_image_format; }
+		
 		uint32_t acquire_next_swapchain_image(const SemaphoreRef& semaphore, uint32_t timeout = std::numeric_limits<uint64_t>::max());
 
 	private:
 
 		vk::SurfaceFormatKHR select_swapchain_surface_format(const std::vector<vk::SurfaceFormatKHR>& surface_formats) const;
+		
 		vk::PresentModeKHR select_swapchain_present_mode(const std::vector<vk::PresentModeKHR>& present_modes) const;
+		
 		vk::Extent2D select_swapchain_extent(const vk::SurfaceCapabilitiesKHR& surface_capabilities) const;
+		
 		void create_image_views();
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		SurfaceRef m_surface;
 		vk::SwapchainKHR m_swapchain_handle;
 		std::vector<vk::Image> m_image_handles;

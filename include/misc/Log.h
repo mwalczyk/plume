@@ -24,21 +24,10 @@
 *
 */
 
-#include "Surface.h"
+#pragma once
 
-namespace graphics
-{
-
-	Surface::Surface(InstanceWeakRef instance) :
-		m_instance(instance)
-	{
-	}
-
-	Surface::~Surface()
-	{
-		InstanceRef instance_shared = m_instance.lock();
-
-		instance_shared->get_handle().destroySurfaceKHR(m_surface_handle);
-	}
-
-} // namespace graphics
+#if defined(_DEBUG)
+#define SP_LOG_DEBUG(string, ...) printf(string, __VA_ARGS__)
+#else
+#define SP_LOG_DEBUG(string, ...)
+#endif

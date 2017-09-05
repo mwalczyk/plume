@@ -29,7 +29,7 @@
 namespace graphics
 {
 
-	Framebuffer::Framebuffer(const DeviceRef& device, const RenderPassRef& render_pass, const std::vector<vk::ImageView>& image_views, uint32_t width, uint32_t height, uint32_t layers) :
+	Framebuffer::Framebuffer(DeviceWeakRef device, const RenderPassRef& render_pass, const std::vector<vk::ImageView>& image_views, uint32_t width, uint32_t height, uint32_t layers) :
 		m_device(device),
 		m_render_pass(render_pass),
 		m_image_views(image_views),
@@ -37,6 +37,8 @@ namespace graphics
 		m_height(height),
 		m_layers(layers)
 	{
+		DeviceRef device_shared = m_device.lock();
+
 		// TODO: this paradigm doesn't work because the swapchain creates its own images and image views that 
 		// can't be properly wrapped into the ImageRef and ImageViewRef classes. Maybe the Framebuffer class 
 		// should accept the a Swapchain as an additional argument?
@@ -53,12 +55,14 @@ namespace graphics
 		framebuffer_create_info.renderPass = m_render_pass->get_handle();
 		framebuffer_create_info.width = m_width;
 
-		m_framebuffer_handle = m_device->get_handle().createFramebuffer(framebuffer_create_info);
+		m_framebuffer_handle = device_shared->get_handle().createFramebuffer(framebuffer_create_info);
 	}
 
 	Framebuffer::~Framebuffer()
 	{
-		m_device->get_handle().destroyFramebuffer(m_framebuffer_handle);
+		DeviceRef device_shared = m_device.lock();
+
+		device_shared->get_handle().destroyFramebuffer(m_framebuffer_handle);
 	}
 
 } // namespace graphics

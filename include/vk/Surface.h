@@ -48,19 +48,20 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new SurfaceRef. Called by the Window class to create a SurfaceRef.
-		static SurfaceRef create(const InstanceRef& instance)
+		static SurfaceRef create(InstanceWeakRef instance)
 		{
 			return std::make_shared<Surface>(instance);
 		}
 
-		Surface(const InstanceRef& instance);
+		Surface(InstanceWeakRef instance);
+		
 		~Surface();
 
-		inline vk::SurfaceKHR get_handle() const { return m_surface_handle; }
+	    vk::SurfaceKHR get_handle() const { return m_surface_handle; }
 
 	private:
 
-		InstanceRef m_instance;
+		InstanceWeakRef m_instance;
 		vk::SurfaceKHR m_surface_handle;
 
 		friend class Window;

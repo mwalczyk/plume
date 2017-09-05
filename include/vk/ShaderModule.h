@@ -93,30 +93,30 @@ namespace graphics
 		};
 
 		//! Factory method for returning a new ShaderModuleRef.
-		static ShaderModuleRef create(const DeviceRef& device, const FileResource& resouce)
+		static ShaderModuleRef create(DeviceWeakRef device, const FileResource& resouce)
 		{
 			return std::make_shared<ShaderModule>(device, resouce);
 		}
 
-		ShaderModule(const DeviceRef& device, const FileResource& resouce);
+		ShaderModule(DeviceWeakRef device, const FileResource& resouce);
 		~ShaderModule();
 
-		inline vk::ShaderModule get_handle() const { return m_shader_module_handle; }
+		vk::ShaderModule get_handle() const { return m_shader_module_handle; }
 
 		//! Retrieve the binary SPIR-V shader code that is held by this shader.
-		inline const std::vector<uint32_t>& get_shader_code() const { return m_shader_code; }
+		const std::vector<uint32_t>& get_shader_code() const { return m_shader_code; }
 
 		//! Retrieve a list of available entry points within this GLSL shader (usually "main").
-		inline const std::vector<std::string>& get_entry_points() const { return m_entry_points; }
+		const std::vector<std::string>& get_entry_points() const { return m_entry_points; }
 
 		//! Retrieve a list of low-level details about the push constants contained within this GLSL shader.
-		inline const std::vector<PushConstant> get_push_constants() const { return m_push_constants; }
+		const std::vector<PushConstant> get_push_constants() const { return m_push_constants; }
 
 		//! Retrieve a list of low-level details about the descriptors contained within this GLSL shader.
-		inline const std::vector<Descriptor>& get_descriptors() const { return m_descriptors; }
+		const std::vector<Descriptor>& get_descriptors() const { return m_descriptors; }
 
 		//! Returns the shader stage corresponding to this module (i.e. vk::ShaderStageFlagBits::eVertex).
-		inline vk::ShaderStageFlagBits get_stage() const { return m_shader_stage; }
+		vk::ShaderStageFlagBits get_stage() const { return m_shader_stage; }
 
 	private:
 
@@ -125,7 +125,7 @@ namespace graphics
 		//! Used during reflection to convert a shader resource into a descriptor struct.
 		void resource_to_descriptor(const spirv_cross::CompilerGLSL& compiler, const spirv_cross::Resource& resource, vk::DescriptorType descriptor_type);
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		vk::ShaderModule m_shader_module_handle;
 		std::vector<uint32_t> m_shader_code;
 		std::vector<std::string> m_entry_points;

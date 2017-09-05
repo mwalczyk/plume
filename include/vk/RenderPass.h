@@ -85,7 +85,7 @@ namespace graphics
 		};
 
 		//! Factory method for returning a new RenderPassRef.
-		static RenderPassRef create(const DeviceRef& device, const Options& options = Options())
+		static RenderPassRef create(DeviceWeakRef device, const Options& options = Options())
 		{
 			return std::make_shared<RenderPass>(device, options);
 		}
@@ -114,14 +114,15 @@ namespace graphics
 		//! whose source subpass is the special keyword VK_SUBPASS_EXTERNAL.
 		static vk::SubpassDependency create_default_subpass_dependency();
 
-		RenderPass(const DeviceRef& device, const Options& options = Options());
+		RenderPass(DeviceWeakRef, const Options& options = Options());
+
 		~RenderPass();
 
-		inline vk::RenderPass get_handle() const { return m_render_pass_handle; }
+		vk::RenderPass get_handle() const { return m_render_pass_handle; }
 
 	private:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		vk::RenderPass m_render_pass_handle;
 		std::vector<vk::AttachmentDescription> m_attachment_descriptions;
 		std::vector<vk::AttachmentReference> m_attachment_references;

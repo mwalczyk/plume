@@ -132,25 +132,25 @@ namespace graphics
 		};
 
 		//! Factory method for returning a new SamplerRef.
-		static SamplerRef create(const DeviceRef& device,const Options& options = Options())
+		static SamplerRef create(DeviceWeakRef device,const Options& options = Options())
 		{
 			return std::make_shared<Sampler>(device, options);
 		}
 
-		Sampler(const DeviceRef& device, const Options& options = Options());
+		Sampler(DeviceWeakRef device, const Options& options = Options());
 		~Sampler();
 
 		inline vk::Sampler get_handle() const { return m_sampler_handle; }
 
 	private:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		vk::Sampler m_sampler_handle;
 	};
 
 	class Image;
 	using ImageRef = std::shared_ptr<Image>;
-	using ImageRefWeak = std::weak_ptr<Image>;
+	using ImageWeakRef = std::weak_ptr<Image>;
 
 	class Image : public Noncopyable
 	{
@@ -159,7 +159,7 @@ namespace graphics
 		static const vk::ImageUsageFlags IMAGE_USAGE_ALL;
 
 		//! Factory method for returning a new ImageRef whose device local memory store will be empty.
-		static ImageRef create(const DeviceRef& device, 
+		static ImageRef create(DeviceWeakRef device, 
 							   vk::ImageType image_type, 
 							   vk::ImageUsageFlags image_usage_flags, 
 							   vk::Format format, 
@@ -173,24 +173,24 @@ namespace graphics
 
 		//! Factory method for returning a new ImageRef that will be pre-initialized with the user supplied data.
 		template<class T>
-		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, const std::vector<T>& data)
+		static ImageRef create(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, const std::vector<T>& data)
 		{
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, mip_levels, data);
 		}
 
 		//! Factory method for returning a new ImageRef from an LDR image file.
-		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource)
+		static ImageRef create(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource)
 		{
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource);
 		}
 
 		//! Factory method for returning a new ImageRef from an HDR image file.
-		static ImageRef create(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource)
+		static ImageRef create(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource)
 		{
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource);
 		}
 
-		Image(const DeviceRef& device, 
+		Image(DeviceWeakRef device,
 			  vk::ImageType image_type, 
 			  vk::ImageUsageFlags image_usage_flags,
 			  vk::Format format, 
@@ -200,7 +200,7 @@ namespace graphics
 			  uint32_t sample_count = 1);
 
 		template<typename T>
-		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, vk::Extent3D dimensions, uint32_t mip_levels, const std::vector<T>& pixels) :
+		Image(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, vk::Extent3D dimensions, uint32_t mip_levels, const std::vector<T>& pixels) :
 			m_device(device),
 			m_image_type(image_type),
 			m_image_usage_flags(image_usage_flags),
@@ -209,6 +209,8 @@ namespace graphics
 			m_mip_levels(mip_levels),
 			m_is_array(false)
 		{
+			DeviceRef device_shared = m_device.lock();
+
 			m_current_layout = vk::ImageLayout::ePreinitialized;
 
 			vk::ImageCreateInfo image_create_info;
@@ -227,7 +229,7 @@ namespace graphics
 			image_create_info.tiling = vk::ImageTiling::eLinear;
 			image_create_info.usage = m_image_usage_flags;
 
-			m_image_handle = m_device->get_handle().createImage(image_create_info);
+			m_image_handle = device_shared->get_handle().createImage(image_create_info);
 
 			initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
@@ -239,7 +241,7 @@ namespace graphics
 			image_subresource.arrayLayer = 0;
 			image_subresource.mipLevel = 0;
 
-			vk::SubresourceLayout subresource_layout = m_device->get_handle().getImageSubresourceLayout(m_image_handle, image_subresource);
+			vk::SubresourceLayout subresource_layout = device_shared->get_handle().getImageSubresourceLayout(m_image_handle, image_subresource);
 
 			// We assume that the image data has four channels (RGBA). We also need to account for the bit depth
 			// of the image data: floats are 4 bits, for example.
@@ -265,10 +267,10 @@ namespace graphics
 			m_device_memory->unmap();
 		}
 
-		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource) :
+		Image(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource) :
 			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents) {}
 
-		Image(const DeviceRef& device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource) :
+		Image(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource) :
 			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents) {}
 
 		~Image();
@@ -305,17 +307,20 @@ namespace graphics
 			return image_subresource;
 		}
 
-		inline vk::Image get_handle() const { return m_image_handle; }
-		inline vk::Format get_format() const { return m_format; }
-		inline vk::ImageLayout get_current_layout() const { return m_current_layout; }
+		vk::Image get_handle() const { return m_image_handle; }
+
+		vk::Format get_format() const { return m_format; }
+
+		vk::ImageLayout get_current_layout() const { return m_current_layout; }
 
 	private:
 
 		//! Given the memory requirements of this image, allocate the appropriate type and size of device memory.
 		void initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags);
+
 		vk::ImageViewType image_view_type_from_parent() const;
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		DeviceMemoryRef m_device_memory;
 		vk::Image m_image_handle;
 		vk::ImageType m_image_type;
@@ -341,9 +346,10 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new ImageViewRef from a parent ImageRef.
-		static ImageViewRef create(const DeviceRef& device, const ImageRefWeak& image, uint32_t base_array_layer = 0, uint32_t layer_count = 1, uint32_t base_mip_level = 0, uint32_t level_count = 1)
+		static ImageViewRef create(DeviceWeakRef device, ImageWeakRef image, uint32_t base_array_layer = 0, uint32_t layer_count = 1, uint32_t base_mip_level = 0, uint32_t level_count = 1)
 		{
-			vk::ImageSubresourceRange subresource_range = {
+			vk::ImageSubresourceRange subresource_range = 
+			{
 				utils::format_to_aspect_mask(image.lock()->m_format),
 				base_mip_level, 
 				level_count,
@@ -354,27 +360,30 @@ namespace graphics
 			return std::make_shared<ImageView>(device, image, subresource_range);
 		}
 
-		static ImageViewRef create(const DeviceRef& device, const ImageRefWeak& image, const vk::ImageSubresourceRange& subresource_range)
+		static ImageViewRef create(DeviceWeakRef device, ImageWeakRef image, const vk::ImageSubresourceRange& subresource_range)
 		{
 			return std::make_shared<ImageView>(device, image, subresource_range);
 		}
 
-		ImageView(const DeviceRef& device, const ImageRefWeak& image, uint32_t base_array_layer = 0, uint32_t layer_count = 1, uint32_t base_mip_level = 0, uint32_t level_count = 1);
-		ImageView(const DeviceRef& device, const ImageRefWeak& image, const vk::ImageSubresourceRange& subresource_range);
+		ImageView(DeviceWeakRef device, ImageWeakRef image, uint32_t base_array_layer = 0, uint32_t layer_count = 1, uint32_t base_mip_level = 0, uint32_t level_count = 1);
+		
+		ImageView(DeviceWeakRef device, ImageWeakRef image, const vk::ImageSubresourceRange& subresource_range);
+		
 		~ImageView();
 
-		inline vk::DescriptorImageInfo build_descriptor_info(const SamplerRef& sampler, vk::ImageLayout image_layout = vk::ImageLayout::eShaderReadOnlyOptimal) const
+		vk::DescriptorImageInfo build_descriptor_info(const SamplerRef& sampler, vk::ImageLayout image_layout = vk::ImageLayout::eShaderReadOnlyOptimal) const
 		{
 			return{ sampler->get_handle(), m_image_view_handle, image_layout };
 		}
 
-		inline vk::ImageView get_handle() const { return m_image_view_handle; }
-		inline bool is_valid() const { return !m_image.expired(); }
+		vk::ImageView get_handle() const { return m_image_view_handle; }
+
+		bool is_valid() const { return !m_image.expired(); }
 
 	private:
 
-		DeviceRef m_device;
-		ImageRefWeak m_image;
+		DeviceWeakRef m_device;
+		ImageWeakRef m_image;
 		vk::ImageSubresourceRange m_subresource_range;
 		vk::ImageView m_image_view_handle;
 	};

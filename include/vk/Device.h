@@ -40,6 +40,7 @@ namespace graphics
 {
 	class Device;
 	using DeviceRef = std::shared_ptr<Device>;
+	using DeviceWeakRef = std::weak_ptr<Device>;
 
 	class CommandBuffer;
 	using CommandBufferRef = std::shared_ptr<CommandBuffer>;
@@ -95,16 +96,37 @@ namespace graphics
 
 		~Device();
 
-		inline vk::Device get_handle() const { return m_device_handle; };
-		inline vk::PhysicalDevice get_physical_device_handle() const { return m_physical_device_handle; }
+		vk::Device get_handle() const { return m_device_handle; };
+
+		vk::PhysicalDevice get_physical_device_handle() const { return m_gpu_details.m_handle; }
 		
-		inline vk::PhysicalDeviceProperties get_physical_device_properties() const { return m_physical_device_properties; }
-		inline vk::PhysicalDeviceFeatures get_physical_device_features() const { return m_physical_device_features;  }
-		inline vk::PhysicalDeviceMemoryProperties get_physical_device_memory_properties() const { return m_physical_device_memory_properties; }
+		vk::PhysicalDeviceProperties get_physical_device_properties() const { return m_gpu_details.m_properties; }
+
+		vk::PhysicalDeviceFeatures get_physical_device_features() const { return m_gpu_details.m_features;  }
+
+		vk::PhysicalDeviceMemoryProperties get_physical_device_memory_properties() const { return m_gpu_details.m_memory_properties; }
 		
-		inline const std::map<QueueType, QueueInternals>& get_queue_families_mapping() const { return m_queue_families_mapping; }
-		inline uint32_t get_queue_family_index(QueueType type) { return m_queue_families_mapping[type].index; }
-		inline vk::Queue get_queue_handle(QueueType type) { return m_queue_families_mapping[type].handle; }
+		const std::vector<vk::QueueFamilyProperties>& get_physical_device_queue_family_properties() const { return m_gpu_details.m_queue_family_properties; }
+
+		const std::vector<vk::ExtensionProperties>& get_physical_device_extension_properties() const { return m_gpu_details.m_extension_properties; }
+
+		//! Format features are properties of the physical device.
+		vk::FormatProperties get_physical_device_format_properties(vk::Format format) const 
+		{ 
+			return m_gpu_details.m_handle.getFormatProperties(format); 
+		}
+
+		//! Depth formats are not necessarily supported by the system. Retrieve the highest precision format available.
+		vk::Format get_supported_depth_format() const
+		{ 
+			return m_gpu_details.get_supported_depth_format(); 
+		}
+
+		const std::map<QueueType, QueueInternals>& get_queue_families_mapping() const { return m_queue_families_mapping; }
+		
+		uint32_t get_queue_family_index(QueueType type) { return m_queue_families_mapping[type].index; }
+		
+		vk::Queue get_queue_handle(QueueType type) { return m_queue_families_mapping[type].handle; }
 
 		void one_time_submit(QueueType type, const CommandBufferRef& command_buffer);
 
@@ -113,22 +135,13 @@ namespace graphics
 			const std::vector<SemaphoreRef>& signal,
 			const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput });
 
-		void present(const SwapchainRef& swapchain, uint32_t image_index, const vk::ArrayProxy<SemaphoreRef>& wait);
-
-		inline const std::vector<vk::QueueFamilyProperties>& get_physical_device_queue_family_properties() const { return m_physical_device_queue_family_properties; }
-		inline const std::vector<vk::ExtensionProperties>& get_physical_device_extension_properties() const { return m_physical_device_extension_properties; }
+		void present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait);
 		
 		//! Wait for all commands submitted on a particular queue to finish.
-		inline void wait_idle_queue(QueueType type) { get_queue_handle(type).waitIdle(); }
+		void wait_idle_queue(QueueType type) { get_queue_handle(type).waitIdle(); }
 
 		//! Wait for all commands submitted to all queues to finish.
-		inline void wait_idle() { m_device_handle.waitIdle(); }
-
-		//! Format features are properties of the physical device.
-		inline vk::FormatProperties get_physical_device_format_properties(vk::Format format) const { return m_physical_device_handle.getFormatProperties(format); }
-		
-		//! Depth formats are not necessarily supported by the system. Retrieve the highest precision format available.
-		vk::Format get_supported_depth_format() const;
+		void wait_idle() { m_device_handle.waitIdle(); }
 
 		//! Returns a structure that contains information related to the chosen physical device's swapchain support.
 		SwapchainSupportDetails get_swapchain_support_details(const SurfaceRef& surface) const;
@@ -136,6 +149,51 @@ namespace graphics
 		friend std::ostream& operator<<(std::ostream& stream, const DeviceRef& device);
 
 	private:
+
+		//! A struct for aggregating all of the information about a particular physical device that is
+		//! associated with this logical device.
+		struct GPUDetails
+		{
+			vk::PhysicalDevice m_handle;
+
+			vk::PhysicalDeviceProperties m_properties;
+
+			vk::PhysicalDeviceFeatures m_features;
+
+			vk::PhysicalDeviceMemoryProperties m_memory_properties;
+
+			std::vector<vk::QueueFamilyProperties> m_queue_family_properties;
+
+			std::vector<vk::ExtensionProperties> m_extension_properties;
+
+			vk::FormatProperties get_physical_device_format_properties(vk::Format format) const 
+			{ 
+				return m_handle.getFormatProperties(format); 
+			}
+
+			vk::Format get_supported_depth_format() const
+			{
+				static const std::vector<vk::Format> depth_formats =
+				{
+					vk::Format::eD32SfloatS8Uint,
+					vk::Format::eD32Sfloat,
+					vk::Format::eD24UnormS8Uint,
+					vk::Format::eD16UnormS8Uint,
+					vk::Format::eD16Unorm
+				};
+
+				for (const auto& format : depth_formats)
+				{
+					auto format_properties = get_physical_device_format_properties(format);
+					if (format_properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+					{
+						return format;
+					}
+				}
+
+				return vk::Format::eUndefined;
+			}
+		};
 
 		std::map<QueueType, QueueInternals> m_queue_families_mapping = 
 		{
@@ -151,12 +209,7 @@ namespace graphics
 		SurfaceRef m_surface;
 
 		vk::Device m_device_handle;
-		vk::PhysicalDevice m_physical_device_handle;
-		vk::PhysicalDeviceProperties m_physical_device_properties;
-		vk::PhysicalDeviceFeatures m_physical_device_features;
-		vk::PhysicalDeviceMemoryProperties m_physical_device_memory_properties;
-		std::vector<vk::QueueFamilyProperties> m_physical_device_queue_family_properties;
-		std::vector<vk::ExtensionProperties> m_physical_device_extension_properties;
+		GPUDetails m_gpu_details;
 		std::vector<const char*> m_required_device_extensions;
 	};
 

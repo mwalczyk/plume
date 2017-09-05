@@ -28,19 +28,16 @@
 
 namespace graphics
 {
-	Swapchain::Options::Options()
-	{
-		m_present_mode = vk::PresentModeKHR::eMailbox;
-		m_format = vk::Format::eB8G8R8A8Unorm;
-	}
 
-	Swapchain::Swapchain(const DeviceRef& device, const SurfaceRef& surface, uint32_t width, uint32_t height, const Options& options) :
+	Swapchain::Swapchain(DeviceWeakRef device, const SurfaceRef& surface, uint32_t width, uint32_t height) :
 		m_device(device),
 		m_surface(surface),
 		m_width(width),
 		m_height(height)
 	{
-		auto support_details = m_device->get_swapchain_support_details(m_surface);
+		DeviceRef device_shared = m_device.lock();
+
+		auto support_details = device_shared->get_swapchain_support_details(m_surface);
 
 		// From the structure above, determine an optimal surface format, presentation mode, and size for the swapchain.
 		auto surface_format = select_swapchain_surface_format(support_details.m_formats);
@@ -73,10 +70,10 @@ namespace graphics
 		swapchain_create_info.queueFamilyIndexCount = 0;									// Again, if the sharing mode is exlusive, we don't need to specify this.
 		swapchain_create_info.surface = m_surface->get_handle();
 
-		m_swapchain_handle = m_device->get_handle().createSwapchainKHR(swapchain_create_info);
+		m_swapchain_handle = device_shared->get_handle().createSwapchainKHR(swapchain_create_info);
 
 		// Note that the Vulkan implementation may create more swapchain images than requested above - this is why we query the number of images again.
-		m_image_handles = m_device->get_handle().getSwapchainImagesKHR(m_swapchain_handle);
+		m_image_handles = device_shared->get_handle().getSwapchainImagesKHR(m_swapchain_handle);
 	
 		// Store the image format and extent for later use.
 		m_swapchain_image_format = surface_format.format;
@@ -87,12 +84,17 @@ namespace graphics
 
 	Swapchain::~Swapchain()
 	{
-		m_device->get_handle().destroySwapchainKHR(m_swapchain_handle);
+		DeviceRef device_shared = m_device.lock();
+
+		device_shared->get_handle().destroySwapchainKHR(m_swapchain_handle);
 	}
 
 	uint32_t Swapchain::acquire_next_swapchain_image(const SemaphoreRef& semaphore, uint32_t timeout)
 	{
-		auto result = m_device->get_handle().acquireNextImageKHR(m_swapchain_handle, timeout, semaphore->get_handle(), {});
+		DeviceRef device_shared = m_device.lock();
+
+		auto result = device_shared->get_handle().acquireNextImageKHR(m_swapchain_handle, timeout, semaphore->get_handle(), {});
+
 		return result.value;
 	}
 
@@ -157,6 +159,8 @@ namespace graphics
 
 	void Swapchain::create_image_views()
 	{
+		DeviceRef device_shared = m_device.lock();
+
 		m_image_view_handles.resize(m_image_handles.size());
 
 		for (size_t i = 0; i < m_image_view_handles.size(); ++i)
@@ -175,7 +179,7 @@ namespace graphics
 			image_view_create_info.subresourceRange.levelCount = 1;
 			image_view_create_info.viewType = vk::ImageViewType::e2D;								// Treat the image as a standard 2D texture.
 
-			m_image_view_handles[i] = m_device->get_handle().createImageView(image_view_create_info);
+			m_image_view_handles[i] = device_shared->get_handle().createImageView(image_view_create_info);
 		}
 	}
 

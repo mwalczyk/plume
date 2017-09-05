@@ -29,25 +29,29 @@
 namespace graphics
 {
 
-	CommandBuffer::CommandBuffer(const DeviceRef& device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level) :
+	CommandBuffer::CommandBuffer(DeviceWeakRef device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level) :
 		m_device(device),
 		m_command_pool(command_pool),
 		m_command_buffer_level(command_buffer_level),
 		m_is_recording(false),
 		m_is_inside_render_pass(false)
 	{
+		DeviceRef device_shared = m_device.lock();
+
 		vk::CommandBufferAllocateInfo command_buffer_allocate_info;
 		command_buffer_allocate_info.commandPool = m_command_pool->get_handle();
 		command_buffer_allocate_info.level = m_command_buffer_level;
 		command_buffer_allocate_info.commandBufferCount = 1;
 
-		m_command_buffer_handle = m_device->get_handle().allocateCommandBuffers(command_buffer_allocate_info)[0];
+		m_command_buffer_handle = device_shared->get_handle().allocateCommandBuffers(command_buffer_allocate_info)[0];
 	}
 
 	CommandBuffer::~CommandBuffer()
 	{
+		DeviceRef device_shared = m_device.lock();
+
 		// Command buffers are automatically destroyed when the command pool from which they were allocated are destroyed.
-		m_device->get_handle().freeCommandBuffers(m_command_pool->get_handle(), m_command_buffer_handle);
+		device_shared->get_handle().freeCommandBuffers(m_command_pool->get_handle(), m_command_buffer_handle);
 	}
 
 	void CommandBuffer::begin(vk::CommandBufferUsageFlags command_buffer_usage_flags)
@@ -88,7 +92,9 @@ namespace graphics
 
 	void CommandBuffer::set_line_width(float width)
 	{
-		auto range = m_device->get_physical_device_properties().limits.lineWidthRange;
+		DeviceRef device_shared = m_device.lock();
+
+		auto range = device_shared->get_physical_device_properties().limits.lineWidthRange;
 		float remapped = std::min(range[1], std::max(range[0], width));
 		m_command_buffer_handle.setLineWidth(remapped);
 	}

@@ -58,26 +58,29 @@ namespace graphics
 		//!		command buffers must be reset together.
 		//!
 		//! Both flags will be set by default.
-		static CommandPoolRef create(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient)
+		static CommandPoolRef create(DeviceWeakRef device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient)
 		{
 			return std::make_shared<CommandPool>(device, queue_family_index, command_pool_create_flags);
 		}
 
-		CommandPool(const DeviceRef& device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
+		CommandPool(DeviceWeakRef device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
+		
 		~CommandPool();
 
-		inline vk::CommandPool get_handle() const { return m_command_pool_handle; };
+		vk::CommandPool get_handle() const { return m_command_pool_handle; };
 
 		// TODO: this should notify all command buffers that have been allocated from this pool, which means
 		// that the command pool class needs to maintain a list of all command buffer objects.
-		inline void reset_pool() 
+		void reset_pool() 
 		{ 
-			m_device->get_handle().resetCommandPool(m_command_pool_handle, vk::CommandPoolResetFlagBits::eReleaseResources); 
+			DeviceRef device_shared = m_device.lock();
+
+			device_shared->get_handle().resetCommandPool(m_command_pool_handle, vk::CommandPoolResetFlagBits::eReleaseResources);
 		}
 
 	private:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		vk::CommandPool m_command_pool_handle;
 	};
 

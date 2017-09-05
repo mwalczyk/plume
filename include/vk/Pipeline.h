@@ -189,7 +189,7 @@ namespace graphics
 		};
 
 		//! Factory method for returning a new PipelineRef.
-		static PipelineRef create(const DeviceRef& device, const RenderPassRef& render_pass, const Options& options = Options()) 
+		static PipelineRef create(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options()) 
 		{ 
 			return std::make_shared<Pipeline>(device, render_pass, options);
 		}
@@ -197,12 +197,15 @@ namespace graphics
 		//! Helper function for constructing a pipeline color blend attachment state that corresponds to standard alpha blending.
 		static vk::PipelineColorBlendAttachmentState create_alpha_blending_attachment_state();
 
-		Pipeline(const DeviceRef& device, const RenderPassRef& render_pass, const Options& options = Options());
+		Pipeline(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options());
+		
 		~Pipeline();
 
-		inline vk::Pipeline get_handle() const { return m_pipeline_handle; }
-		inline vk::PipelineLayout get_pipeline_layout_handle() const { return m_pipeline_layout_handle; }
-		inline vk::PipelineBindPoint get_pipeline_bind_point() const { return vk::PipelineBindPoint::eGraphics; }
+		vk::Pipeline get_handle() const { return m_pipeline_handle; }
+
+		vk::PipelineLayout get_pipeline_layout_handle() const { return m_pipeline_layout_handle; }
+
+		vk::PipelineBindPoint get_pipeline_bind_point() const { return vk::PipelineBindPoint::eGraphics; }
 
 		//! Returns a push constant range structure that holds information about the push constant with the given name.
 		vk::PushConstantRange get_push_constants_member(const std::string& name) const;
@@ -229,7 +232,7 @@ namespace graphics
 		//! Generate all of the descriptor set layout handles.		
 		void build_descriptor_set_layouts();
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		RenderPassRef m_render_pass;
 		vk::Pipeline m_pipeline_handle;
 		vk::PipelineLayout m_pipeline_layout_handle;

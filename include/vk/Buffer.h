@@ -33,6 +33,7 @@
 #include "Noncopyable.h"
 #include "Device.h"
 #include "DeviceMemory.h"
+#include "Log.h"
 
 namespace graphics
 {
@@ -53,18 +54,18 @@ namespace graphics
 
 		//! Factory method for returning a new BufferRef that will be filled with the supplied vector of data.
 		template<class T>
-		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const std::vector<Device::QueueType> queues = { Device::QueueType::GRAPHICS })
+		static BufferRef create(DeviceWeakRef device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const std::vector<Device::QueueType> queues = { Device::QueueType::GRAPHICS })
 		{
 			return std::make_shared<Buffer>(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues);
 		}
 
 		//! Factory method for returning a new BufferRef that will be filled with the supplied data.
-		static BufferRef create(const DeviceRef& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<Device::QueueType> queues = { Device::QueueType::GRAPHICS })
+		static BufferRef create(DeviceWeakRef device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<Device::QueueType> queues = { Device::QueueType::GRAPHICS })
 		{
 			return std::make_shared<Buffer>(device, buffer_usage_flags, size, data, queues);
 		}
 
-		Buffer(const DeviceRef& device, 
+		Buffer(DeviceWeakRef device,
 			vk::BufferUsageFlags buffer_usage_flags,		
 			size_t size, 
 			const void* data, 
@@ -72,22 +73,28 @@ namespace graphics
 
 		~Buffer();
 
-		inline vk::Buffer get_handle() const { return m_buffer_handle; }
-		inline DeviceMemoryRef get_device_memory() const { return m_device_memory; }
-		inline vk::BufferUsageFlags get_buffer_usage_flags() const { return m_buffer_usage_flags; }
+		DeviceMemoryRef get_device_memory() const { return m_device_memory; }
 
-		inline vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const 
-		{ 
-			return { m_buffer_handle, offset, range };  
-		}
+		vk::Buffer get_handle() const { return m_buffer_handle; }
+
+		vk::BufferUsageFlags get_buffer_usage_flags() const { return m_buffer_usage_flags; }
+
+		//! Returns the memory requirements of this buffer resource, as reported by the driver. Used
+		//! to allocate the device memory associated with this buffer.
+		const vk::MemoryRequirements& get_memory_requirements() const { return m_memory_requirements; }
 
 		//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
 		//! allocation size, which can be queried from the buffer's device memory reference.
-		inline size_t get_requested_size() const { return m_requested_size; }
+		size_t get_requested_size() const { return m_requested_size; }
+
+		vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const
+		{
+			return{ m_buffer_handle, offset, range };
+		}
 
 	private:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		DeviceMemoryRef m_device_memory;
 		vk::Buffer m_buffer_handle;
 		vk::BufferUsageFlags m_buffer_usage_flags;

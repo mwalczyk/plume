@@ -32,21 +32,20 @@
 namespace graphics
 {
 	Device::Device(vk::PhysicalDevice physical_device, const SurfaceRef& surface, vk::QueueFlags required_queue_flags, bool use_swapchain, const std::vector<const char*>& required_device_extensions) :
-		m_physical_device_handle(physical_device),
 		m_surface(surface),
 		m_required_device_extensions(required_device_extensions)
 	{		
 		// Store the general properties, features, and memory properties of the chosen physical device.
-		m_physical_device_properties = m_physical_device_handle.getProperties();
-		m_physical_device_features = m_physical_device_handle.getFeatures();
-		m_physical_device_memory_properties = m_physical_device_handle.getMemoryProperties();
-		
-		// Store the queue family properties of the chosen physical device.
-		m_physical_device_queue_family_properties = m_physical_device_handle.getQueueFamilyProperties();
+		m_gpu_details = 
+		{
+			physical_device,
+			physical_device.getProperties(),
+			physical_device.getFeatures(),
+			physical_device.getMemoryProperties(),
+			physical_device.getQueueFamilyProperties(),
+			physical_device.enumerateDeviceExtensionProperties()
+		};
 
-		// Store the device extensions of the chosen physical device.
-		m_physical_device_extension_properties = m_physical_device_handle.enumerateDeviceExtensionProperties();
-		
 		// Find the indicies of all of the requested queue families (inspired by Sascha Willems' codebase).
 		const float default_queue_priority = 0.0f;
 		const uint32_t default_queue_count = 1;
@@ -123,9 +122,9 @@ namespace graphics
 
 			// Make sure that at least one queue family from the supplied physical device actually 
 			// supports presentation with respect to the requested surface.
-			for (size_t i = 0; i < m_physical_device_queue_family_properties.size(); ++i)
+			for (size_t i = 0; i < m_gpu_details.m_queue_family_properties.size(); ++i)
 			{
-				vk::Bool32 support = m_physical_device_handle.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface->get_handle());
+				vk::Bool32 support = m_gpu_details.m_handle.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface->get_handle());
 				if (support) 
 				{  
 					// TODO: is this necessary?
@@ -139,12 +138,12 @@ namespace graphics
 		// See: https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#extended-functionality-device-layer-deprecation
 		vk::DeviceCreateInfo device_create_info;
 		device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_required_device_extensions.size());
-		device_create_info.pEnabledFeatures = &m_physical_device_features;
+		device_create_info.pEnabledFeatures = &m_gpu_details.m_features;
 		device_create_info.ppEnabledExtensionNames = m_required_device_extensions.data();
 		device_create_info.pQueueCreateInfos = device_queue_create_infos.data();
 		device_create_info.queueCreateInfoCount = static_cast<uint32_t>(device_queue_create_infos.size());
 
-		m_device_handle = m_physical_device_handle.createDevice(device_create_info);
+		m_device_handle = m_gpu_details.m_handle.createDevice(device_create_info);
 
 		// Store handles to each of the newly created queues.
 		m_queue_families_mapping[QueueType::GRAPHICS].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::GRAPHICS].index, 0);
@@ -170,11 +169,11 @@ namespace graphics
 		// Try to find a dedicated queue for compute operations (without graphics).
 		if (queue_flag_bits == vk::QueueFlagBits::eCompute)
 		{
-			for (size_t i = 0; i < m_physical_device_queue_family_properties.size(); ++i)
+			for (size_t i = 0; i < m_gpu_details.m_queue_family_properties.size(); ++i)
 			{
-				if (m_physical_device_queue_family_properties[i].queueCount > 0 &&
-					m_physical_device_queue_family_properties[i].queueFlags & queue_flag_bits &&
-					(m_physical_device_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits::eGraphics)
+				if (m_gpu_details.m_queue_family_properties[i].queueCount > 0 &&
+					m_gpu_details.m_queue_family_properties[i].queueFlags & queue_flag_bits &&
+					(m_gpu_details.m_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits::eGraphics)
 				{
 					return static_cast<uint32_t>(i);
 				}
@@ -183,12 +182,12 @@ namespace graphics
 		// Try to find a dedicated queue for transfer operations (without compute and graphics).
 		else if (queue_flag_bits == vk::QueueFlagBits::eTransfer)
 		{
-			for (size_t i = 0; i < m_physical_device_queue_family_properties.size(); ++i)
+			for (size_t i = 0; i < m_gpu_details.m_queue_family_properties.size(); ++i)
 			{
-				if (m_physical_device_queue_family_properties[i].queueCount > 0 &&
-					m_physical_device_queue_family_properties[i].queueFlags & queue_flag_bits &&
-					(m_physical_device_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits::eGraphics &&
-					(m_physical_device_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eCompute) != vk::QueueFlagBits::eCompute)
+				if (m_gpu_details.m_queue_family_properties[i].queueCount > 0 &&
+					m_gpu_details.m_queue_family_properties[i].queueFlags & queue_flag_bits &&
+					(m_gpu_details.m_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits::eGraphics &&
+					(m_gpu_details.m_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eCompute) != vk::QueueFlagBits::eCompute)
 				{
 					return static_cast<uint32_t>(i);
 				}
@@ -197,9 +196,9 @@ namespace graphics
 		
 		// For all other queue families (or if a dedicated queue was not found above), simply return the 
 		// index of the first queue family that supports the requested operations.
-		for (size_t i = 0; i < m_physical_device_queue_family_properties.size(); ++i)
+		for (size_t i = 0; i < m_gpu_details.m_queue_family_properties.size(); ++i)
 		{
-			if (m_physical_device_queue_family_properties[i].queueCount > 0 && m_physical_device_queue_family_properties[i].queueFlags & queue_flag_bits)
+			if (m_gpu_details.m_queue_family_properties[i].queueCount > 0 && m_gpu_details.m_queue_family_properties[i].queueFlags & queue_flag_bits)
 			{
 				return static_cast<uint32_t>(i);
 			}
@@ -208,41 +207,18 @@ namespace graphics
 		throw std::runtime_error("Could not find a matching queue family");
 	}
 
-	vk::Format Device::get_supported_depth_format() const
-	{
-		static const std::vector<vk::Format> depth_formats = 
-		{
-			vk::Format::eD32SfloatS8Uint,
-			vk::Format::eD32Sfloat,
-			vk::Format::eD24UnormS8Uint,
-			vk::Format::eD16UnormS8Uint,
-			vk::Format::eD16Unorm
-		};
-
-		for (const auto& format : depth_formats)
-		{
-			auto format_properties = get_physical_device_format_properties(format);
-			if (format_properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
-			{
-				return format;
-			}
-		}
-		
-		return vk::Format::eUndefined;
-	}
-
 	Device::SwapchainSupportDetails Device::get_swapchain_support_details(const SurfaceRef& surface) const
 	{
 		SwapchainSupportDetails support_details;
 
 		// Return the basic surface capabilities, i.e. min/max number of images, min/max width and height, etc.
-		support_details.m_capabilities = m_physical_device_handle.getSurfaceCapabilitiesKHR(surface->get_handle());
+		support_details.m_capabilities = m_gpu_details.m_handle.getSurfaceCapabilitiesKHR(surface->get_handle());
 
 		// Retrieve the available surface formats, i.e. pixel formats and color spaces.
-		support_details.m_formats = m_physical_device_handle.getSurfaceFormatsKHR(surface->get_handle());
+		support_details.m_formats = m_gpu_details.m_handle.getSurfaceFormatsKHR(surface->get_handle());
 
 		// Retrieve the surface presentation modes, i.e. VK_PRESENT_MODE_MAILBOX_KHR.
-		support_details.m_present_modes = m_physical_device_handle.getSurfacePresentModesKHR(surface->get_handle());
+		support_details.m_present_modes = m_gpu_details.m_handle.getSurfacePresentModesKHR(surface->get_handle());
 
 		if (support_details.m_formats.size() == 0 || support_details.m_present_modes.size() == 0)
 		{
@@ -313,7 +289,7 @@ namespace graphics
 		get_queue_handle(type).waitIdle();
 	}
 
-	void Device::present(const SwapchainRef& swapchain, uint32_t image_index, const vk::ArrayProxy<SemaphoreRef>& wait)
+	void Device::present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait)
 	{
 		// Gather all semaphore handles.
 		std::vector<vk::Semaphore> wait_handles(wait.size());
@@ -336,10 +312,10 @@ namespace graphics
 	{
 		stream << "Device object: " << device->m_device_handle << std::endl;
 		
-		stream << "Chosen physical device object: " << device->m_physical_device_handle << std::endl;
-		std::cout << "\tDevice ID: " << device->m_physical_device_properties.deviceID << std::endl;
-		std::cout << "\tDevice name: " << device->m_physical_device_properties.deviceName << std::endl;
-		std::cout << "\tVendor ID: " << device->m_physical_device_properties.vendorID << std::endl;
+		stream << "Chosen physical device object: " << device->m_gpu_details.m_handle << std::endl;
+		std::cout << "\tDevice ID: " << device->m_gpu_details.m_properties.deviceID << std::endl;
+		std::cout << "\tDevice name: " << device->m_gpu_details.m_properties.deviceName << std::endl;
+		std::cout << "\tVendor ID: " << device->m_gpu_details.m_properties.vendorID << std::endl;
 
 		stream << "Queue family details:" << std::endl;
 		stream << "\tQueue family - graphics index: " << device->m_queue_families_mapping[Device::QueueType::GRAPHICS].index << std::endl;

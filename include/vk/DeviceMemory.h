@@ -53,18 +53,21 @@ namespace graphics
 	public:
 		
 		//! Factory method for returning a new DeviceMemoryRef.
-		static DeviceMemoryRef create(const DeviceRef& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties)
+		static DeviceMemoryRef create(DeviceWeakRef device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties)
 		{
 			return std::make_shared<DeviceMemory>(device, memory_requirements, required_memory_properties);
 		}
 
 		//! Construct a stack allocated, non-copyable container that manages a device memory allocation.
-		DeviceMemory(const DeviceRef& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties);
+		DeviceMemory(DeviceWeakRef device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties);
+		
 		~DeviceMemory();
 
-		inline vk::DeviceMemory get_handle() const { return m_device_memory_handle; }
-		inline vk::DeviceSize get_allocation_size() const { return m_allocation_size; }
-		inline uint32_t get_selected_memory_index() const { return m_selected_memory_index; }
+		vk::DeviceMemory get_handle() const { return m_device_memory_handle; }
+
+		vk::DeviceSize get_allocation_size() const { return m_allocation_size; }
+
+		uint32_t get_selected_memory_index() const { return m_selected_memory_index; }
 
 		//! Retrieve a host virtual address pointer to a region of this memory allocation. Note that this
 		//! function does not check whether any previously submitted commands that accessed the memory
@@ -79,7 +82,7 @@ namespace graphics
 
 	private:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		vk::DeviceMemory m_device_memory_handle;
 		vk::DeviceSize m_allocation_size;
 		uint32_t m_selected_memory_index;

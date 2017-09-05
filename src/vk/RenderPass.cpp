@@ -146,13 +146,15 @@ namespace graphics
 		m_subpass_dependencies.emplace_back(create_default_subpass_dependency());
 	}
 
-	RenderPass::RenderPass(const DeviceRef& device, const Options& options) :
+	RenderPass::RenderPass(DeviceWeakRef device, const Options& options) :
 		m_device(device),
 		m_attachment_descriptions(options.m_attachment_descriptions),
 		m_attachment_references(options.m_attachment_references),
 		m_subpass_descriptions(options.m_subpass_descriptions),
 		m_subpass_dependencies(options.m_subpass_dependencies)
 	{
+		DeviceRef device_shared = m_device.lock();
+
 		// Create a render pass with the information above.
 		vk::RenderPassCreateInfo render_pass_create_info;
 		render_pass_create_info.attachmentCount = static_cast<uint32_t>(m_attachment_descriptions.size());
@@ -162,12 +164,14 @@ namespace graphics
 		render_pass_create_info.pSubpasses = m_subpass_descriptions.data();
 		render_pass_create_info.subpassCount = static_cast<uint32_t>(m_subpass_descriptions.size());
 
-		m_render_pass_handle = m_device->get_handle().createRenderPass(render_pass_create_info);
+		m_render_pass_handle = device_shared->get_handle().createRenderPass(render_pass_create_info);
 	}
 
 	RenderPass::~RenderPass()
 	{
-		m_device->get_handle().destroyRenderPass(m_render_pass_handle);
+		DeviceRef device_shared = m_device.lock();
+
+		device_shared->get_handle().destroyRenderPass(m_render_pass_handle);
 	}
 
 } // namespace graphics

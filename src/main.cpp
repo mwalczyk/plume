@@ -261,7 +261,7 @@ int main()
 		device->wait_idle_queue(Device::QueueType::GRAPHICS);
 		
 		// Present the rendered image to the swapchain.
-		device->present(swapchain, image_index, render_complete_sem);
+		device->present(swapchain, image_index, { render_complete_sem });
 	}
 
 	return 0;

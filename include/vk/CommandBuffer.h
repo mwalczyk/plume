@@ -101,33 +101,34 @@ namespace graphics
 		//!
 		//! Primary command buffers can execute secondary command buffers. Note that secondary command buffers
 		//! are not directly submitted to queues like primary command buffers.
-		static CommandBufferRef create(const DeviceRef& device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level = vk::CommandBufferLevel::ePrimary)
+		static CommandBufferRef create(DeviceWeakRef device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level = vk::CommandBufferLevel::ePrimary)
 		{
 			return std::make_shared<CommandBuffer>(device, command_pool, command_buffer_level);
 		}
 
-		CommandBuffer(const DeviceRef& device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level = vk::CommandBufferLevel::ePrimary);
+		CommandBuffer(DeviceWeakRef device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level = vk::CommandBufferLevel::ePrimary);
+		
 		~CommandBuffer();
 
-		inline vk::CommandBuffer get_handle() const { return m_command_buffer_handle; };
+		vk::CommandBuffer get_handle() const { return m_command_buffer_handle; };
 
 		//! Determine whether or not this command buffer is a primary or secondary command buffer.
-		inline bool is_primary() const { return m_command_buffer_level == vk::CommandBufferLevel::ePrimary; }
+		bool is_primary() const { return m_command_buffer_level == vk::CommandBufferLevel::ePrimary; }
 
 		//! Returns `true` if this command buffer is currently being recorded into (i.e. `begin()` has 
 		//! been called).
-		inline bool is_recording() const { return m_is_recording; }
+		bool is_recording() const { return m_is_recording; }
 
 		//! Returns `true` if this command buffer has entered a render pass (i.e. `begin_render_pass()` 
 		//! has been called).
-		inline bool is_inside_render_pass() const { return m_is_inside_render_pass; }
+		bool is_inside_render_pass() const { return m_is_inside_render_pass; }
 
 
 		//! Puts the command buffer back into its original state but does not necessarily interact
 		//! with the command pool from which it was allocated. Therefore, if the command buffer
 		//! dynamically allocates resources from the pool as it grows, it can hang on to those
 		//! resources and avoid the cost of reallocation the second and subsequent times it's rebuilt.
-		inline void reset()
+		void reset()
 		{
 			m_is_recording = false;
 			m_is_inside_render_pass = false;
@@ -211,7 +212,7 @@ namespace graphics
 
 	private:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		CommandPoolRef m_command_pool;
 		vk::CommandBuffer m_command_buffer_handle;
 		vk::CommandBufferLevel m_command_buffer_level;

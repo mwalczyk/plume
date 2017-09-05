@@ -48,19 +48,20 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new SemaphoreRef.
-		static SemaphoreRef create(const DeviceRef& device)
+		static SemaphoreRef create(DeviceWeakRef device)
 		{
 			return std::make_shared<Semaphore>(device);
 		}
 
-		Semaphore(const DeviceRef& device);
+		Semaphore(DeviceWeakRef device);
+		
 		~Semaphore();
 
-		inline vk::Semaphore get_handle() const { return m_semaphore_handle; };
+		vk::Semaphore get_handle() const { return m_semaphore_handle; };
 
 	private:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		vk::Semaphore m_semaphore_handle;
 	};
 

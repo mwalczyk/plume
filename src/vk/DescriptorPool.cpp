@@ -29,15 +29,24 @@
 namespace graphics
 {
 
-	DescriptorPool::DescriptorPool(const DeviceRef& device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets) :
+	DescriptorPool::DescriptorPool(DeviceWeakRef device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets) :
 		m_device(device)
 	{
+		DeviceRef device_shared = m_device.lock();
+
 		vk::DescriptorPoolCreateInfo descriptor_pool_create_info;
 		descriptor_pool_create_info.maxSets = max_sets;
 		descriptor_pool_create_info.poolSizeCount = static_cast<uint32_t>(descriptor_pool_sizes.size());
 		descriptor_pool_create_info.pPoolSizes = descriptor_pool_sizes.data();
 
-		m_descriptor_pool_handle = m_device->get_handle().createDescriptorPool(descriptor_pool_create_info);
+		m_descriptor_pool_handle = device_shared->get_handle().createDescriptorPool(descriptor_pool_create_info);
+	}
+
+	DescriptorPool::~DescriptorPool()
+	{
+		DeviceRef device_shared = m_device.lock();
+
+		device_shared->get_handle().destroyDescriptorPool(m_descriptor_pool_handle);
 	}
 
 } // namespace graphics

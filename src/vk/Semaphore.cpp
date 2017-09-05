@@ -29,17 +29,19 @@
 namespace graphics
 {
 
-	Semaphore::Semaphore(const DeviceRef& device) :
+	Semaphore::Semaphore(DeviceWeakRef device) :
 		m_device(device)
 	{
-		vk::SemaphoreCreateInfo semaphore_create_info;
+		DeviceRef device_shared = m_device.lock();
 
-		m_semaphore_handle = m_device->get_handle().createSemaphore(semaphore_create_info);
+		m_semaphore_handle = device_shared->get_handle().createSemaphore({});
 	}
 
 	Semaphore::~Semaphore()
 	{
-		m_device->get_handle().destroySemaphore(m_semaphore_handle);
+		DeviceRef device_shared = m_device.lock();
+
+		device_shared->get_handle().destroySemaphore(m_semaphore_handle);
 	}
 
 } // namespace graphics

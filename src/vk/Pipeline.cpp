@@ -121,10 +121,12 @@ namespace graphics
 		return color_blend_attachment_state;
 	}
 
-	Pipeline::Pipeline(const DeviceRef& device, const RenderPassRef& render_pass, const Options& options) :
+	Pipeline::Pipeline(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options) :
 		m_device(device),
 		m_render_pass(render_pass)
 	{		
+		DeviceRef device_shared = m_device.lock();
+
 		// Group the shader create info structs together.
 		std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos;
 		bool found_vertex_shader = false;
@@ -180,7 +182,7 @@ namespace graphics
 		pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
 		pipeline_layout_create_info.setLayoutCount = static_cast<uint32_t>(descriptor_set_layouts.size());;
 
-		m_pipeline_layout_handle = m_device->get_handle().createPipelineLayout(pipeline_layout_create_info);
+		m_pipeline_layout_handle = device_shared->get_handle().createPipelineLayout(pipeline_layout_create_info);
 
 		// Aggregate all of the structures above to create a graphics pipeline.
 		vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info;
@@ -201,13 +203,15 @@ namespace graphics
 		graphics_pipeline_create_info.stageCount = static_cast<uint32_t>(shader_stage_create_infos.size());
 		graphics_pipeline_create_info.subpass = options.m_subpass_index;
 
-		m_pipeline_handle = m_device->get_handle().createGraphicsPipeline({}, graphics_pipeline_create_info);
+		m_pipeline_handle = device_shared->get_handle().createGraphicsPipeline({}, graphics_pipeline_create_info);
 	}
 
 	Pipeline::~Pipeline()
 	{
-		m_device->get_handle().destroyPipeline(m_pipeline_handle);
-		m_device->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
+		DeviceRef device_shared = m_device.lock();
+
+		device_shared->get_handle().destroyPipeline(m_pipeline_handle);
+		device_shared->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
 	}
 
 	vk::PushConstantRange Pipeline::get_push_constants_member(const std::string& name) const
@@ -272,7 +276,9 @@ namespace graphics
 
 	void Pipeline::add_push_constants_to_global_map(const ShaderModuleRef& module)
 	{
-		uint32_t max_push_constants_size = m_device->get_physical_device_properties().limits.maxPushConstantsSize;
+		DeviceRef device_shared = m_device.lock();
+
+		uint32_t max_push_constants_size = device_shared->get_physical_device_properties().limits.maxPushConstantsSize;
 
 		for (const auto& push_constant : module->get_push_constants())
 		{
@@ -330,6 +336,8 @@ namespace graphics
 
 	void Pipeline::build_descriptor_set_layouts()
 	{
+		DeviceRef device_shared = m_device.lock();
+
 		// Iterate through the map of descriptors, which maps descriptor set IDs (i.e. 0, 1, 2) to
 		// a list of descriptors (i.e. uniform buffers, samplers), and create a descriptor set layout
 		// for each set.
@@ -339,7 +347,7 @@ namespace graphics
 			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(mapping.second.size());
 			descriptor_set_layout_create_info.pBindings = mapping.second.data();
 
-			vk::DescriptorSetLayout descriptor_set_layout = m_device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+			vk::DescriptorSetLayout descriptor_set_layout = device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 
 			m_descriptor_set_layouts_mapping.insert(std::make_pair(mapping.first, descriptor_set_layout));
 		}

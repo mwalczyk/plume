@@ -50,12 +50,12 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new LayoutBuilderRef. 
-		static LayoutBuilderRef create(const DeviceRef& device, uint32_t start = 0)
+		static LayoutBuilderRef create(DeviceWeakRef device, uint32_t start = 0)
 		{
 			return std::make_shared<LayoutBuilder>(device, start);
 		}
 
-		LayoutBuilder(const DeviceRef& device, uint32_t start = 0) :
+		LayoutBuilder(DeviceWeakRef device, uint32_t start = 0) :
 			m_device(device),
 			m_current_binding(start)
 		{
@@ -76,22 +76,28 @@ namespace graphics
 
 		vk::DescriptorSetLayout build_layout()
 		{
+			DeviceRef device_shared = m_device.lock();
+
 			vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
 			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(m_layout_bindings.size());
 			descriptor_set_layout_create_info.pBindings = m_layout_bindings.data();
 
-			return m_device->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+			return device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 		}
 
-		inline void skip(uint32_t skip_count) { m_current_binding += skip_count; }
-		inline void reset() { m_current_binding = 0; m_layout_bindings.clear(); }
-		inline void reset_and_start_at(uint32_t start) { m_current_binding = start; m_layout_bindings.clear(); }
-		inline size_t get_bindings_count() const { return m_layout_bindings.size(); }
-		inline const std::vector<vk::DescriptorSetLayoutBinding>& get_bindings() const { return m_layout_bindings; }
+		void skip(uint32_t skip_count) { m_current_binding += skip_count; }
+
+		void reset() { m_current_binding = 0; m_layout_bindings.clear(); }
+
+		void reset_and_start_at(uint32_t start) { m_current_binding = start; m_layout_bindings.clear(); }
+
+		size_t get_bindings_count() const { return m_layout_bindings.size(); }
+
+		const std::vector<vk::DescriptorSetLayoutBinding>& get_bindings() const { return m_layout_bindings; }
 
 	private:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		uint32_t m_current_binding;
 		std::vector<vk::DescriptorSetLayoutBinding> m_layout_bindings;
 	};
@@ -115,19 +121,21 @@ namespace graphics
 		//!															   { vk::DescriptorType::eCombinedImageSampler, 4},
 		//!															   { vk::DescriptorType::eStorageBuffer, 1} });
 		//!
-		static DescriptorPoolRef create(const DeviceRef& device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1)
+		static DescriptorPoolRef create(DeviceWeakRef device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1)
 		{
 
 			return std::make_shared<DescriptorPool>(device, descriptor_pool_sizes, max_sets);
 		}
 
-		DescriptorPool(const DeviceRef& device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1);
+		DescriptorPool(DeviceWeakRef device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1);
 
-		inline vk::DescriptorPool get_handle() const { return m_descriptor_pool_handle; }
+		~DescriptorPool();
+
+		vk::DescriptorPool get_handle() const { return m_descriptor_pool_handle; }
 
 	public:
 
-		DeviceRef m_device;
+		DeviceWeakRef m_device;
 		vk::DescriptorPool m_descriptor_pool_handle;
 	};
 

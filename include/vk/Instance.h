@@ -41,6 +41,7 @@ namespace graphics
 	
 	class Instance;
 	using InstanceRef = std::shared_ptr<Instance>;
+	using InstanceWeakRef = std::weak_ptr<Instance>;
 
 	//! There is no global state in Vulkan and all per-application state is stored in an instance object.
 	//! Creating an instance initializes the Vulkan library and allows the application to pass information
@@ -96,15 +97,20 @@ namespace graphics
 		Instance(const Options& options = Options());
 		~Instance();
 
-		inline vk::Instance get_handle() const { return m_instance_handle; }
-		inline const std::vector<vk::ExtensionProperties>& get_instance_extension_properties() const { return m_instance_extension_properties; }
-		inline const std::vector<vk::LayerProperties>& get_instance_layer_properties() const { return m_instance_layer_properties; }
-		inline const std::vector<vk::PhysicalDevice>& get_physical_devices() const { return m_physical_devices; }
+		vk::Instance get_handle() const { return m_instance_handle; }
+
+		const std::vector<vk::ExtensionProperties>& get_instance_extension_properties() const { return m_instance_extension_properties; }
+
+		const std::vector<vk::LayerProperties>& get_instance_layer_properties() const { return m_instance_layer_properties; }
+
+		const std::vector<vk::PhysicalDevice>& get_physical_devices() const { return m_physical_devices; }
+
 		vk::PhysicalDevice pick_physical_device(const std::function<bool(vk::PhysicalDevice)>& func);
 
 	private:
 
 		bool check_instance_layer_support();
+
 		void setup_debug_report_callback(VkDebugReportFlagsEXT debug_report_flags);
 
 		vk::Instance m_instance_handle;
