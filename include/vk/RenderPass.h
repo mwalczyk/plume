@@ -41,9 +41,29 @@ namespace graphics
 	class RenderPassBuilder;
 	using RenderPassBuilderRef = std::shared_ptr<RenderPassBuilder>;
 
+	//! A helper class for constructing render passes.
+	//!
+	//! Each vk::AttachmentDescription describes a particular attachment that will be used during the
+	//! render pass. It has several important fields:
+	//!
+	//! - flags: only possible value is vk::AttachmentDescriptionFlagBits::eMayAlias, which says that
+	//!   this attachment aliases the same device memory as other attachments
+	//! - format: the format of the image that will be used for the attachment
+	//! - samples: the number of samples of the image
+	//! - loadOp: how the contents of color and depth components are treated at the beginning of the
+	//!   subpass where it is first used
+	//! - storeOp: how the contents of color and depth components are treated at the end of the 
+	//!   subpass where it is last used
+	//! - stencilLoadOp: same as `loadOp` but for the stencil component
+	//! - stencilStoreOp: same as `storeOp` but for the stencil component
+	//! - initialLayout: the layout the attachment image subresource will be in when a render pass
+	//!   instance begins
+	//! - finalLayout: the layout the attachment image subresource will be transitioned to when a 
+	//!   render pass instance ends - note that an attachment can use a different layout in each
+	//!   subpass, if desired
 	class RenderPassBuilder
 	{
-	public:
+	public: 
 
 		enum class AttachmentCategory
 		{
@@ -52,33 +72,6 @@ namespace graphics
 			CATEGORY_DEPTH_STENCIL,
 			CATEGORY_INPUT,
 			CATEGORY_PRESERVE
-		};
-
-		struct SubpassRecord
-		{
-			const std::vector<std::string>& get_attachment_names(AttachmentCategory category) const
-			{ 
-				switch (category)
-				{
-				case AttachmentCategory::CATEGORY_COLOR:
-					return m_color_names;
-				case AttachmentCategory::CATEGORY_RESOLVE:
-					return m_resolve_names;
-				case AttachmentCategory::CATEGORY_DEPTH_STENCIL:
-					return m_depth_stencil_names;
-				case AttachmentCategory::CATEGORY_INPUT:
-					return m_input_names;
-				case AttachmentCategory::CATEGORY_PRESERVE:
-				default:
-					return m_preserve_names;
-				}
-			}
-
-			std::vector<std::string> m_color_names;
-			std::vector<std::string> m_resolve_names;
-			std::vector<std::string> m_depth_stencil_names;
-			std::vector<std::string> m_input_names;
-			std::vector<std::string> m_preserve_names;
 		};
 
 		static RenderPassBuilderRef create()
@@ -96,6 +89,11 @@ namespace graphics
 		//! the swapchain.
 		void add_color_present_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
+			if (attachment_with_name_exists(name))
+			{
+				throw std::runtime_error("Attachments created with a RenderPassBuilder must have unique names: " + name + " already exists.");
+			}
+
 			vk::AttachmentDescription attachment_description;
 			attachment_description.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 			attachment_description.format = format;
@@ -115,6 +113,11 @@ namespace graphics
 		//! between subsequent subpasses for maximum efficiency.
 		void add_color_transient_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
+			if (attachment_with_name_exists(name))
+			{
+				throw std::runtime_error("Attachments created with a RenderPassBuilder must have unique names: " + name + " already exists.");
+			}
+
 			// For the store op, vk::AttachmentStoreOp::eDontCare is critical, since it allows tile based renderers 
 			// to completely avoid writing out the multisampled framebuffer to memory. This is a huge performance and 
 			// bandwidth improvement.
@@ -136,6 +139,11 @@ namespace graphics
 		//! The initial and final layouts will be set to vk::ImageLayout::eDepthStencilAttachmentOptimal.
 		void add_depth_stencil_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
+			if (attachment_with_name_exists(name))
+			{
+				throw std::runtime_error("Attachments created with a RenderPassBuilder must have unique names: " + name + " already exists.");
+			}
+
 			if (!utils::is_depth_format(format))
 			{
 				throw std::runtime_error("Attempting to create a depth stencil attachment with an invalid image format");
@@ -163,7 +171,7 @@ namespace graphics
 			m_recorded_subpasses.push_back({});
 		}
 
-		void append_attachment(const std::string& name, AttachmentCategory category)
+		void append_attachment_to_subpass(const std::string& name, AttachmentCategory category)
 		{
 			if (!m_is_recording)
 			{
@@ -210,15 +218,53 @@ namespace graphics
 		void end_subpass_record(const vk::SubpassDependency dependency = create_default_subpass_dependency())
 		{
 			m_is_recording = false;
-
 			m_recorded_subpass_dependencies.push_back(dependency);
 		}
 
 		size_t get_number_of_subpasses() const { return m_recorded_subpasses.size(); }
 
-		const std::vector<SubpassRecord>& get_subpass_records() const { return m_recorded_subpasses; }
-		
 	private:
+
+		struct SubpassRecord
+		{
+			const std::vector<std::string>& get_attachment_names(AttachmentCategory category) const
+			{
+				switch (category)
+				{
+				case AttachmentCategory::CATEGORY_COLOR:
+					return m_color_names;
+				case AttachmentCategory::CATEGORY_RESOLVE:
+					return m_resolve_names;
+				case AttachmentCategory::CATEGORY_DEPTH_STENCIL:
+					return m_depth_stencil_names;
+				case AttachmentCategory::CATEGORY_INPUT:
+					return m_input_names;
+				case AttachmentCategory::CATEGORY_PRESERVE:
+				default:
+					return m_preserve_names;
+				}
+			}
+
+			std::vector<std::string> m_color_names;
+			std::vector<std::string> m_resolve_names;
+			std::vector<std::string> m_depth_stencil_names;
+			std::vector<std::string> m_input_names;
+			std::vector<std::string> m_preserve_names;
+		};
+
+		const std::vector<SubpassRecord>& get_subpass_records() const 
+		{ 
+			return m_recorded_subpasses; 
+		}
+
+		bool attachment_with_name_exists(const std::string& name)
+		{
+			if (m_attachment_mapping.find(name) == m_attachment_mapping.end())
+			{
+				return false;
+			}
+			return true;
+		}
 
 		bool m_is_recording;
 		std::vector<SubpassRecord> m_recorded_subpasses;
@@ -275,12 +321,12 @@ namespace graphics
 			friend class RenderPass;
 		};
 
-		//! Factory method for returning a new RenderPassRef.
+		//! Factory method for returning a new RenderPassRef from a RenderPassBuilderRef.
 		static RenderPassRef create(DeviceWeakRef device, const RenderPassBuilderRef& builder)
 		{
 			return std::make_shared<RenderPass>(device, builder);
 		}
-	
+
 		RenderPass(DeviceWeakRef, const RenderPassBuilderRef& builder);
 
 		~RenderPass();

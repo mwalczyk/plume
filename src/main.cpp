@@ -59,9 +59,9 @@ int main()
 	render_pass_builder->add_depth_stencil_attachment("depth", vk::Format::eD32SfloatS8Uint, msaa);
 
 	render_pass_builder->begin_subpass_record();
-	render_pass_builder->append_attachment("color_inter", RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR);
-	render_pass_builder->append_attachment("color_final", RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE);
-	render_pass_builder->append_attachment("depth", RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL);
+	render_pass_builder->append_attachment_to_subpass("color_inter", RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR);
+	render_pass_builder->append_attachment_to_subpass("color_final", RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE);
+	render_pass_builder->append_attachment_to_subpass("depth", RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL);
 	render_pass_builder->end_subpass_record();
 
 	auto render_pass = RenderPass::create(device, render_pass_builder);

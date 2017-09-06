@@ -124,8 +124,6 @@ namespace graphics
 			subpass_index++;
 		}
 
-
-
 		// Create a render pass with the information above.
 		vk::RenderPassCreateInfo render_pass_create_info;
 		render_pass_create_info.attachmentCount = static_cast<uint32_t>(all_attachment_descs.size());
