@@ -214,6 +214,7 @@
     <ClCompile Include="..\src\vk\Instance.cpp" />
     <ClCompile Include="..\src\vk\Pipeline.cpp" />
     <ClCompile Include="..\src\vk\RenderPass.cpp" />
+    <ClCompile Include="..\src\vk\Sampler.cpp" />
     <ClCompile Include="..\src\vk\Semaphore.cpp" />
     <ClCompile Include="..\src\vk\ShaderModule.cpp" />
     <ClCompile Include="..\src\vk\Surface.cpp" />
@@ -248,6 +249,7 @@
     <ClInclude Include="..\include\vk\Pipeline.h" />
     <ClInclude Include="..\include\vk\Platform.h" />
     <ClInclude Include="..\include\vk\RenderPass.h" />
+    <ClInclude Include="..\include\vk\Sampler.h" />
     <ClInclude Include="..\include\vk\Semaphore.h" />
     <ClInclude Include="..\include\vk\ShaderModule.h" />
     <ClInclude Include="..\include\vk\Surface.h" />

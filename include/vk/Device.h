@@ -102,6 +102,8 @@ namespace graphics
 		
 		vk::PhysicalDeviceProperties get_physical_device_properties() const { return m_gpu_details.m_properties; }
 
+		vk::PhysicalDeviceLimits get_physical_device_limits() const { return m_gpu_details.m_properties.limits; }
+
 		vk::PhysicalDeviceFeatures get_physical_device_features() const { return m_gpu_details.m_features;  }
 
 		vk::PhysicalDeviceMemoryProperties get_physical_device_memory_properties() const { return m_gpu_details.m_memory_properties; }

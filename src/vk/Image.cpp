@@ -29,61 +29,6 @@
 namespace graphics
 {
 
-	Sampler::Options::Options()
-	{
-		m_address_mode_u = m_address_mode_v = m_address_mode_w = vk::SamplerAddressMode::eRepeat;
-		m_min_filter = m_mag_filter = vk::Filter::eLinear;
-		m_min_lod = m_max_lod = m_mip_lod_bias = 0.0f;
-		m_anistropy_enabled = VK_TRUE;
-		m_max_anistropy = 16.0f;
-		m_border_color = vk::BorderColor::eIntOpaqueBlack;
-		m_mipmap_mode = vk::SamplerMipmapMode::eLinear;
-		m_unnormalized_coordinates = VK_FALSE;
-		m_compare_op_enable = VK_FALSE;
-		m_compare_op = vk::CompareOp::eAlways;
-	}
-
-	Sampler::Sampler(DeviceWeakRef device, const Options& options) :
-		m_device(device)
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		vk::SamplerCreateInfo sampler_create_info;
-		sampler_create_info.addressModeU = options.m_address_mode_u;
-		sampler_create_info.addressModeV = options.m_address_mode_v;
-		sampler_create_info.addressModeW = options.m_address_mode_w;
-		sampler_create_info.anisotropyEnable = options.m_anistropy_enabled;
-		sampler_create_info.borderColor = options.m_border_color;
-		sampler_create_info.compareEnable = options.m_compare_op_enable; 
-		sampler_create_info.compareOp = options.m_compare_op;
-		sampler_create_info.magFilter = options.m_mag_filter;
-		sampler_create_info.maxAnisotropy = options.m_max_anistropy;
-		sampler_create_info.maxLod = options.m_max_lod;
-		sampler_create_info.minFilter = options.m_min_filter;
-		sampler_create_info.minLod = options.m_min_lod;
-		sampler_create_info.mipLodBias = options.m_mip_lod_bias;
-		sampler_create_info.mipmapMode = options.m_mipmap_mode;
-		sampler_create_info.unnormalizedCoordinates = options.m_unnormalized_coordinates;
-
-		m_sampler_handle = device_shared->get_handle().createSampler(sampler_create_info);
-	}
-
-	Sampler::~Sampler()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroySampler(m_sampler_handle);
-	}
-
-	static const vk::ImageUsageFlags IMAGE_USAGE_ALL = vk::ImageUsageFlagBits::eColorAttachment |
-		vk::ImageUsageFlagBits::eDepthStencilAttachment |
-		vk::ImageUsageFlagBits::eInputAttachment |
-		vk::ImageUsageFlagBits::eSampled |
-		vk::ImageUsageFlagBits::eStorage |
-		vk::ImageUsageFlagBits::eTransferDst |
-		vk::ImageUsageFlagBits::eTransferSrc |
-		vk::ImageUsageFlagBits::eTransientAttachment;
-
 	Image::~Image()
 	{
 		DeviceRef device_shared = m_device.lock();
@@ -149,7 +94,7 @@ namespace graphics
 
 		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-		// If the image was constructed with more than one array layer, set this flag to true
+		// If the image was constructed with more than one array layer, set this flag to `true`.
 		m_is_array = image_create_info.arrayLayers > 1;
 	}
 
@@ -162,57 +107,57 @@ namespace graphics
 		case vk::ImageType::e2D:
 			return m_is_array ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
 		case vk::ImageType::e3D:
-			// Note that it is not possible to have an array of 3D textures
+		default:
+			// Note that it is not possible to have an array of 3D textures.
 			return vk::ImageViewType::e3D;
 
-		// TODO: cubemaps and cubemap arrays
+		// TODO: cubemaps and cubemap arrays - see the section of the spec dedicated
+	    // to this: https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#resources-image-views-compatibility
 		}
 	}
 
-	ImageView::ImageView(DeviceWeakRef device, ImageWeakRef image, uint32_t base_array_layer, uint32_t layer_count, uint32_t base_mip_level, uint32_t level_count)
+	ImageView::ImageView(DeviceWeakRef device, ImageRef image, uint32_t base_array_layer, uint32_t layer_count, uint32_t base_mip_level, uint32_t level_count, const vk::ComponentMapping& component_mapping)
 	{
-		vk::ImageSubresourceRange subresource_range = {
-			utils::format_to_aspect_mask(image.lock()->m_format),
+		vk::ImageSubresourceRange subresource_range = 
+		{
+			utils::format_to_aspect_mask(image->m_format),
 			base_mip_level,
 			level_count,
 			base_array_layer,
 			layer_count
 		};
 
-		ImageView(device, image, subresource_range);
+		ImageView(device, image, subresource_range, component_mapping);
 	}
 
-	ImageView::ImageView(DeviceWeakRef device, ImageWeakRef image, const vk::ImageSubresourceRange& subresource_range) :
+	ImageView::ImageView(DeviceWeakRef device, ImageRef image, const vk::ImageSubresourceRange& subresource_range, const vk::ComponentMapping& component_mapping) :
 		m_device(device),
 		m_image(image),
 		m_subresource_range(subresource_range)
 	{
 		DeviceRef device_shared = m_device.lock();
 
-		if (image.expired())
-		{
-			throw std::runtime_error("Attempting to build an image view for an image that has already expired");
-		}
-
-		// In order to use the contents of the weak pointer, we must convert it to a shared pointer. At this 
-		// point, we have already verified that the parent image has not yet expired, so this is a safe operation.
-		auto shared_image_lock = image.lock();
-
-		if (!shared_image_lock->m_is_array && m_subresource_range.layerCount > 1)
+		if (!image->m_is_array && m_subresource_range.layerCount > 1)
 		{
 			throw std::runtime_error("Attempting to build an image view that accesses multiple array layers \
 				of the parent image, but the parent image is not an array");
 		}
 
+		// TODO: during the image view creation process, we make several assumptions. In particular,
+		// we assume that the image view will have the same format as the parent image and that we can
+		// reasonably deduce the view type based on the parent image's type. We may not want to make
+		// these assumptions in the future.
+
 		vk::ImageViewCreateInfo image_view_create_info;
-		image_view_create_info.format = shared_image_lock->m_format;
-		image_view_create_info.image = shared_image_lock->m_image_handle;
+		image_view_create_info.format = image->m_format;
+		image_view_create_info.image = image->m_image_handle;
 		image_view_create_info.subresourceRange.aspectMask = m_subresource_range.aspectMask;
 		image_view_create_info.subresourceRange.baseArrayLayer = m_subresource_range.baseArrayLayer;
 		image_view_create_info.subresourceRange.baseMipLevel = m_subresource_range.baseMipLevel;
 		image_view_create_info.subresourceRange.layerCount = m_subresource_range.layerCount;
 		image_view_create_info.subresourceRange.levelCount = m_subresource_range.levelCount;
-		image_view_create_info.viewType = shared_image_lock->image_view_type_from_parent();
+		image_view_create_info.components = component_mapping;
+		image_view_create_info.viewType = image->image_view_type_from_parent();	
 
 		m_image_view_handle = device_shared->get_handle().createImageView(image_view_create_info);
 	}

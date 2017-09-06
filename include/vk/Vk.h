@@ -37,6 +37,7 @@
 #include "Instance.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
+#include "Sampler.h"
 #include "Semaphore.h"
 #include "ShaderModule.h"
 #include "Surface.h"
