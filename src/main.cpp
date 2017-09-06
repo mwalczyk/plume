@@ -52,24 +52,18 @@ int main()
 	* Render pass
 	*
 	***********************************************************************************/
-	auto ms_attachment =		RenderPass::create_multisample_attachment(vk::Format::eB8G8R8A8Unorm, 0, msaa);
-	auto resolve_attachment =	RenderPass::create_color_attachment(vk::Format::eB8G8R8A8Unorm, 1);
-	auto depth_attachment =		RenderPass::create_depth_stencil_attachment(vk::Format::eD32SfloatS8Uint, 2, msaa);
 	
-	vk::SubpassDescription subpass_description = {};
-	subpass_description.colorAttachmentCount = 1;
-	subpass_description.pColorAttachments = &ms_attachment.second;
-	subpass_description.pDepthStencilAttachment = &depth_attachment.second;
-	subpass_description.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-	subpass_description.pResolveAttachments = &resolve_attachment.second;
+	// TODO: create a render pass builder class with begin(...) and end(...) subpass functions,
+	// and add_color_attachment(...), add_depth_stencil_attachment(...), and add_resolve_attachment(...)
+	// functions that can be called in-between.
+	RenderPassBuilder builder;
+	builder.begin_subpass();
+	builder.add_color_transient_attachment(vk::Format::eB8G8R8A8Unorm, 0, msaa);
+	builder.add_color_present_attachment(vk::Format::eB8G8R8A8Unorm, 1);
+	builder.add_depth_stencil_attachment(vk::Format::eD32SfloatS8Uint, 2, msaa);
+	builder.end_subpass();
 
-	auto render_pass_options = RenderPass::Options()
-		.attachment_descriptions({ ms_attachment.first, resolve_attachment.first, depth_attachment.first })
-		.attachment_references({ ms_attachment.second, resolve_attachment.second, depth_attachment.second })
-		.subpass_descriptions({ subpass_description })
-		.subpass_dependencies({ RenderPass::create_default_subpass_dependency() });
-
-	auto render_pass = RenderPass::create(device, render_pass_options);
+	auto render_pass = RenderPass::create(device, builder);
 
    /***********************************************************************************
 	*
@@ -107,7 +101,7 @@ int main()
 		.attach_shader_stages({ v_shader, f_shader })
 		.primitive_topology(geometry.get_topology())
 		.cull_mode(vk::CullModeFlagBits::eNone)
-		.depth_test()
+		.enable_depth_test()
 		.samples(msaa);
 	auto pipeline = Pipeline::create(device, render_pass, pipeline_options);
 	std::cout << pipeline << std::endl;
@@ -150,7 +144,7 @@ int main()
 	* Command pool and command buffers
 	*
 	***********************************************************************************/
-	auto command_pool = CommandPool::create(device, device->get_queue_family_index(Device::QueueType::GRAPHICS));
+	auto command_pool = CommandPool::create(device, Device::QueueType::GRAPHICS);
 	auto temp_command_buffer = CommandBuffer::create(device, command_pool);
 
 	{

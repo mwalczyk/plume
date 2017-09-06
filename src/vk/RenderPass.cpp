@@ -29,140 +29,46 @@
 namespace graphics
 {
 
-	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::create_color_attachment(vk::Format format, uint32_t attachment)
-	{
-		// Set up the attachment description.
-		vk::AttachmentDescription attachment_description;
-		attachment_description.finalLayout = vk::ImageLayout::ePresentSrcKHR;
-		attachment_description.format = format;
-		attachment_description.initialLayout = vk::ImageLayout::eUndefined;
-		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
-		attachment_description.samples = vk::SampleCountFlagBits::e1;
-		attachment_description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-		attachment_description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-		attachment_description.storeOp = vk::AttachmentStoreOp::eStore;
-
-		// Set up the attachment reference.
-		vk::AttachmentReference attachment_reference;
-		attachment_reference.attachment = attachment;
-		attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-		return { attachment_description, attachment_reference };
-	}
-
-	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::create_depth_stencil_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count)
-	{
-		if (!utils::is_depth_format(format))
-		{
-			throw std::runtime_error("Attempting to create a depth stencil attachment with an invalid image format");
-		}
-
-		// Set up the attachment description.
-		vk::AttachmentDescription attachment_description;
-		attachment_description.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		attachment_description.format = format;
-		attachment_description.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
-		attachment_description.samples = utils::sample_count_to_flags(sample_count);
-		attachment_description.stencilLoadOp = utils::is_stencil_format(format) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
-		attachment_description.stencilStoreOp = utils::is_stencil_format(format) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
-		attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
-
-		// Set up the attachment reference.
-		vk::AttachmentReference attachment_reference;
-		attachment_reference.attachment = attachment;
-		attachment_reference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-		return { attachment_description, attachment_reference };
-	}
-
-	std::pair<vk::AttachmentDescription, vk::AttachmentReference> RenderPass::create_multisample_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count)
-	{
-		// Set up the attachment description.
-		// For the store op, vk::AttachmentStoreOp::eDontCare is critical, since it allows tile based renderers 
-		// to completely avoid writing out the multisampled framebuffer to memory. This is a huge performance and 
-		// bandwidth improvement.
-		vk::AttachmentDescription attachment_description;
-		attachment_description.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-		attachment_description.format = format;
-		attachment_description.initialLayout = vk::ImageLayout::eUndefined;
-		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
-		attachment_description.samples = utils::sample_count_to_flags(sample_count);
-		attachment_description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-		attachment_description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-		attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
-
-		// Set up the attachment reference.
-		vk::AttachmentReference attachment_reference;
-		attachment_reference.attachment = attachment;
-		attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-		return{ attachment_description, attachment_reference };
-	}
-
-	vk::SubpassDescription RenderPass::create_subpass_description(const std::vector<vk::AttachmentReference>& color_attachment_references, const vk::AttachmentReference& depth_stencil_attachment_reference)
-	{
-		vk::SubpassDescription subpass_description;
-		subpass_description.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;	// Currently, only graphics subpasses are supported by Vulkan.
-		subpass_description.colorAttachmentCount = static_cast<uint32_t>(color_attachment_references.size());
-		subpass_description.pColorAttachments = color_attachment_references.data();
-		subpass_description.pDepthStencilAttachment = &depth_stencil_attachment_reference;
-
-		return subpass_description;
-	}
-
-	vk::SubpassDependency RenderPass::create_default_subpass_dependency()
-	{
-		vk::SubpassDependency subpass_dependency;
-		subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		subpass_dependency.dstSubpass = 0;
-		subpass_dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		subpass_dependency.srcAccessMask = {};
-		subpass_dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		subpass_dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
-
-		return subpass_dependency;
-	}
-
-	RenderPass::Options::Options()
-	{
-		auto color_attachment = create_color_attachment(vk::Format::eB8G8R8A8Unorm, 0);
-		auto depth_attachment = create_depth_stencil_attachment(vk::Format::eD32SfloatS8Uint, 1);
-
-		// Aggregate all attachment references and descriptions.
-		m_attachment_descriptions = { color_attachment.first, depth_attachment.first };
-		m_attachment_references = { color_attachment.second, depth_attachment.second };
-
-		vk::SubpassDescription subpass_description;
-		subpass_description.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-		subpass_description.colorAttachmentCount = 1;
-		subpass_description.pColorAttachments = &m_attachment_references[0];
-		subpass_description.pDepthStencilAttachment = &m_attachment_references[1];
-		subpass_description.preserveAttachmentCount = 0;
-		subpass_description.pPreserveAttachments = nullptr;
-		subpass_description.pResolveAttachments = nullptr;
-
-		m_subpass_descriptions.emplace_back(subpass_description);
-		m_subpass_dependencies.emplace_back(create_default_subpass_dependency());
-	}
-
-	RenderPass::RenderPass(DeviceWeakRef device, const Options& options) :
-		m_device(device),
-		m_attachment_descriptions(options.m_attachment_descriptions),
-		m_attachment_references(options.m_attachment_references),
-		m_subpass_descriptions(options.m_subpass_descriptions),
-		m_subpass_dependencies(options.m_subpass_dependencies)
+	RenderPass::RenderPass(DeviceWeakRef device, const RenderPassBuilder& builder) :
+		m_device(device)
 	{
 		DeviceRef device_shared = m_device.lock();
 
+		std::vector<vk::AttachmentDescription> all_attachment_descs;
+		std::vector<vk::SubpassDescription> all_subpass_descs;
+		std::vector<vk::SubpassDependency> all_subpass_deps;
+
+		for (const auto& subpass_record : builder.get_subpass_records())
+		{
+			// TODO: this isn't correct and will not respect the order of color / resolve
+			// attachments with respect to one another. For example, if we first add a color
+			// attachment at attachment point #1 then a resolve attachment at attachment point
+			// #2, this would break.
+			all_attachment_descs.insert(std::end(all_attachment_descs),
+				std::begin(subpass_record.m_resolve_attachment_descs),
+				std::end(subpass_record.m_resolve_attachment_descs));
+
+			all_attachment_descs.insert(std::end(all_attachment_descs), 
+										std::begin(subpass_record.m_color_attachment_descs), 
+										std::end(subpass_record.m_color_attachment_descs));
+
+			all_attachment_descs.push_back(subpass_record.m_depth_stencil_attachment_desc);
+
+			all_subpass_descs.push_back(subpass_record.build_subpass_description());
+
+			all_subpass_deps.push_back(subpass_record.get_subpass_dependency());
+		}
+
+
+
 		// Create a render pass with the information above.
 		vk::RenderPassCreateInfo render_pass_create_info;
-		render_pass_create_info.attachmentCount = static_cast<uint32_t>(m_attachment_descriptions.size());
-		render_pass_create_info.dependencyCount = static_cast<uint32_t>(m_subpass_dependencies.size());
-		render_pass_create_info.pAttachments = m_attachment_descriptions.data();
-		render_pass_create_info.pDependencies = m_subpass_dependencies.data();
-		render_pass_create_info.pSubpasses = m_subpass_descriptions.data();
-		render_pass_create_info.subpassCount = static_cast<uint32_t>(m_subpass_descriptions.size());
+		render_pass_create_info.attachmentCount = static_cast<uint32_t>(all_attachment_descs.size());
+		render_pass_create_info.dependencyCount = static_cast<uint32_t>(all_subpass_deps.size());
+		render_pass_create_info.pAttachments = all_attachment_descs.data();
+		render_pass_create_info.pDependencies = all_subpass_deps.data();
+		render_pass_create_info.pSubpasses = all_subpass_descs.data();
+		render_pass_create_info.subpassCount = static_cast<uint32_t>(all_subpass_descs.size());
 
 		m_render_pass_handle = device_shared->get_handle().createRenderPass(render_pass_create_info);
 	}

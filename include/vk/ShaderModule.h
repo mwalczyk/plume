@@ -99,6 +99,7 @@ namespace graphics
 		}
 
 		ShaderModule(DeviceWeakRef device, const FileResource& resouce);
+
 		~ShaderModule();
 
 		vk::ShaderModule get_handle() const { return m_shader_module_handle; }
@@ -110,7 +111,7 @@ namespace graphics
 		const std::vector<std::string>& get_entry_points() const { return m_entry_points; }
 
 		//! Retrieve a list of low-level details about the push constants contained within this GLSL shader.
-		const std::vector<PushConstant> get_push_constants() const { return m_push_constants; }
+		const std::vector<PushConstant>& get_push_constants() const { return m_push_constants; }
 
 		//! Retrieve a list of low-level details about the descriptors contained within this GLSL shader.
 		const std::vector<Descriptor>& get_descriptors() const { return m_descriptors; }

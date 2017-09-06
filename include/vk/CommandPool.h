@@ -58,12 +58,12 @@ namespace graphics
 		//!		command buffers must be reset together.
 		//!
 		//! Both flags will be set by default.
-		static CommandPoolRef create(DeviceWeakRef device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient)
+		static CommandPoolRef create(DeviceWeakRef device, Device::QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient)
 		{
-			return std::make_shared<CommandPool>(device, queue_family_index, command_pool_create_flags);
+			return std::make_shared<CommandPool>(device, queue_type, command_pool_create_flags);
 		}
 
-		CommandPool(DeviceWeakRef device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
+		CommandPool(DeviceWeakRef device, Device::QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
 		
 		~CommandPool();
 

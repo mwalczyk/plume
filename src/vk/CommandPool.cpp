@@ -29,14 +29,14 @@
 namespace graphics
 {
 	
-	CommandPool::CommandPool(DeviceWeakRef device, uint32_t queue_family_index, vk::CommandPoolCreateFlags command_pool_create_flags) :
+	CommandPool::CommandPool(DeviceWeakRef device, Device::QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags) :
 		m_device(device)
 	{
 		DeviceRef device_shared = m_device.lock();
 
 		vk::CommandPoolCreateInfo command_pool_create_info;
 		command_pool_create_info.flags = command_pool_create_flags;
-		command_pool_create_info.queueFamilyIndex = queue_family_index;
+		command_pool_create_info.queueFamilyIndex = device_shared->get_queue_family_index(queue_type);
 
 		m_command_pool_handle = device_shared->get_handle().createCommandPool(command_pool_create_info);
 	}

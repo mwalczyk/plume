@@ -105,11 +105,19 @@ namespace graphics
 				return *this; 
 			}
 			
-			//! Enable or disable depth testing.
-			Options& depth_test(vk::Bool32 enabled = VK_TRUE) { m_depth_stencil_state_create_info.depthTestEnable = enabled; return *this; }
+			//! Enable depth testing.
+			Options& enable_depth_test() { m_depth_stencil_state_create_info.depthTestEnable = VK_TRUE; return *this; }
 			
-			//! Enable or disable stencil testing.
-			Options& stencil_test(vk::Bool32 enabled = VK_TRUE) { m_depth_stencil_state_create_info.stencilTestEnable = enabled; return *this; }
+			//! Enable stencil testing.
+			Options& enable_stencil_test() { m_depth_stencil_state_create_info.stencilTestEnable = VK_TRUE; return *this; }
+
+			//! Enable both depth and stencil testing.
+			Options& enable_depth_stencil_tests()
+			{
+				m_depth_stencil_state_create_info.depthTestEnable = VK_TRUE;
+				m_depth_stencil_state_create_info.stencilTestEnable = VK_TRUE;
+				return *this;
+			}
 
 			//! A limited amount of the pipeline state can be changed without recreating the entire pipeline.
 			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) 
