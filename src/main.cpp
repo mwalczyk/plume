@@ -53,17 +53,18 @@ int main()
 	*
 	***********************************************************************************/
 	
-	// TODO: create a render pass builder class with begin(...) and end(...) subpass functions,
-	// and add_color_attachment(...), add_depth_stencil_attachment(...), and add_resolve_attachment(...)
-	// functions that can be called in-between.
-	RenderPassBuilder builder;
-	builder.begin_subpass();
-	builder.add_color_transient_attachment(vk::Format::eB8G8R8A8Unorm, 0, msaa);
-	builder.add_color_present_attachment(vk::Format::eB8G8R8A8Unorm, 1);
-	builder.add_depth_stencil_attachment(vk::Format::eD32SfloatS8Uint, 2, msaa);
-	builder.end_subpass();
+	auto render_pass_builder = RenderPassBuilder::create();
+	render_pass_builder->add_color_transient_attachment("color_inter", vk::Format::eB8G8R8A8Unorm, msaa);
+	render_pass_builder->add_color_present_attachment("color_final", vk::Format::eB8G8R8A8Unorm);
+	render_pass_builder->add_depth_stencil_attachment("depth", vk::Format::eD32SfloatS8Uint, msaa);
 
-	auto render_pass = RenderPass::create(device, builder);
+	render_pass_builder->begin_subpass_record();
+	render_pass_builder->append_attachment("color_inter", RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR);
+	render_pass_builder->append_attachment("color_final", RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE);
+	render_pass_builder->append_attachment("depth", RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL);
+	render_pass_builder->end_subpass_record();
+
+	auto render_pass = RenderPass::create(device, render_pass_builder);
 
    /***********************************************************************************
 	*
@@ -173,8 +174,9 @@ int main()
 	for (size_t i = 0; i < swapchain_image_views.size(); ++i)
 	{
 		std::vector<vk::ImageView> image_views = { 
-			image_ms_view->get_handle(),			// attachment 0: multisample color 
+			
 			swapchain_image_views[i],				// attachment 1: resolve color (swapchain)
+			image_ms_view->get_handle(),			// attachment 0: multisample color 
 			image_depth_view->get_handle()			// attachment 2: depth-stencil
 		};
 

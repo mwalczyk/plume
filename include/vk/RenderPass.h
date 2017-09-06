@@ -28,6 +28,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 
 #include "Platform.h"
 #include "Noncopyable.h"
@@ -37,59 +38,64 @@
 namespace graphics
 {
 
+	class RenderPassBuilder;
+	using RenderPassBuilderRef = std::shared_ptr<RenderPassBuilder>;
+
 	class RenderPassBuilder
 	{
 	public:
 
+		enum class AttachmentCategory
+		{
+			CATEGORY_COLOR,
+			CATEGORY_RESOLVE,
+			CATEGORY_DEPTH_STENCIL,
+			CATEGORY_INPUT,
+			CATEGORY_PRESERVE
+		};
+
 		struct SubpassRecord
 		{
-			vk::SubpassDescription build_subpass_description() const
-			{
-				vk::SubpassDescription subpass_description = {};
-				subpass_description.colorAttachmentCount = static_cast<uint32_t>(m_color_attachment_refs.size());
-				subpass_description.pColorAttachments = m_color_attachment_refs.data();
-				subpass_description.pDepthStencilAttachment = &m_depth_stencil_attachment_ref;
-				subpass_description.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-				subpass_description.pResolveAttachments = m_resolve_attachment_refs.data();
-
-				// TODO: what do these do?
-				subpass_description.pInputAttachments = nullptr;
-				subpass_description.inputAttachmentCount = 0;
-				subpass_description.pPreserveAttachments = nullptr;
-				subpass_description.preserveAttachmentCount = 0;
-
-				return subpass_description;
+			const std::vector<std::string>& get_attachment_names(AttachmentCategory category) const
+			{ 
+				switch (category)
+				{
+				case AttachmentCategory::CATEGORY_COLOR:
+					return m_color_names;
+				case AttachmentCategory::CATEGORY_RESOLVE:
+					return m_resolve_names;
+				case AttachmentCategory::CATEGORY_DEPTH_STENCIL:
+					return m_depth_stencil_names;
+				case AttachmentCategory::CATEGORY_INPUT:
+					return m_input_names;
+				case AttachmentCategory::CATEGORY_PRESERVE:
+				default:
+					return m_preserve_names;
+				}
 			}
 
-			const vk::SubpassDependency& get_subpass_dependency() const { return m_dependency; }
-
-			std::vector<vk::AttachmentDescription>	m_color_attachment_descs;
-			std::vector<vk::AttachmentReference>	m_color_attachment_refs;
-
-			std::vector<vk::AttachmentDescription>	m_resolve_attachment_descs;
-			std::vector<vk::AttachmentReference>	m_resolve_attachment_refs;
-
-			vk::AttachmentDescription m_depth_stencil_attachment_desc;
-			vk::AttachmentReference m_depth_stencil_attachment_ref;
-
-			vk::SubpassDependency m_dependency;
+			std::vector<std::string> m_color_names;
+			std::vector<std::string> m_resolve_names;
+			std::vector<std::string> m_depth_stencil_names;
+			std::vector<std::string> m_input_names;
+			std::vector<std::string> m_preserve_names;
 		};
+
+		static RenderPassBuilderRef create()
+		{
+			return std::make_shared<RenderPassBuilder>();
+		}
 
 		RenderPassBuilder() :
 			m_is_recording(false)
 		{}
 
-		bool is_recording() const { return m_is_recording; }
-
-		void begin_subpass()
+		//! Constructs an attachment description for a color attachment with the specified image 
+		//! format and sample count. The final layout of this attachment will be vk::ImageLayout::ePresentSrcKHR,
+		//! so this method should only be called for an attachment that will (eventually) be presented back to 
+		//! the swapchain.
+		void add_color_present_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
-			m_is_recording = true;
-			m_recorded_subpasses.push_back({});
-		}
-
-		void add_color_present_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count = 1)
-		{
-			// Set up the attachment description.
 			vk::AttachmentDescription attachment_description;
 			attachment_description.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 			attachment_description.format = format;
@@ -100,19 +106,15 @@ namespace graphics
 			attachment_description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
 			attachment_description.storeOp = vk::AttachmentStoreOp::eStore;
 
-			// Set up the attachment reference.
-			vk::AttachmentReference attachment_reference;
-			attachment_reference.attachment = attachment;
-			attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-			m_recorded_subpasses.back().m_color_attachment_descs.push_back(attachment_description);
-			m_recorded_subpasses.back().m_color_attachment_refs.push_back(attachment_reference);
+			// Add to global map of string names to attachment descriptions.
+			m_attachment_mapping.insert({ name, attachment_description });
 		}
 
-		void add_color_transient_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count = 1)
+		//! Constructs an attachment description for a multisample color attachment with the specified image format and sample 
+		//! count. Note that this type of render pass attachment is meant to be used with MSAA, as its contents will not be stored 
+		//! between subsequent subpasses for maximum efficiency.
+		void add_color_transient_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
-			// Set up the attachment description.
-
 			// For the store op, vk::AttachmentStoreOp::eDontCare is critical, since it allows tile based renderers 
 			// to completely avoid writing out the multisampled framebuffer to memory. This is a huge performance and 
 			// bandwidth improvement.
@@ -126,23 +128,19 @@ namespace graphics
 			attachment_description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
 			attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
 
-			// Set up the attachment reference.
-			vk::AttachmentReference attachment_reference;
-			attachment_reference.attachment = attachment;
-			attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-			m_recorded_subpasses.back().m_resolve_attachment_descs.push_back(attachment_description);
-			m_recorded_subpasses.back().m_resolve_attachment_refs.push_back(attachment_reference);
+			// Add to global map of string names to attachment descriptions.
+			m_attachment_mapping.insert({ name, attachment_description });
 		}
 
-		void add_depth_stencil_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count = 1)
+		//! Constructs an attachment description for a depth stencil attachment with the specified image format and sample count. 
+		//! The initial and final layouts will be set to vk::ImageLayout::eDepthStencilAttachmentOptimal.
+		void add_depth_stencil_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
 			if (!utils::is_depth_format(format))
 			{
 				throw std::runtime_error("Attempting to create a depth stencil attachment with an invalid image format");
 			}
 
-			// Set up the attachment description.
 			vk::AttachmentDescription attachment_description;
 			attachment_description.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 			attachment_description.format = format;
@@ -153,13 +151,45 @@ namespace graphics
 			attachment_description.stencilStoreOp = utils::is_stencil_format(format) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
 			attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
 
-			// Set up the attachment reference.
-			vk::AttachmentReference attachment_reference;
-			attachment_reference.attachment = attachment;
-			attachment_reference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+			// Add to global map of string names to attachment descriptions.
+			m_attachment_mapping.insert({ name, attachment_description });
+		}
 
-			m_recorded_subpasses.back().m_depth_stencil_attachment_desc = attachment_description;
-			m_recorded_subpasses.back().m_depth_stencil_attachment_ref = attachment_reference;
+		bool is_recording() const { return m_is_recording; }
+
+		void begin_subpass_record()
+		{
+			m_is_recording = true;
+			m_recorded_subpasses.push_back({});
+		}
+
+		void append_attachment(const std::string& name, AttachmentCategory category)
+		{
+			if (!m_is_recording)
+			{
+				throw std::runtime_error("The RenderPassBuilder must be in a recording state in order to receive this\
+					command - see the `begin_subpass()` command for details.");
+			}
+
+			switch (category)
+			{
+			case AttachmentCategory::CATEGORY_COLOR:
+				m_recorded_subpasses.back().m_color_names.push_back(name);
+				break;
+			case AttachmentCategory::CATEGORY_RESOLVE:
+				m_recorded_subpasses.back().m_resolve_names.push_back(name);
+				break;
+			case AttachmentCategory::CATEGORY_DEPTH_STENCIL:
+				m_recorded_subpasses.back().m_depth_stencil_names.push_back(name);
+				break;
+			case AttachmentCategory::CATEGORY_INPUT:
+				m_recorded_subpasses.back().m_input_names.push_back(name);
+				break;
+			case AttachmentCategory::CATEGORY_PRESERVE:
+			default:
+				m_recorded_subpasses.back().m_preserve_names.push_back(name);
+				break;
+			}
 		}
 
 		static vk::SubpassDependency create_default_subpass_dependency()
@@ -175,25 +205,27 @@ namespace graphics
 			return subpass_dependency;
 		}
 
-		void end_subpass(const vk::SubpassDependency dependency = create_default_subpass_dependency())
+		//! By default, ending a subpass will append a subpass dependency whose source subpass is the special keyword VK_SUBPASS_EXTERNAL.
+		//! If more than one subpass is used, it is up to you to ensure that this subpass dependency is constructed properly.
+		void end_subpass_record(const vk::SubpassDependency dependency = create_default_subpass_dependency())
 		{
 			m_is_recording = false;
 
-			m_recorded_subpasses.back().m_dependency = dependency;
+			m_recorded_subpass_dependencies.push_back(dependency);
 		}
+
+		size_t get_number_of_subpasses() const { return m_recorded_subpasses.size(); }
 
 		const std::vector<SubpassRecord>& get_subpass_records() const { return m_recorded_subpasses; }
-
+		
 	private:
-
-		void bake()
-		{
-
-		}
 
 		bool m_is_recording;
 		std::vector<SubpassRecord> m_recorded_subpasses;
 		std::vector<vk::SubpassDependency> m_recorded_subpass_dependencies;
+		std::map<std::string, vk::AttachmentDescription> m_attachment_mapping;
+
+		friend class RenderPass;
 	};
 
 	class RenderPass;
@@ -244,36 +276,12 @@ namespace graphics
 		};
 
 		//! Factory method for returning a new RenderPassRef.
-		static RenderPassRef create(DeviceWeakRef device, const RenderPassBuilder& builder)
+		static RenderPassRef create(DeviceWeakRef device, const RenderPassBuilderRef& builder)
 		{
 			return std::make_shared<RenderPass>(device, builder);
 		}
-
-		//! Constructs a generic attachment description and attachment reference for a color attachment with the specified image 
-		//! format and attachment index. The numeric index that is used to build each attachment reference corresponds to the 
-		//! index of a attachment description in the array that is used to construct the render pass. Note that this type of render
-		//! pass attachment does not have multisampling enabled. 
-		//static std::pair<vk::AttachmentDescription, vk::AttachmentReference> create_color_attachment(vk::Format format, uint32_t attachment);
-		
-		//! Constructs a generic attachment description and attachment reference for a depth stencil attachment with the specified 
-		//! image format and attachment index. The numeric index that is used to build each attachment reference corresponds to the 
-		//! index of a attachment description in the array that is used to construct the render pass. 
-		//static std::pair<vk::AttachmentDescription, vk::AttachmentReference> create_depth_stencil_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count = 1);
-
-		//! Constructs a generic attachment description and attachment reference for a multisample color attachment with the specified 
-		//! image format and attachment index. The numeric index that is used to build each attachment reference corresponds to the 
-		//! index of a attachment description in the array that is used to construct the render pass. Note that this type of render pass
-		//! attachment is meant to be used with MSAA, as its contents will not be stored between subsequent subpasses for maximum
-		//! efficiency.
-		//static std::pair<vk::AttachmentDescription, vk::AttachmentReference> create_multisample_attachment(vk::Format format, uint32_t attachment, uint32_t sample_count = 4);
-
-		//static vk::SubpassDescription create_subpass_description(const std::vector<vk::AttachmentReference>& color_attachment_references, const vk::AttachmentReference& depth_stencil_attachment_reference);
-		
-		//! This should only be used if the render pass has a single subpass. Internally, this constructs a subpass dependency
-		//! whose source subpass is the special keyword VK_SUBPASS_EXTERNAL.
-		//static vk::SubpassDependency create_default_subpass_dependency();
-
-		RenderPass(DeviceWeakRef, const RenderPassBuilder& builder);
+	
+		RenderPass(DeviceWeakRef, const RenderPassBuilderRef& builder);
 
 		~RenderPass();
 
@@ -282,11 +290,8 @@ namespace graphics
 	private:
 
 		DeviceWeakRef m_device;
+		RenderPassBuilderRef m_render_pass_builder;
 		vk::RenderPass m_render_pass_handle;
-		std::vector<vk::AttachmentDescription> m_attachment_descriptions;
-		std::vector<vk::AttachmentReference> m_attachment_references;
-		std::vector<vk::SubpassDescription> m_subpass_descriptions;
-		std::vector<vk::SubpassDependency> m_subpass_dependencies;
 	};
 
 } // namespace graphics

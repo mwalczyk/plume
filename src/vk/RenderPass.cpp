@@ -29,34 +29,99 @@
 namespace graphics
 {
 
-	RenderPass::RenderPass(DeviceWeakRef device, const RenderPassBuilder& builder) :
-		m_device(device)
+	RenderPass::RenderPass(DeviceWeakRef device, const RenderPassBuilderRef& builder) :
+		m_device(device),
+		m_render_pass_builder(builder)
 	{
 		DeviceRef device_shared = m_device.lock();
 
-		std::vector<vk::AttachmentDescription> all_attachment_descs;
-		std::vector<vk::SubpassDescription> all_subpass_descs;
-		std::vector<vk::SubpassDependency> all_subpass_deps;
-
-		for (const auto& subpass_record : builder.get_subpass_records())
+		// First, separate the names and attachment descriptions into two independent
+		// vectors - we need to do this so that we can pass the vk::AttachmentDescription
+		// structs to the render pass constructor.
+		std::vector<std::string>				all_attachment_names;
+		std::vector<vk::AttachmentDescription>	all_attachment_descs;
+		for (const auto& mapping : builder->m_attachment_mapping)
 		{
-			// TODO: this isn't correct and will not respect the order of color / resolve
-			// attachments with respect to one another. For example, if we first add a color
-			// attachment at attachment point #1 then a resolve attachment at attachment point
-			// #2, this would break.
-			all_attachment_descs.insert(std::end(all_attachment_descs),
-				std::begin(subpass_record.m_resolve_attachment_descs),
-				std::end(subpass_record.m_resolve_attachment_descs));
+			all_attachment_names.push_back(mapping.first);	// The colloquial name of the attachment (i.e. "color_attachment_0")
+			all_attachment_descs.push_back(mapping.second);	// The vk::AttachmentDescription struct describing this attachment
 
-			all_attachment_descs.insert(std::end(all_attachment_descs), 
-										std::begin(subpass_record.m_color_attachment_descs), 
-										std::end(subpass_record.m_color_attachment_descs));
+			// For example, the two vectors above might look like:
+			// "color_0", "color_1", "depth", ...
+			// with a vk::AttachmentDescription for each
+		}
 
-			all_attachment_descs.push_back(subpass_record.m_depth_stencil_attachment_desc);
+		// A vector of vectors - each "outer" vector represents a particular subpass, while each
+		// "inner" vector represents the attachment references of a particular type belonging to 
+		// that subpass. 
+		std::vector<std::vector<vk::AttachmentReference>>	all_attachment_color_refs(builder->m_recorded_subpasses.size());
+		std::vector<std::vector<vk::AttachmentReference>>	all_attachment_resolve_refs(builder->m_recorded_subpasses.size());
+		std::vector<std::vector<vk::AttachmentReference>>	all_attachment_depth_refs(builder->m_recorded_subpasses.size());
+		std::vector<std::vector<vk::AttachmentReference>>	all_attachment_input_refs(builder->m_recorded_subpasses.size());
+		std::vector<std::vector<vk::AttachmentReference>>	all_attachment_preserve_refs(builder->m_recorded_subpasses.size());
 
-			all_subpass_descs.push_back(subpass_record.build_subpass_description());
+		std::vector<vk::SubpassDescription>					all_subpass_descs(builder->m_recorded_subpasses.size());
+		std::vector<vk::SubpassDependency>					all_subpass_deps = builder->m_recorded_subpass_dependencies;
 
-			all_subpass_deps.push_back(subpass_record.get_subpass_dependency());
+		size_t subpass_index = 0;
+
+		// Find and create all attachment references corresponding to this subpass.
+		for (const auto& subpass_record : builder->m_recorded_subpasses)
+		{
+			//static const std::vector<RenderPassBuilder::AttachmentCategory
+
+			// Color
+			auto attachment_names = subpass_record.get_attachment_names(RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR);
+			for (const auto& name : attachment_names)
+			{
+				// Find the index corresponding to this attachment.
+				uint32_t index = find(all_attachment_names.begin(), all_attachment_names.end(), name) - all_attachment_names.begin();
+				
+				vk::AttachmentReference attachment_reference = { index, vk::ImageLayout::eColorAttachmentOptimal };
+				all_attachment_color_refs[subpass_index].push_back(attachment_reference);
+			}
+
+			// Resolve
+			attachment_names = subpass_record.get_attachment_names(RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE);
+			for (const auto& name : attachment_names)
+			{
+				// Find the index corresponding to this attachment.
+				uint32_t index = find(all_attachment_names.begin(), all_attachment_names.end(), name) - all_attachment_names.begin();
+
+				vk::AttachmentReference attachment_reference = { index, vk::ImageLayout::eColorAttachmentOptimal };
+				all_attachment_resolve_refs[subpass_index].push_back(attachment_reference);
+			}
+
+			// Depth stencil
+			attachment_names = subpass_record.get_attachment_names(RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL);
+			for (const auto& name : attachment_names)
+			{
+				// Find the index corresponding to this attachment.
+				uint32_t index = find(all_attachment_names.begin(), all_attachment_names.end(), name) - all_attachment_names.begin();
+
+				vk::AttachmentReference attachment_reference = { index, vk::ImageLayout::eDepthStencilAttachmentOptimal };
+				all_attachment_depth_refs[subpass_index].push_back(attachment_reference);
+			}
+
+
+			// Create the subpass description based on the attachment references created above.
+			vk::SubpassDescription subpass_description = {};
+			subpass_description.colorAttachmentCount = static_cast<uint32_t>(all_attachment_color_refs[subpass_index].size());
+			subpass_description.inputAttachmentCount = 0;
+			subpass_description.preserveAttachmentCount = 0;
+
+			subpass_description.pColorAttachments = all_attachment_color_refs[subpass_index].data();
+			subpass_description.pResolveAttachments = all_attachment_resolve_refs[subpass_index].data();
+			subpass_description.pDepthStencilAttachment = all_attachment_depth_refs[subpass_index].data();
+			subpass_description.pInputAttachments = nullptr;
+			subpass_description.pPreserveAttachments = nullptr;
+			
+			subpass_description.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+
+			// Finally, add the subpass description to the global list.
+			all_subpass_descs[subpass_index] = subpass_description;
+
+			// Increment the subpass index.
+			subpass_index++;
 		}
 
 
