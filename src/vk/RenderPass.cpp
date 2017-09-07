@@ -42,12 +42,8 @@ namespace graphics
 		std::vector<vk::AttachmentDescription>	all_attachment_descs;
 		for (const auto& mapping : builder->m_attachment_mapping)
 		{
-			all_attachment_names.push_back(mapping.first);	// The colloquial name of the attachment (i.e. "color_attachment_0")
+			all_attachment_names.push_back(mapping.first);	// The colloquial name of the attachment (i.e. "color_a")
 			all_attachment_descs.push_back(mapping.second);	// The vk::AttachmentDescription struct describing this attachment
-
-			// For example, the two vectors above might look like:
-			// "color_0", "color_1", "depth", ...
-			// with a vk::AttachmentDescription for each
 		}
 
 		// A vector of vectors - each "outer" vector represents a particular subpass, while each
@@ -65,43 +61,70 @@ namespace graphics
 		size_t subpass_index = 0;
 
 		// Find and create all attachment references corresponding to this subpass.
-		for (const auto& subpass_record : builder->m_recorded_subpasses)
+		for (auto& subpass_record : builder->m_recorded_subpasses)
 		{
-			//static const std::vector<RenderPassBuilder::AttachmentCategory
-
-			// Color
-			auto attachment_names = subpass_record.get_attachment_names(RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR);
-			for (const auto& name : attachment_names)
+			static const std::map<RenderPassBuilder::AttachmentCategory, vk::ImageLayout> default_image_layouts = 
 			{
-				// Find the index corresponding to this attachment.
-				uint32_t index = find(all_attachment_names.begin(), all_attachment_names.end(), name) - all_attachment_names.begin();
-				
-				vk::AttachmentReference attachment_reference = { index, vk::ImageLayout::eColorAttachmentOptimal };
-				all_attachment_color_refs[subpass_index].push_back(attachment_reference);
-			}
+				{ RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR,			vk::ImageLayout::eColorAttachmentOptimal },
+				{ RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE,			vk::ImageLayout::eColorAttachmentOptimal },
+				{ RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL,	vk::ImageLayout::eDepthStencilAttachmentOptimal },
+				{ RenderPassBuilder::AttachmentCategory::CATEGORY_INPUT,			vk::ImageLayout::eColorAttachmentOptimal },
+				{ RenderPassBuilder::AttachmentCategory::CATEGORY_PRESERVE,			vk::ImageLayout::eColorAttachmentOptimal }
+			};
 
-			// Resolve
-			attachment_names = subpass_record.get_attachment_names(RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE);
-			for (const auto& name : attachment_names)
+			// Iterate over all of the possible attachment categories for this particular subpass.
+			// Each category is associated with a set of attachment names (strings). This mapping is
+			// maintained internally by the SubpassRecord struct. We use the static map above to allow
+			// for easy iteration over this set. We also associate each cateogry with a default image
+			// layout, since the vk::AttachmentReference struct requires this. 
+			//
+			// TODO: are these layouts correct?
+			for (auto mapping : default_image_layouts)
 			{
-				// Find the index corresponding to this attachment.
-				uint32_t index = find(all_attachment_names.begin(), all_attachment_names.end(), name) - all_attachment_names.begin();
+				RenderPassBuilder::AttachmentCategory category =	mapping.first;
+				vk::ImageLayout default_image_layout =				mapping.second;
 
-				vk::AttachmentReference attachment_reference = { index, vk::ImageLayout::eColorAttachmentOptimal };
-				all_attachment_resolve_refs[subpass_index].push_back(attachment_reference);
+				// Iterate over all of the names associated with this attachment category, for example:
+				//
+				//			CATEGORY_COLOR:		{ "color_a", "color_b", "color_c", ... }
+				//			CATEGORY_RESOLVE:	{ "ms_resolve_a", "ms_resolve_b", "ms_resolve_c", ... }
+				//			...
+				for (const auto& name : subpass_record.get_attachment_names(category))
+				{
+					// Find the index corresponding to the attachment with this name. For example:
+					//
+					//		{ "color_a", "color_b", "color_c", ... }
+					//
+					// the attachment "color_c" would have the index 2.
+					uint32_t index = find(all_attachment_names.begin(), all_attachment_names.end(), name) - all_attachment_names.begin();
+
+					vk::AttachmentReference attachment_reference = { index, default_image_layout };
+
+					// Finally, based on the attachment category, add the newly created attachment
+					// reference to the appropriate global list that will be used to construct this
+					// subpass description.
+					switch (category)
+					{
+					case RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR:
+						all_attachment_color_refs[subpass_index].push_back(attachment_reference);
+						break;
+					case RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE:
+						all_attachment_resolve_refs[subpass_index].push_back(attachment_reference);
+						break;
+					case RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL:
+						all_attachment_depth_refs[subpass_index].push_back(attachment_reference);
+						break;
+					case RenderPassBuilder::AttachmentCategory::CATEGORY_INPUT:
+						all_attachment_input_refs[subpass_index].push_back(attachment_reference);
+						break;
+					case RenderPassBuilder::AttachmentCategory::CATEGORY_PRESERVE:
+					default:
+						all_attachment_preserve_refs[subpass_index].push_back(attachment_reference);
+						break;
+					}
+					
+				}
 			}
-
-			// Depth stencil
-			attachment_names = subpass_record.get_attachment_names(RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL);
-			for (const auto& name : attachment_names)
-			{
-				// Find the index corresponding to this attachment.
-				uint32_t index = find(all_attachment_names.begin(), all_attachment_names.end(), name) - all_attachment_names.begin();
-
-				vk::AttachmentReference attachment_reference = { index, vk::ImageLayout::eDepthStencilAttachmentOptimal };
-				all_attachment_depth_refs[subpass_index].push_back(attachment_reference);
-			}
-
 
 			// Create the subpass description based on the attachment references created above.
 			vk::SubpassDescription subpass_description = {};

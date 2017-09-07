@@ -83,16 +83,49 @@ namespace graphics
 			m_is_recording(false)
 		{}
 
+		//! Constructs an attachment description for a generic attachment.
+		void add_generic_attachment(const std::string& name, const vk::AttachmentDescription& attachment_description)
+		{
+			check_attachment_name_unique(name);
+
+			// Add to global map of string names to attachment descriptions.
+			m_attachment_mapping.insert({ name, attachment_description });
+		}
+
+		//! Constructs an attachment description for a generic attachment.
+		void add_generic_attachment(const std::string& name, 
+									vk::Format format =							vk::Format::eB8G8R8A8Unorm,
+									uint32_t sample_count =						1,
+									vk::ImageLayout initial_layout =			vk::ImageLayout::eUndefined,
+									vk::ImageLayout final_layout =				vk::ImageLayout::eGeneral,
+									vk::AttachmentLoadOp load_op =				vk::AttachmentLoadOp::eDontCare,
+									vk::AttachmentStoreOp store_op =			vk::AttachmentStoreOp::eDontCare,
+									vk::AttachmentLoadOp stencil_load_op =		vk::AttachmentLoadOp::eDontCare,
+									vk::AttachmentStoreOp stencil_store_op =	vk::AttachmentStoreOp::eDontCare)
+		{
+			check_attachment_name_unique(name);
+
+			vk::AttachmentDescription attachment_description;
+			attachment_description.finalLayout = final_layout;
+			attachment_description.format = format;
+			attachment_description.initialLayout = initial_layout;
+			attachment_description.loadOp = load_op;
+			attachment_description.samples = utils::sample_count_to_flags(sample_count);
+			attachment_description.stencilLoadOp = stencil_load_op;
+			attachment_description.stencilStoreOp = stencil_store_op;
+			attachment_description.storeOp = store_op;
+
+			// Add to global map of string names to attachment descriptions.
+			m_attachment_mapping.insert({ name, attachment_description });
+		}
+
 		//! Constructs an attachment description for a color attachment with the specified image 
 		//! format and sample count. The final layout of this attachment will be vk::ImageLayout::ePresentSrcKHR,
 		//! so this method should only be called for an attachment that will (eventually) be presented back to 
 		//! the swapchain.
 		void add_color_present_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
-			if (attachment_with_name_exists(name))
-			{
-				throw std::runtime_error("Attachments created with a RenderPassBuilder must have unique names: " + name + " already exists.");
-			}
+			check_attachment_name_unique(name);
 
 			vk::AttachmentDescription attachment_description;
 			attachment_description.finalLayout = vk::ImageLayout::ePresentSrcKHR;
@@ -113,10 +146,7 @@ namespace graphics
 		//! between subsequent subpasses for maximum efficiency.
 		void add_color_transient_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
-			if (attachment_with_name_exists(name))
-			{
-				throw std::runtime_error("Attachments created with a RenderPassBuilder must have unique names: " + name + " already exists.");
-			}
+			check_attachment_name_unique(name);
 
 			// For the store op, vk::AttachmentStoreOp::eDontCare is critical, since it allows tile based renderers 
 			// to completely avoid writing out the multisampled framebuffer to memory. This is a huge performance and 
@@ -139,10 +169,7 @@ namespace graphics
 		//! The initial and final layouts will be set to vk::ImageLayout::eDepthStencilAttachmentOptimal.
 		void add_depth_stencil_attachment(const std::string& name, vk::Format format, uint32_t sample_count = 1)
 		{
-			if (attachment_with_name_exists(name))
-			{
-				throw std::runtime_error("Attachments created with a RenderPassBuilder must have unique names: " + name + " already exists.");
-			}
+			check_attachment_name_unique(name);
 
 			if (!utils::is_depth_format(format))
 			{
@@ -165,12 +192,18 @@ namespace graphics
 
 		bool is_recording() const { return m_is_recording; }
 
+		//! Creates a new subpass entry inside this RenderPassBuilder instance. All subsequent calls to 
+		//! `append_attachment_to_subpass(...)` will affect this subpass entry.
 		void begin_subpass_record()
 		{
 			m_is_recording = true;
 			m_recorded_subpasses.push_back({});
 		}
 
+		//! Associates the attachment with the specified name with the current subpass. You must also specify which 
+		//! category the attachment belongs to with respect to the subpass (i.e. AttachmentCategory::CATEGORY_COLOR,
+		//! if the specified attachment is going to be used as a color attachment during this subpass). Note that
+		//! you must call `begin_subpass_record()` before calling this function.
 		void append_attachment_to_subpass(const std::string& name, AttachmentCategory category)
 		{
 			if (!m_is_recording)
@@ -179,25 +212,7 @@ namespace graphics
 					command - see the `begin_subpass()` command for details.");
 			}
 
-			switch (category)
-			{
-			case AttachmentCategory::CATEGORY_COLOR:
-				m_recorded_subpasses.back().m_color_names.push_back(name);
-				break;
-			case AttachmentCategory::CATEGORY_RESOLVE:
-				m_recorded_subpasses.back().m_resolve_names.push_back(name);
-				break;
-			case AttachmentCategory::CATEGORY_DEPTH_STENCIL:
-				m_recorded_subpasses.back().m_depth_stencil_names.push_back(name);
-				break;
-			case AttachmentCategory::CATEGORY_INPUT:
-				m_recorded_subpasses.back().m_input_names.push_back(name);
-				break;
-			case AttachmentCategory::CATEGORY_PRESERVE:
-			default:
-				m_recorded_subpasses.back().m_preserve_names.push_back(name);
-				break;
-			}
+			m_recorded_subpasses.back().m_categories_to_names_map[category].push_back(name);
 		}
 
 		static vk::SubpassDependency create_default_subpass_dependency()
@@ -227,29 +242,24 @@ namespace graphics
 
 		struct SubpassRecord
 		{
-			const std::vector<std::string>& get_attachment_names(AttachmentCategory category) const
+			std::map<AttachmentCategory, std::vector<std::string>> m_categories_to_names_map =
 			{
-				switch (category)
-				{
-				case AttachmentCategory::CATEGORY_COLOR:
-					return m_color_names;
-				case AttachmentCategory::CATEGORY_RESOLVE:
-					return m_resolve_names;
-				case AttachmentCategory::CATEGORY_DEPTH_STENCIL:
-					return m_depth_stencil_names;
-				case AttachmentCategory::CATEGORY_INPUT:
-					return m_input_names;
-				case AttachmentCategory::CATEGORY_PRESERVE:
-				default:
-					return m_preserve_names;
-				}
+				{ AttachmentCategory::CATEGORY_COLOR,			{} },
+				{ AttachmentCategory::CATEGORY_RESOLVE,			{} },
+				{ AttachmentCategory::CATEGORY_DEPTH_STENCIL,	{} },
+				{ AttachmentCategory::CATEGORY_INPUT,			{} },
+				{ AttachmentCategory::CATEGORY_PRESERVE,		{} },
+			};
+
+			const std::map<AttachmentCategory, std::vector<std::string>>& get_categories_to_names_map() const
+			{
+				return m_categories_to_names_map;
 			}
 
-			std::vector<std::string> m_color_names;
-			std::vector<std::string> m_resolve_names;
-			std::vector<std::string> m_depth_stencil_names;
-			std::vector<std::string> m_input_names;
-			std::vector<std::string> m_preserve_names;
+			const std::vector<std::string>& get_attachment_names(AttachmentCategory category) 
+			{
+				return m_categories_to_names_map[category];
+			}
 		};
 
 		const std::vector<SubpassRecord>& get_subpass_records() const 
@@ -257,13 +267,12 @@ namespace graphics
 			return m_recorded_subpasses; 
 		}
 
-		bool attachment_with_name_exists(const std::string& name)
+		void check_attachment_name_unique(const std::string& name)
 		{
-			if (m_attachment_mapping.find(name) == m_attachment_mapping.end())
+			if (m_attachment_mapping.find(name) != m_attachment_mapping.end())
 			{
-				return false;
+				throw std::runtime_error("Attachments created with a RenderPassBuilder must have unique names: " + name + " already exists.");
 			}
-			return true;
 		}
 
 		bool m_is_recording;
