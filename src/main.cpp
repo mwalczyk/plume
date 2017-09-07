@@ -52,7 +52,6 @@ int main()
 	* Render pass
 	*
 	***********************************************************************************/
-	
 	auto render_pass_builder = RenderPassBuilder::create();
 	render_pass_builder->add_color_transient_attachment("color_inter", vk::Format::eB8G8R8A8Unorm, msaa);
 	render_pass_builder->add_color_present_attachment("color_final", vk::Format::eB8G8R8A8Unorm);
@@ -173,14 +172,14 @@ int main()
 	std::vector<FramebufferRef> framebuffers(swapchain_image_views.size());
 	for (size_t i = 0; i < swapchain_image_views.size(); ++i)
 	{
-		std::vector<vk::ImageView> image_views = { 
-			
-			swapchain_image_views[i],				// attachment 1: resolve color (swapchain)
-			image_ms_view->get_handle(),			// attachment 0: multisample color 
-			image_depth_view->get_handle()			// attachment 2: depth-stencil
+		std::map<std::string, vk::ImageView> name_to_image_view_map = 
+		{ 
+			{ "color_inter", image_ms_view->get_handle() },	// attachment 0: color (multisample / transient)
+			{ "color_final", swapchain_image_views[i] },	// attachment 1: color (resolve / present)
+			{ "depth", image_depth_view->get_handle() }		// attachment 2: depth-stencil
 		};
 
-		framebuffers[i] = Framebuffer::create(device, render_pass, image_views, width, height);
+		framebuffers[i] = Framebuffer::create(device, render_pass, name_to_image_view_map, width, height);
 	}
 
    /***********************************************************************************

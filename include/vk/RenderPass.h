@@ -238,6 +238,16 @@ namespace graphics
 
 		size_t get_number_of_subpasses() const { return m_recorded_subpasses.size(); }
 
+		std::vector<std::string> get_attachment_names() const
+		{
+			std::vector<std::string> attachment_names;
+			for (const auto& mapping : m_attachment_mapping)
+			{
+				attachment_names.push_back(mapping.first);
+			}
+			return attachment_names;
+		}
+
 	private:
 
 		struct SubpassRecord
@@ -341,6 +351,8 @@ namespace graphics
 		~RenderPass();
 
 		vk::RenderPass get_handle() const { return m_render_pass_handle; }
+
+		RenderPassBuilderRef get_render_pass_builder() { return m_render_pass_builder; }
 
 	private:
 
