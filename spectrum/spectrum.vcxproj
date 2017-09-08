@@ -96,13 +96,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\glfw\include\GLFW;$(ProjectDir)include\glm\glm;$(ProjectDir)include\spirv-cross;$(ProjectDir)include\stb;$(ProjectDir)include\vk;$(ProjectDir)include\;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\shaderc\libshaderc\include\shaderc;$(ProjectDir)deps\glfw\include\GLFW;$(ProjectDir)deps\glm\glm;$(ProjectDir)deps\spirv-cross;$(ProjectDir)deps\stb;$(ProjectDir)include\vk;$(ProjectDir)include\;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)deps\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)deps\glfw\lib-vc2015;$(SolutionDir)deps\shaderc\build\libshaderc\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;shaderc_combined.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -120,13 +120,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\glfw\include\GLFW;$(ProjectDir)include\glm\glm;$(ProjectDir)include\spirv-cross;$(ProjectDir)include\stb;$(ProjectDir)include\vk;$(ProjectDir)include\;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\shaderc\libshaderc\include\shaderc;$(ProjectDir)deps\glfw\include\GLFW;$(ProjectDir)deps\glm\glm;$(ProjectDir)deps\spirv-cross;$(ProjectDir)deps\stb;$(ProjectDir)include\vk;$(ProjectDir)include\;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)deps\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)deps\glfw\lib-vc2015;$(SolutionDir)deps\shaderc\build\libshaderc\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;shaderc_combined.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -146,15 +146,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\glfw\include\GLFW;$(ProjectDir)include\glm\glm;$(ProjectDir)include\spirv-cross;$(ProjectDir)include\stb;$(ProjectDir)include\vk;$(ProjectDir)include\;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\shaderc\libshaderc\include\shaderc;$(ProjectDir)deps\glfw\include\GLFW;$(ProjectDir)deps\glm\glm;$(ProjectDir)deps\spirv-cross;$(ProjectDir)deps\stb;$(ProjectDir)include\vk;$(ProjectDir)include\;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)deps\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)deps\glfw\lib-vc2015;$(SolutionDir)deps\shaderc\build\libshaderc\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;shaderc_combined.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -174,15 +174,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\glfw\include\GLFW;$(ProjectDir)include\glm\glm;$(ProjectDir)include\spirv-cross;$(ProjectDir)include\stb;$(ProjectDir)include\vk;$(ProjectDir)include\;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\shaderc\libshaderc\include\shaderc;$(ProjectDir)deps\glfw\include\GLFW;$(ProjectDir)deps\glm\glm;$(ProjectDir)deps\spirv-cross;$(ProjectDir)deps\stb;$(ProjectDir)include\vk;$(ProjectDir)include\;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)deps\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)deps\glfw\lib-vc2015;$(SolutionDir)deps\shaderc\build\libshaderc\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;shaderc_combined.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>

@@ -61,6 +61,16 @@ namespace graphics
 	//! - finalLayout: the layout the attachment image subresource will be transitioned to when a 
 	//!   render pass instance ends - note that an attachment can use a different layout in each
 	//!   subpass, if desired
+	//!
+	//! Each vk::AttachmentReference simply stores an index and a reference to an attachment description. 
+	//! It is used for constructing a subpass description.
+	//!
+	//! Each vk::SubpassDescription describes the subset of attachments that is involved in the execution of 
+	//! a subpass. Each subpass can read from some attachments as input attachments, write to some as color 
+	//! attachments or depth / stencil attachments, and perform multisample resolve operations to resolve 
+	//! attachments.
+	//!
+	//! Each vk::SubpassDependency describes the execution and memory dependencies between subpasses.
 	class RenderPassBuilder
 	{
 	public: 
@@ -190,6 +200,7 @@ namespace graphics
 			m_attachment_mapping.insert({ name, attachment_description });
 		}
 
+		//! Returns `true` if a subpass is currently being recorded into and `false` otherwise.
 		bool is_recording() const { return m_is_recording; }
 
 		//! Creates a new subpass entry inside this RenderPassBuilder instance. All subsequent calls to 
@@ -209,7 +220,7 @@ namespace graphics
 			if (!m_is_recording)
 			{
 				throw std::runtime_error("The RenderPassBuilder must be in a recording state in order to receive this\
-					command - see the `begin_subpass()` command for details.");
+					command - see the `begin_subpass_record()` command for details.");
 			}
 
 			m_recorded_subpasses.back().m_categories_to_names_map[category].push_back(name);
@@ -236,8 +247,10 @@ namespace graphics
 			m_recorded_subpass_dependencies.push_back(dependency);
 		}
 
+		//! Returns the number of subpasses that have been recorded.
 		size_t get_number_of_subpasses() const { return m_recorded_subpasses.size(); }
 
+		//! Returns a vector of all of the user-defined names for render pass attachments.
 		std::vector<std::string> get_attachment_names() const
 		{
 			std::vector<std::string> attachment_names;
@@ -272,11 +285,10 @@ namespace graphics
 			}
 		};
 
-		const std::vector<SubpassRecord>& get_subpass_records() const 
-		{ 
-			return m_recorded_subpasses; 
-		}
+		//! Returns a vector of all of the recorded subpasses.
+		const std::vector<SubpassRecord>& get_subpass_records() const { return m_recorded_subpasses; }
 
+		//! Ensures that the given name does not already exist in the attachment map.
 		void check_attachment_name_unique(const std::string& name)
 		{
 			if (m_attachment_mapping.find(name) != m_attachment_mapping.end())
@@ -286,7 +298,7 @@ namespace graphics
 		}
 
 		bool m_is_recording;
-		std::vector<SubpassRecord> m_recorded_subpasses;
+		std::vector<SubpassRecord> m_recorded_subpasses;	// TODO: this should also be a map of names -> SubpassRecords.
 		std::vector<vk::SubpassDependency> m_recorded_subpass_dependencies;
 		std::map<std::string, vk::AttachmentDescription> m_attachment_mapping;
 
@@ -305,40 +317,6 @@ namespace graphics
 	class RenderPass : public Noncopyable
 	{
 	public:
-
-		class Options
-		{
-		public:
-
-			//! Construct a simple render pass with a subpass that contains a single color attachment and a single
-			//! depth attachment.
-			Options();
-
-			//! An attachment description describes the properties of an attachment including its format, sample count, and
-			//! how its contents ae treated at the beginning and end of each render pass instance.
-			Options& attachment_descriptions(const std::vector<vk::AttachmentDescription>& attachment_descriptions) { m_attachment_descriptions = attachment_descriptions; return *this; }
-			
-			//! An attachment reference simply stores an index and a reference to an attachment description. It is used for
-			//! constructing a subpass description.
-			Options& attachment_references(const std::vector<vk::AttachmentReference>& attachment_references) { m_attachment_references = attachment_references; return *this; }
-			
-			//! A subpass description describes the subset of attachments that is involved in the execution of each subpass.
-			//! Each subpass can read from some attachments as input attachments, write to some as color attachments or 
-			//! depth / stencil attachments, and perform multisample resolve operations to resolve attachments.
-			Options& subpass_descriptions(const std::vector<vk::SubpassDescription>& subpass_descriptions) { m_subpass_descriptions = subpass_descriptions; return *this; }
-
-			//! A subpass dependency describes the execution and memory dependencies between subpasses.
-			Options& subpass_dependencies(const std::vector<vk::SubpassDependency>& subpass_dependencies) { m_subpass_dependencies = subpass_dependencies; return *this; }
-
-		private:
-
-			std::vector<vk::AttachmentDescription> m_attachment_descriptions;
-			std::vector<vk::AttachmentReference> m_attachment_references;
-			std::vector<vk::SubpassDescription> m_subpass_descriptions;
-			std::vector<vk::SubpassDependency> m_subpass_dependencies;
-
-			friend class RenderPass;
-		};
 
 		//! Factory method for returning a new RenderPassRef from a RenderPassBuilderRef.
 		static RenderPassRef create(DeviceWeakRef device, const RenderPassBuilderRef& builder)

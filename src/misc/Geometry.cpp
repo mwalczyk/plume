@@ -28,15 +28,16 @@
 
 namespace geo
 {
-	static const VertexAttributeSet active_attributes =
+
+	const Geometry::VertexAttributeSet active_attributes =
 	{
-		VertexAttribute::ATTRIBUTE_POSITION,
-		VertexAttribute::ATTRIBUTE_COLOR,
-		//VertexAttribute::ATTRIBUTE_NORMAL,
-		//VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES
+		Geometry::VertexAttribute::ATTRIBUTE_POSITION,
+		Geometry::VertexAttribute::ATTRIBUTE_COLOR,
+		//Geometry::VertexAttribute::ATTRIBUTE_NORMAL,
+		//Geometry::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES
 	};
 
-	vk::Format attribute_to_format(VertexAttribute attribute)
+	vk::Format Geometry::vertex_attribute_to_format(VertexAttribute attribute)
 	{
 		switch (attribute)
 		{
@@ -45,47 +46,25 @@ namespace geo
 		case VertexAttribute::ATTRIBUTE_NORMAL:
 			return vk::Format::eR32G32B32Sfloat;
 		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES:
-			return vk::Format::eR32G32Sfloat;
 		default:
 			return vk::Format::eR32G32Sfloat;
 		}
 	}
 
-	float* Geometry::get_vertex_attribute(VertexAttribute attribute) 
+	uint32_t Geometry::get_vertex_attribute_dimensions(VertexAttribute attribute)
 	{
 		switch (attribute)
 		{
-		case geo::VertexAttribute::ATTRIBUTE_POSITION: return reinterpret_cast<float*>(m_positions.data());
-		case geo::VertexAttribute::ATTRIBUTE_COLOR: return reinterpret_cast<float*>(m_colors.data());
-		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return reinterpret_cast<float*>(m_normals.data());
-		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return reinterpret_cast<float*>(m_texture_coordinates.data());
+		case VertexAttribute::ATTRIBUTE_POSITION:
+		case VertexAttribute::ATTRIBUTE_COLOR:
+		case VertexAttribute::ATTRIBUTE_NORMAL: 
+			return 3;
+		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: 
+			return 2;
 		}
 	}
 
-	void Geometry::set_random_colors()
-	{
-		static std::random_device rand;
-		static std::mt19937 mersenne(rand());
-		static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-
-		m_colors.clear();
-		m_colors.resize(get_vertex_count());
-
-		std::generate(m_colors.begin(), m_colors.end(), [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
-	}
-
-	uint32_t Geometry::get_vertex_attribute_dimensions(VertexAttribute attribute) const
-	{
-		switch (attribute)
-		{
-		case geo::VertexAttribute::ATTRIBUTE_POSITION: 
-		case geo::VertexAttribute::ATTRIBUTE_COLOR: 
-		case geo::VertexAttribute::ATTRIBUTE_NORMAL: return 3;
-		case geo::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return 2;
-		}
-	}
-
-	uint32_t Geometry::get_vertex_attribute_size(VertexAttribute attribute) const
+	uint32_t Geometry::get_vertex_attribute_size(VertexAttribute attribute)
 	{
 		return get_vertex_attribute_dimensions(attribute) * sizeof(float);
 	}
@@ -98,7 +77,7 @@ namespace geo
 
 		for (const auto& available_attribute : active_attributes)
 		{
-			vk::Format attribute_format = attribute_to_format(available_attribute);
+			vk::Format attribute_format = vertex_attribute_to_format(available_attribute);
 
 			input_attribute_descriptions.push_back({ attribute_location, attribute_binding, attribute_format });
 
@@ -129,13 +108,50 @@ namespace geo
 		return binding_descriptions;
 	}
 
+	float* Geometry::get_vertex_attribute_data_ptr(VertexAttribute attribute)
+	{
+		switch (attribute)
+		{
+		case VertexAttribute::ATTRIBUTE_POSITION: 
+			return reinterpret_cast<float*>(m_positions.data());
+		case VertexAttribute::ATTRIBUTE_COLOR: 
+			return reinterpret_cast<float*>(m_colors.data());
+		case VertexAttribute::ATTRIBUTE_NORMAL: 
+			return reinterpret_cast<float*>(m_normals.data());
+		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: 
+		default:
+			return reinterpret_cast<float*>(m_texture_coordinates.data());
+		}
+	}
+
+	void Geometry::set_colors(const std::vector<glm::vec3>& colors, const glm::vec3& fill_rest)
+	{ 
+		m_colors = colors;
+		m_colors.resize(get_vertex_count(), fill_rest);
+	}
+
+	void Geometry::set_colors_random()
+	{
+		static std::random_device rand;
+		static std::mt19937 mersenne(rand());
+		static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+
+		m_colors.clear();
+		m_colors.resize(get_vertex_count());
+
+		std::generate(m_colors.begin(), 
+					  m_colors.end(), 
+					  [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
+	}
+
 	IcoSphere::IcoSphere()
 	{
 		// See: http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html
-		float t = (1.0f + sqrtf(5.0f)) / 2.0f;
+		const float t = (1.0f + sqrtf(5.0f)) / 2.0f;
 		
 		// Calculate positions.
-		m_positions = {
+		m_positions = 
+		{
 			{-1.0f,  t,     0.0f},
 			{ 1.0f,  t,     0.0f},
 			{-1.0f, -t,     0.0f},
@@ -155,11 +171,9 @@ namespace geo
 			position = glm::normalize(position);
 		}
 
-		// Set the default color.
-		set_solid({ 1.0f, 1.0f, 1.0f });
-
 		// Calculate indices.
-		m_indices = {
+		m_indices = 
+		{
 			0, 11, 5,
 			0, 5, 1,
 			0, 1, 7,
@@ -185,24 +199,24 @@ namespace geo
 
 	Grid::Grid()
 	{
-		m_positions = {
+		m_positions = 
+		{
 			{ -1.0f, -1.0f, 0.0f },
 			{  1.0f, -1.0f,	0.0f },
 			{  1.0f, 1.0f,	0.0f },
 			{ -1.0f, 1.0f,	0.0f }
 		};
 
-		// Set the default color.
-		set_solid({ 1.0f, 1.0f, 1.0f });
-
-		m_texture_coordinates = {
+		m_texture_coordinates = 
+		{
 			{ 0.0f, 1.0f },
 			{ 1.0f, 1.0f },
 			{ 1.0f, 0.0f },
 			{ 0.0f, 0.0f }
 		};
 
-		m_indices = {
+		m_indices = 
+		{
 			0, 1, 2, 
 			2, 3, 0
 		};
@@ -223,9 +237,6 @@ namespace geo
 		}
 
 		m_indices.push_back(1);
-
-		// Set the default color.
-		set_solid({ 1.0f, 1.0f, 1.0f });
 	}
 
 	Sphere::Sphere()
@@ -267,8 +278,6 @@ namespace geo
 			m_indices.push_back(i);
 			m_indices.push_back(i + 1);
 		}
-
-		set_solid({ 1.0f, 1.0f, 1.0f });
 	}
 
 } // namespace geo
