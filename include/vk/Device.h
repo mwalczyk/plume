@@ -38,6 +38,16 @@
 
 namespace graphics
 {
+
+	enum class QueueType
+	{
+		GRAPHICS,
+		COMPUTE,
+		TRANSFER,
+		SPARSE_BINDING,
+		PRESENTATION
+	};
+
 	class Device;
 	using DeviceRef = std::shared_ptr<Device>;
 	using DeviceWeakRef = std::weak_ptr<Device>;
@@ -60,15 +70,6 @@ namespace graphics
 			vk::SurfaceCapabilitiesKHR m_capabilities;
 			std::vector<vk::SurfaceFormatKHR> m_formats;
 			std::vector<vk::PresentModeKHR> m_present_modes;
-		};
-
-		enum class QueueType
-		{
-			GRAPHICS,
-			COMPUTE,
-			TRANSFER,
-			SPARSE_BINDING,
-			PRESENTATION
 		};
 
 		struct QueueInternals

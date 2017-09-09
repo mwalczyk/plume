@@ -39,7 +39,7 @@ namespace graphics
 		vk::BufferUsageFlagBits::eUniformTexelBuffer |
 		vk::BufferUsageFlagBits::eVertexBuffer;
 
-	Buffer::Buffer(DeviceWeakRef device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<Device::QueueType> queues) :
+	Buffer::Buffer(DeviceWeakRef device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<QueueType> queues) :
 		m_device(device),
 		m_buffer_usage_flags(buffer_usage_flags),
 		m_requested_size(size)
@@ -55,7 +55,7 @@ namespace graphics
 
 		// Gather all of the queue family indices based on the requested queue types.
 		std::vector<uint32_t> queue_family_indices(queues.size());
-		std::transform(queues.begin(), queues.end(), queue_family_indices.begin(), [&](Device::QueueType type) { return device_shared->get_queue_family_index(type); });
+		std::transform(queues.begin(), queues.end(), queue_family_indices.begin(), [&](QueueType type) { return device_shared->get_queue_family_index(type); });
 
 		vk::BufferCreateInfo buffer_create_info;
 		buffer_create_info.pQueueFamilyIndices = queue_family_indices.data();	// Ignored if the sharing mode is exclusive.

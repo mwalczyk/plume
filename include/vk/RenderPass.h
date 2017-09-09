@@ -38,6 +38,15 @@
 namespace graphics
 {
 
+	enum class AttachmentCategory
+	{
+		CATEGORY_COLOR,
+		CATEGORY_RESOLVE,
+		CATEGORY_DEPTH_STENCIL,
+		CATEGORY_INPUT,
+		CATEGORY_PRESERVE
+	};
+
 	class RenderPassBuilder;
 	using RenderPassBuilderRef = std::shared_ptr<RenderPassBuilder>;
 
@@ -74,15 +83,6 @@ namespace graphics
 	class RenderPassBuilder
 	{
 	public: 
-
-		enum class AttachmentCategory
-		{
-			CATEGORY_COLOR,
-			CATEGORY_RESOLVE,
-			CATEGORY_DEPTH_STENCIL,
-			CATEGORY_INPUT,
-			CATEGORY_PRESERVE
-		};
 
 		static RenderPassBuilderRef create()
 		{

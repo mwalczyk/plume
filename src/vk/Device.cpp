@@ -318,11 +318,11 @@ namespace graphics
 		std::cout << "\tVendor ID: " << device->m_gpu_details.m_properties.vendorID << std::endl;
 
 		stream << "Queue family details:" << std::endl;
-		stream << "\tQueue family - graphics index: " << device->m_queue_families_mapping[Device::QueueType::GRAPHICS].index << std::endl;
-		stream << "\tQueue family - compute index: " << device->m_queue_families_mapping[Device::QueueType::COMPUTE].index << std::endl;
-		stream << "\tQueue family - transfer index: " << device->m_queue_families_mapping[Device::QueueType::TRANSFER].index << std::endl;
-		stream << "\tQueue family - sparse binding index: " << device->m_queue_families_mapping[Device::QueueType::SPARSE_BINDING].index << std::endl;
-		stream << "\tQueue family - present index: " << device->m_queue_families_mapping[Device::QueueType::PRESENTATION].index << std::endl;
+		stream << "\tQueue family - graphics index: " << device->m_queue_families_mapping[QueueType::GRAPHICS].index << std::endl;
+		stream << "\tQueue family - compute index: " << device->m_queue_families_mapping[QueueType::COMPUTE].index << std::endl;
+		stream << "\tQueue family - transfer index: " << device->m_queue_families_mapping[QueueType::TRANSFER].index << std::endl;
+		stream << "\tQueue family - sparse binding index: " << device->m_queue_families_mapping[QueueType::SPARSE_BINDING].index << std::endl;
+		stream << "\tQueue family - present index: " << device->m_queue_families_mapping[QueueType::PRESENTATION].index << std::endl;
 
 		return stream;
 	}

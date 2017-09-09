@@ -39,50 +39,47 @@
 
 #include "Platform.h"
 
-namespace geo
+namespace geom
 {
+
+	enum class VertexAttribute
+	{
+		ATTRIBUTE_POSITION,
+		ATTRIBUTE_COLOR,
+		ATTRIBUTE_NORMAL,
+		ATTRIBUTE_TEXTURE_COORDINATES,
+		ATTRIBUTE_CUSTOM_0,
+		ATTRIBUTE_CUSTOM_1,
+		ATTRIBUTE_CUSTOM_2,
+		ATTRIBUTE_CUSTOM_3
+	};
+
+	enum class AttributeMode
+	{
+		MODE_INTERLEAVED,
+		MODE_SEPARATE
+	};
+
+	using VertexAttributeSet = std::vector<VertexAttribute>;
 
 	class Geometry
 	{
 	public:
 
-		enum class VertexAttribute
-		{
-			ATTRIBUTE_POSITION,
-			ATTRIBUTE_COLOR,
-			ATTRIBUTE_NORMAL,
-			ATTRIBUTE_TEXTURE_COORDINATES,
-			ATTRIBUTE_CUSTOM_0,
-			ATTRIBUTE_CUSTOM_1,
-			ATTRIBUTE_CUSTOM_2,
-			ATTRIBUTE_CUSTOM_3
-		};
-
-		enum class AttributeMode
-		{
-			MODE_INTERLEAVED,
-			MODE_SEPARATE
-		};
-
-		using VertexAttributeSet = std::vector<VertexAttribute>;
-
-		static const VertexAttributeSet active_attributes;
-		static vk::Format vertex_attribute_to_format(VertexAttribute attribute);
+		static vk::Format get_vertex_attribute_format(VertexAttribute attribute);
 		static uint32_t get_vertex_attribute_dimensions(VertexAttribute attribute);
 		static uint32_t get_vertex_attribute_size(VertexAttribute attribute);
-		static std::vector<vk::VertexInputAttributeDescription> get_vertex_input_attribute_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_SEPARATE);
-		static std::vector<vk::VertexInputBindingDescription> get_vertex_input_binding_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_SEPARATE);
-
-		Geometry()
-		{
-			set_colors_solid({ 1.0f, 1.0f, 1.0f });
-		}
+		static uint32_t get_vertex_attribute_offset(VertexAttribute attribute);
+		static std::vector<vk::VertexInputAttributeDescription> get_vertex_input_attribute_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_INTERLEAVED);
+		static std::vector<vk::VertexInputBindingDescription> get_vertex_input_binding_descriptions(uint32_t start_binding = 0, AttributeMode mode = AttributeMode::MODE_INTERLEAVED);
 
 		virtual ~Geometry() = default;
 
 		virtual vk::PrimitiveTopology get_topology() const = 0;
 
 		size_t get_vertex_count() const { return m_positions.size(); }
+		
+		std::vector<float> get_packed_vertex_attributes();
 		const std::vector<glm::vec3>& get_positions() const { return m_positions; }
 		const std::vector<glm::vec3>& get_colors() const { return m_colors; }
 		const std::vector<glm::vec3>& get_normals() const { return m_normals; }
@@ -103,6 +100,14 @@ namespace geo
 
 	protected:
 
+		struct Vertex
+		{
+			glm::vec3 m_position;
+			glm::vec3 m_color;
+			glm::vec3 m_normal;
+			glm::vec2 m_texture_coordinate;
+		};
+
 		std::vector<glm::vec3> m_positions;
 		std::vector<glm::vec3> m_colors;
 		std::vector<glm::vec3> m_normals;
@@ -110,17 +115,24 @@ namespace geo
 		std::vector<uint32_t> m_indices;
 	};
 
-	class IcoSphere: public Geometry
-	{
-	public:
-		IcoSphere();
-		vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleList; }
-	};
-
 	class Grid : public Geometry
 	{
 	public:
-		Grid();
+
+		Grid() :
+			Grid(1.0f, 1.0f, { 0.0f, 0.0f, 0.0f })
+		{};
+
+		Grid(float width, float height, const glm::vec3& center);
+		
+		//! Set the texture coordinates of each of the four corner points of the rectangle. The corners 
+		//! are ordered in a clockwise fashion, beginning with the upper-left.
+		void texture_coordinates(const glm::vec2& ul, const glm::vec2& ur, const glm::vec2& lr, const glm::vec2& ll);
+
+		//! Set the colors of each of the four corner points of the rectangle. The corners are ordered 
+		//! in a clockwise fashion, beginning with the upper-left.
+		void colors(const glm::vec3& ul, const glm::vec3& ur, const glm::vec3& lr, const glm::vec3& ll);
+
 		vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
 	};
 
@@ -128,16 +140,35 @@ namespace geo
 	{
 	public:
 
-		Circle() : Circle(1.0f) {};
-		Circle(float radius, uint32_t subdivisions = 30);
+		Circle() : 
+			Circle(1.0f, { 0.0f, 0.0f, 0.0f }) 
+		{};
+
+		Circle(float radius, const glm::vec3& center, uint32_t subdivisions = 30);
 		vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleFan; }
 	};
 
 	class Sphere : public Geometry
 	{
 	public:
-		Sphere();
+		Sphere() : 
+			Sphere(1.0f, { 0.0f, 0.0f, 0.0f }) 
+		{};
+		
+		Sphere(float radius, const glm::vec3& center, size_t u_divisions = 30, size_t v_divisions = 30);
 		vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
+	};
+
+	class IcoSphere : public Geometry
+	{
+	public:
+		IcoSphere() :
+			IcoSphere(1.0f, { 0.0f, 0.0f, 0.0f })
+		{};
+
+		IcoSphere(float radius, const glm::vec3& center);
+
+		vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleList; }
 	};
 
 } // namespace geo

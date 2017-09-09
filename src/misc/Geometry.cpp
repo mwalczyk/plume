@@ -26,28 +26,25 @@
 
 #include "Geometry.h"
 
-namespace geo
+namespace geom
 {
 
-	const Geometry::VertexAttributeSet active_attributes =
+	static const VertexAttributeSet active_attributes =
 	{
-		Geometry::VertexAttribute::ATTRIBUTE_POSITION,
-		Geometry::VertexAttribute::ATTRIBUTE_COLOR,
-		//Geometry::VertexAttribute::ATTRIBUTE_NORMAL,
-		//Geometry::VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES
+		VertexAttribute::ATTRIBUTE_POSITION,
+		VertexAttribute::ATTRIBUTE_COLOR,
+		VertexAttribute::ATTRIBUTE_NORMAL,
+		VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES
 	};
 
-	vk::Format Geometry::vertex_attribute_to_format(VertexAttribute attribute)
+	vk::Format Geometry::get_vertex_attribute_format(VertexAttribute attribute)
 	{
 		switch (attribute)
 		{
 		case VertexAttribute::ATTRIBUTE_POSITION:
 		case VertexAttribute::ATTRIBUTE_COLOR:
-		case VertexAttribute::ATTRIBUTE_NORMAL:
-			return vk::Format::eR32G32B32Sfloat;
-		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES:
-		default:
-			return vk::Format::eR32G32Sfloat;
+		case VertexAttribute::ATTRIBUTE_NORMAL: return vk::Format::eR32G32B32Sfloat;
+		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return vk::Format::eR32G32Sfloat;
 		}
 	}
 
@@ -57,10 +54,8 @@ namespace geo
 		{
 		case VertexAttribute::ATTRIBUTE_POSITION:
 		case VertexAttribute::ATTRIBUTE_COLOR:
-		case VertexAttribute::ATTRIBUTE_NORMAL: 
-			return 3;
-		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: 
-			return 2;
+		case VertexAttribute::ATTRIBUTE_NORMAL: return 3;
+		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return 2;
 		}
 	}
 
@@ -69,43 +64,127 @@ namespace geo
 		return get_vertex_attribute_dimensions(attribute) * sizeof(float);
 	}
 
+	uint32_t Geometry::get_vertex_attribute_offset(VertexAttribute attribute)
+	{
+		switch (attribute)
+		{
+		case VertexAttribute::ATTRIBUTE_POSITION: return 0;
+		case VertexAttribute::ATTRIBUTE_COLOR: return sizeof(float) * 3;
+		case VertexAttribute::ATTRIBUTE_NORMAL: return sizeof(float) * 6;
+		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return sizeof(float) * 9;
+		}
+	}
+
 	std::vector<vk::VertexInputAttributeDescription> Geometry::get_vertex_input_attribute_descriptions(uint32_t start_binding, AttributeMode mode)
 	{
-		std::vector<vk::VertexInputAttributeDescription> input_attribute_descriptions;
-		uint32_t attribute_location = 0;
-		uint32_t attribute_binding = start_binding;
+		std::vector<vk::VertexInputAttributeDescription> input_attribute_descriptions;			
+		uint32_t attribute_binding = start_binding;		// The binding number which this attribute takes its data from.
+		uint32_t attribute_offset = 0;					// The byte offset of this attribute relative to the start of an element in the vertex input binding
 
-		for (const auto& available_attribute : active_attributes)
+		for (auto available_attribute : active_attributes)
 		{
-			vk::Format attribute_format = vertex_attribute_to_format(available_attribute);
+			uint32_t attribute_location = static_cast<uint32_t>(available_attribute);		// The shader binding location number for this attribute.
+			vk::Format attribute_format = get_vertex_attribute_format(available_attribute);	// The size and type of the vertex attribute data.
 
-			input_attribute_descriptions.push_back({ attribute_location, attribute_binding, attribute_format });
+			// If the vertex attributes are interleaved, we need to do some work to figure out
+			// the byte offset of each attribute relative to the start of an element (vertex or instance).
+			if (mode == AttributeMode::MODE_INTERLEAVED)
+			{
+				// TODO: use `offsetof(...)` and some sort vertex struct to organize this.
+				attribute_offset = get_vertex_attribute_offset(available_attribute);
+			}
 
+			input_attribute_descriptions.push_back({ 
+				attribute_location, 
+				attribute_binding, 
+				attribute_format, 
+				attribute_offset
+			});
+
+			// If the vertex attributes are separate, then we increment the binding index. 
 			if (mode == AttributeMode::MODE_SEPARATE)
 			{
 				attribute_binding++;
 			}
-			attribute_location++;
 		}
 		return input_attribute_descriptions;
 	}
 
 	std::vector<vk::VertexInputBindingDescription> Geometry::get_vertex_input_binding_descriptions(uint32_t start_binding, AttributeMode mode)
 	{
-		std::vector<vk::VertexInputBindingDescription> binding_descriptions;
-		uint32_t attribute_binding = start_binding;
+		// TOOD: this does not take into account any custom attributes that might be instanced, i.e. vk::VertexInputRate::eInstance
 
-		for (const auto& available_attribute : active_attributes)
+		std::vector<vk::VertexInputBindingDescription> binding_descriptions;	
+		uint32_t binding_index = start_binding;
+
+		// If the attributes are interleaved (and assuming we are not instancing), then the vertex
+		// data will all belong to a single buffer with a stride equal to the total size of all
+		// vertex attributes combined.
+		if (mode == AttributeMode::MODE_INTERLEAVED)
 		{
-			// TOOD: this does not take into account any custom attributes that might be instanced, i.e. vk::VertexInputRate::eInstance
-			binding_descriptions.push_back({ attribute_binding, get_vertex_attribute_size(available_attribute) });
+			uint32_t binding_stride = 0;
+			for (const auto& available_attribute : active_attributes)
+			{
+				binding_stride += get_vertex_attribute_size(available_attribute);
+			}
+
+			binding_descriptions.push_back({ 
+				binding_index, 
+				binding_stride, 
+				vk::VertexInputRate::eVertex 
+			});
+
+			return binding_descriptions;
+		}
+
+		// Otherwise, the attributes are separate and will each exist in a unique buffer (or region
+		// of buffer memory).
+		for (auto available_attribute : active_attributes)
+		{
+			uint32_t binding_stride = get_vertex_attribute_size(available_attribute);
+
+			binding_descriptions.push_back({ 
+				binding_index, 
+				binding_stride, 
+				vk::VertexInputRate::eVertex 
+			});
 
 			if (mode == AttributeMode::MODE_SEPARATE)
 			{
-				attribute_binding++;
+				binding_index++;
 			}
 		}
 		return binding_descriptions;
+	}
+
+	std::vector<float> Geometry::get_packed_vertex_attributes()
+	{
+		/*assert(m_positions.size() == 
+			   m_colors.size() ==
+			   m_normals.size() ==
+			   m_texture_coordinates.size());*/
+
+		std::vector<float> packed_vertex_attributes;
+
+		for (size_t i = 0; i < m_positions.size(); ++i)
+		{
+			packed_vertex_attributes.push_back(m_positions[i].x);
+			packed_vertex_attributes.push_back(m_positions[i].y);
+			packed_vertex_attributes.push_back(m_positions[i].z);
+
+			packed_vertex_attributes.push_back(m_colors[i].x);
+			packed_vertex_attributes.push_back(m_colors[i].y);
+			packed_vertex_attributes.push_back(m_colors[i].z);
+
+			packed_vertex_attributes.push_back(m_normals[i].x);
+			packed_vertex_attributes.push_back(m_normals[i].y);
+			packed_vertex_attributes.push_back(m_normals[i].z);
+
+			packed_vertex_attributes.push_back(m_texture_coordinates[i].x);
+			packed_vertex_attributes.push_back(m_texture_coordinates[i].y);
+		}
+
+		return packed_vertex_attributes;
 	}
 
 	float* Geometry::get_vertex_attribute_data_ptr(VertexAttribute attribute)
@@ -144,68 +223,24 @@ namespace geo
 					  [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
 	}
 
-	IcoSphere::IcoSphere()
+	Grid::Grid(float width, float height, const glm::vec3& center)
 	{
-		// See: http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html
-		const float t = (1.0f + sqrtf(5.0f)) / 2.0f;
-		
-		// Calculate positions.
 		m_positions = 
 		{
-			{-1.0f,  t,     0.0f},
-			{ 1.0f,  t,     0.0f},
-			{-1.0f, -t,     0.0f},
-			{ 1.0f, -t,     0.0f},
-			{ 0.0f, -1.0f,  t},
-			{ 0.0f,  1.0f,  t},
-			{ 0.0f, -1.0f, -t},
-			{ 0.0f,  1.0f, -t},
-			{ t,     0.0f, -1.0f},
-			{ t,     0.0f,  1.0f},
-			{-t,     0.0f, -1.0f},
-			{-t,     0.0f,  1.0f}
+			{ -width, -height, 0.0f },
+			{  width, -height, 0.0f },
+			{  width,  height, 0.0f },
+			{ -width,  height, 0.0f }
 		};
 
-		for (auto &position : m_positions)
+		for (auto& pt : m_positions)
 		{
-			position = glm::normalize(position);
+			pt += center;
 		}
 
-		// Calculate indices.
-		m_indices = 
-		{
-			0, 11, 5,
-			0, 5, 1,
-			0, 1, 7,
-			0, 7, 10,
-			0, 10, 11,
-			1, 5, 9,
-			5, 11, 4,
-			11, 10, 2,
-			10, 7, 6,
-			7, 1, 8,
-			3, 9, 4,
-			3, 4, 2,
-			3, 2, 6,
-			3, 6, 8,
-			3, 8, 9,
-			4, 9, 5,
-			2, 4, 11, 
-			6, 2, 10,
-			8, 6, 7,
-			9, 8, 1
-		};
-	}
+		set_colors_solid({ 1.0f, 1.0f, 1.0f });
 
-	Grid::Grid()
-	{
-		m_positions = 
-		{
-			{ -1.0f, -1.0f, 0.0f },
-			{  1.0f, -1.0f,	0.0f },
-			{  1.0f, 1.0f,	0.0f },
-			{ -1.0f, 1.0f,	0.0f }
-		};
+		m_normals.resize(get_vertex_count(), { 0.0f, 0.0f, 1.0f });
 
 		m_texture_coordinates = 
 		{
@@ -222,9 +257,25 @@ namespace geo
 		};
 	}
 
-	Circle::Circle(float radius, uint32_t subdivisions)
+	void Grid::texture_coordinates(const glm::vec2& ul, const glm::vec2& ur, const glm::vec2& lr, const glm::vec2& ll)
 	{
-		m_positions.push_back({ 0.0f, 0.0f, -2.0f });
+		m_texture_coordinates[0] = ul;
+		m_texture_coordinates[1] = ur;
+		m_texture_coordinates[2] = lr;
+		m_texture_coordinates[3] = ll;
+	}
+
+	void Grid::colors(const glm::vec3& ul, const glm::vec3& ur, const glm::vec3& lr, const glm::vec3& ll)
+	{
+		m_colors[0] = ul;
+		m_colors[1] = ur;
+		m_colors[2] = lr;
+		m_colors[3] = ll;
+	}
+
+	Circle::Circle(float radius, const glm::vec3& center, uint32_t subdivisions)
+	{
+		m_positions.push_back(center);
 		m_indices.push_back(0);
 
 		float div = (2.0f * M_PI) / subdivisions;
@@ -232,20 +283,24 @@ namespace geo
 		{
 			float c = cosf(div * i) * radius;
 			float s = sinf(div * i) * radius;
-			m_positions.push_back({ c, s, -2.0f });
+			auto pt = glm::vec3(c, s, 0.0f);
+
+			m_positions.push_back(pt + center);
+			m_normals.push_back({ 0.0f, 0.0f, 1.0f });
 			m_indices.push_back(i + 1);
 		}
 
+		set_colors_solid({ 1.0f, 1.0f, 1.0f });
+
 		m_indices.push_back(1);
+
+		// TODO: figure out how to calculate uv-coordinates.
+		m_texture_coordinates.resize(get_vertex_count(), { 0.0f, 0.0f });
 	}
 
-	Sphere::Sphere()
+	Sphere::Sphere(float radius, const glm::vec3& center, size_t u_divisions, size_t v_divisions)
 	{
-		const uint32_t v_divisions = 60;
-		const uint32_t u_divisions = 60;
-		const float radius = 1.0f;
-
-		// Calculate vertex positions
+		// Calculate vertex positions.
 		for (int i = 0; i <= v_divisions; ++i)
 		{
 			float v = i / static_cast<float>(v_divisions);		// Fraction along the v-axis, 0..1
@@ -254,20 +309,22 @@ namespace geo
 			for (int j = 0; j <= u_divisions; ++j)
 			{
 				float u = j / static_cast<float>(u_divisions);	// Fraction along the u-axis, 0..1
-				float theta = u * (glm::pi<float>() * 2);		// Rotational angle, 0..2*pi
+				float theta = u * (glm::pi<float>() * 2);		// Rotational angle, 0..2 * pi
 
-				// Spherical to Cartesian coordinates
+				// Spherical to Cartesian coordinates.
 				float x = cosf(theta) * sinf(phi);
 				float y = cosf(phi);
 				float z = sinf(theta) * sinf(phi);
-				auto vertex = glm::vec3(x, y, z) * radius;
+				auto vertex = glm::vec3(x, y, z) * radius + center;
 
 				m_positions.push_back(vertex);
 				m_normals.push_back(glm::normalize(vertex));
 			}
 		}
 
-		// Calculate indices
+		set_colors_solid({ 1.0f, 1.0f, 1.0f });
+
+		// Calculate indices.
 		for (int i = 0; i < u_divisions * v_divisions + u_divisions; ++i)
 		{
 			m_indices.push_back(i);
@@ -278,6 +335,72 @@ namespace geo
 			m_indices.push_back(i);
 			m_indices.push_back(i + 1);
 		}
+
+		// TODO: figure out how to calculate uv-coordinates.
+		m_texture_coordinates.resize(get_vertex_count(), { 0.0f, 0.0f });
+	}
+
+	IcoSphere::IcoSphere(float radius, const glm::vec3& center)
+	{
+		// See: http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html
+		const float t = (1.0f + sqrtf(5.0f)) / 2.0f;
+
+		// Calculate positions.
+		m_positions =
+		{
+			{ -1.0f,  t,     0.0f },
+			{  1.0f,  t,     0.0f },
+			{ -1.0f, -t,     0.0f },
+			{  1.0f, -t,     0.0f },
+			{  0.0f, -1.0f,  t },
+			{  0.0f,  1.0f,  t },
+			{  0.0f, -1.0f, -t },
+			{  0.0f,  1.0f, -t },
+			{  t,     0.0f, -1.0f },
+			{  t,     0.0f,  1.0f },
+			{ -t,     0.0f, -1.0f },
+			{ -t,     0.0f,  1.0f }
+		};
+
+		for (auto &position : m_positions)
+		{
+			position = glm::normalize(position) * radius + center;
+		}
+
+		set_colors_solid({ 1.0f, 1.0f, 1.0f });
+
+		size_t vertex_index = 0;
+		m_normals.resize(get_vertex_count());
+		std::generate(m_normals.begin(),
+			m_normals.end(),
+			[&] { return glm::normalize(m_positions[vertex_index]); });
+
+		m_indices =
+		{
+			0,  11, 5,
+			0,  5,  1,
+			0,  1,  7,
+			0,  7,  10,
+			0,  10, 11,
+			1,  5,  9,
+			5,  11, 4,
+			11, 10, 2,
+			10, 7,  6,
+			7,  1,  8,
+			3,  9,  4,
+			3,  4,  2,
+			3,  2,  6,
+			3,  6,  8,
+			3,  8,  9,
+			4,  9,  5,
+			2,  4,  11,
+			6,  2,  10,
+			8,  6,  7,
+			9,  8,  1
+		};
+
+		// TODO: figure out how to calculate uv-coordinates.
+		m_texture_coordinates.resize(get_vertex_count(), { 0.0f, 0.0f });
 	}
 
 } // namespace geo

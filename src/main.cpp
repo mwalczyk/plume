@@ -205,9 +205,9 @@ int main()
 	render_pass_builder->add_depth_stencil_attachment("depth", vk::Format::eD32SfloatS8Uint, msaa);
 
 	render_pass_builder->begin_subpass_record();
-	render_pass_builder->append_attachment_to_subpass("color_inter", RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR);
-	render_pass_builder->append_attachment_to_subpass("color_final", RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE);
-	render_pass_builder->append_attachment_to_subpass("depth", RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL);
+	render_pass_builder->append_attachment_to_subpass("color_inter", AttachmentCategory::CATEGORY_COLOR);
+	render_pass_builder->append_attachment_to_subpass("color_final", AttachmentCategory::CATEGORY_RESOLVE);
+	render_pass_builder->append_attachment_to_subpass("depth", AttachmentCategory::CATEGORY_DEPTH_STENCIL);
 	render_pass_builder->end_subpass_record();
 
 	auto render_pass = RenderPass::create(device, render_pass_builder);
@@ -217,11 +217,10 @@ int main()
 	* Geometry, buffers, and pipeline
 	*
 	***********************************************************************************/
-	auto geometry = geo::Grid();
-	auto vbo_0 =	Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_positions());
-	auto vbo_1 =	Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_texture_coordinates());
-	auto ibo =		Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
-	auto ubo =		Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
+	auto geometry = geom::Grid();
+	auto vbo = Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_packed_vertex_attributes());
+	auto ibo = Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
+	auto ubo = Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
 	
 	UniformBufferData ubo_data = 
 	{
@@ -291,7 +290,7 @@ int main()
 	* Command pool and command buffers
 	*
 	***********************************************************************************/
-	auto command_pool = CommandPool::create(device, Device::QueueType::GRAPHICS);
+	auto command_pool = CommandPool::create(device, QueueType::GRAPHICS);
 	auto temp_command_buffer = CommandBuffer::create(device, command_pool);
 
 	{
@@ -299,7 +298,7 @@ int main()
 		temp_command_buffer->transition_image_layout(image_depth, image_depth->get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	}
 
-	device->one_time_submit(Device::QueueType::GRAPHICS, temp_command_buffer);
+	device->one_time_submit(QueueType::GRAPHICS, temp_command_buffer);
 
 	temp_command_buffer->reset();
 
@@ -309,7 +308,7 @@ int main()
 		temp_command_buffer->clear_color_image(image_sdf_map, clear::RED);
 	}
 
-	device->one_time_submit(Device::QueueType::GRAPHICS, temp_command_buffer);
+	device->one_time_submit(QueueType::GRAPHICS, temp_command_buffer);
 
    /***********************************************************************************
 	*
@@ -390,17 +389,17 @@ int main()
 			ScopedRecord record(command_buffer);
 			command_buffer->begin_render_pass(render_pass, framebuffers[image_index], clear_vals);
 			command_buffer->bind_pipeline(pipeline);
-			command_buffer->bind_vertex_buffers({ vbo_0, vbo_1 });
+			command_buffer->bind_vertex_buffers({ vbo });
 			command_buffer->bind_index_buffer(ibo);
 			command_buffer->update_push_constant_ranges(pipeline, "time", get_elapsed_seconds());
 			command_buffer->bind_descriptor_sets(pipeline, 0, { descriptor_set });
 			command_buffer->draw_indexed(static_cast<uint32_t>(geometry.num_indices()));
 			command_buffer->end_render_pass();
 		}
-		device->submit_with_semaphores(Device::QueueType::GRAPHICS, command_buffer, { image_available_sem }, { render_complete_sem });
+		device->submit_with_semaphores(QueueType::GRAPHICS, command_buffer, { image_available_sem }, { render_complete_sem });
 
 		// Wait for rendering to finish before attempting to present...
-		device->wait_idle_queue(Device::QueueType::GRAPHICS);
+		device->wait_idle_queue(QueueType::GRAPHICS);
 		
 		// Present the rendered image to the swapchain.
 		device->present(swapchain, image_index, { render_complete_sem });

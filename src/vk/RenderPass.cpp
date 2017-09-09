@@ -63,13 +63,13 @@ namespace graphics
 		// Find and create all attachment references corresponding to this subpass.
 		for (auto& subpass_record : builder->m_recorded_subpasses)
 		{
-			static const std::map<RenderPassBuilder::AttachmentCategory, vk::ImageLayout> default_image_layouts = 
+			static const std::map<AttachmentCategory, vk::ImageLayout> default_image_layouts = 
 			{
-				{ RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR,			vk::ImageLayout::eColorAttachmentOptimal },
-				{ RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE,			vk::ImageLayout::eColorAttachmentOptimal },
-				{ RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL,	vk::ImageLayout::eDepthStencilAttachmentOptimal },
-				{ RenderPassBuilder::AttachmentCategory::CATEGORY_INPUT,			vk::ImageLayout::eColorAttachmentOptimal },
-				{ RenderPassBuilder::AttachmentCategory::CATEGORY_PRESERVE,			vk::ImageLayout::eColorAttachmentOptimal }
+				{ AttachmentCategory::CATEGORY_COLOR,			vk::ImageLayout::eColorAttachmentOptimal },
+				{ AttachmentCategory::CATEGORY_RESOLVE,			vk::ImageLayout::eColorAttachmentOptimal },
+				{ AttachmentCategory::CATEGORY_DEPTH_STENCIL,	vk::ImageLayout::eDepthStencilAttachmentOptimal },
+				{ AttachmentCategory::CATEGORY_INPUT,			vk::ImageLayout::eColorAttachmentOptimal },
+				{ AttachmentCategory::CATEGORY_PRESERVE,		vk::ImageLayout::eColorAttachmentOptimal }
 			};
 
 			// Iterate over all of the possible attachment categories for this particular subpass.
@@ -81,8 +81,8 @@ namespace graphics
 			// TODO: are these layouts correct?
 			for (auto mapping : default_image_layouts)
 			{
-				RenderPassBuilder::AttachmentCategory category =	mapping.first;
-				vk::ImageLayout default_image_layout =				mapping.second;
+				AttachmentCategory category = mapping.first;
+				vk::ImageLayout default_image_layout = mapping.second;
 
 				// Iterate over all of the names associated with this attachment category, for example:
 				//
@@ -105,19 +105,19 @@ namespace graphics
 					// subpass description.
 					switch (category)
 					{
-					case RenderPassBuilder::AttachmentCategory::CATEGORY_COLOR:
+					case AttachmentCategory::CATEGORY_COLOR:
 						all_attachment_color_refs[subpass_index].push_back(attachment_reference);
 						break;
-					case RenderPassBuilder::AttachmentCategory::CATEGORY_RESOLVE:
+					case AttachmentCategory::CATEGORY_RESOLVE:
 						all_attachment_resolve_refs[subpass_index].push_back(attachment_reference);
 						break;
-					case RenderPassBuilder::AttachmentCategory::CATEGORY_DEPTH_STENCIL:
+					case AttachmentCategory::CATEGORY_DEPTH_STENCIL:
 						all_attachment_depth_refs[subpass_index].push_back(attachment_reference);
 						break;
-					case RenderPassBuilder::AttachmentCategory::CATEGORY_INPUT:
+					case AttachmentCategory::CATEGORY_INPUT:
 						all_attachment_input_refs[subpass_index].push_back(attachment_reference);
 						break;
-					case RenderPassBuilder::AttachmentCategory::CATEGORY_PRESERVE:
+					case AttachmentCategory::CATEGORY_PRESERVE:
 					default:
 						all_attachment_preserve_refs[subpass_index].push_back(attachment_reference);
 						break;
