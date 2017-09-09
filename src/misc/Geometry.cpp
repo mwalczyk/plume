@@ -112,7 +112,9 @@ namespace geom
 
 	std::vector<vk::VertexInputBindingDescription> Geometry::get_vertex_input_binding_descriptions(uint32_t start_binding, AttributeMode mode)
 	{
-		// TOOD: this does not take into account any custom attributes that might be instanced, i.e. vk::VertexInputRate::eInstance
+		// TOOD: this does not take into account any custom attributes that might be instanced, i.e. vk::VertexInputRate::eInstance.
+		// Also, it doesn't let you create vertex bindings that are not sequential (i.e. 0, 2, 4, 6, etc...), although I'm not sure
+		// this actually matters.
 
 		std::vector<vk::VertexInputBindingDescription> binding_descriptions;	
 		uint32_t binding_index = start_binding;
@@ -159,10 +161,7 @@ namespace geom
 
 	std::vector<float> Geometry::get_packed_vertex_attributes()
 	{
-		/*assert(m_positions.size() == 
-			   m_colors.size() ==
-			   m_normals.size() ==
-			   m_texture_coordinates.size());*/
+		// TOOD: need to check if all attribute vectors have the same size.
 
 		std::vector<float> packed_vertex_attributes;
 
@@ -191,15 +190,10 @@ namespace geom
 	{
 		switch (attribute)
 		{
-		case VertexAttribute::ATTRIBUTE_POSITION: 
-			return reinterpret_cast<float*>(m_positions.data());
-		case VertexAttribute::ATTRIBUTE_COLOR: 
-			return reinterpret_cast<float*>(m_colors.data());
-		case VertexAttribute::ATTRIBUTE_NORMAL: 
-			return reinterpret_cast<float*>(m_normals.data());
-		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: 
-		default:
-			return reinterpret_cast<float*>(m_texture_coordinates.data());
+		case VertexAttribute::ATTRIBUTE_POSITION: return reinterpret_cast<float*>(m_positions.data());
+		case VertexAttribute::ATTRIBUTE_COLOR: return reinterpret_cast<float*>(m_colors.data());
+		case VertexAttribute::ATTRIBUTE_NORMAL: return reinterpret_cast<float*>(m_normals.data());
+		case VertexAttribute::ATTRIBUTE_TEXTURE_COORDINATES: return reinterpret_cast<float*>(m_texture_coordinates.data());
 		}
 	}
 
