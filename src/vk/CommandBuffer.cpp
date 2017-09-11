@@ -237,6 +237,144 @@ namespace graphics
 		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTopOfPipe, {}, {}, {}, image_memory_barrier);
 	}
 
+	void CommandBuffer::barrier_compute_write_storage_buffer_compute_read_storage_buffer()
+	{
+		static vk::MemoryBarrier memory_barrier;
+		memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+		memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
+												vk::PipelineStageFlagBits::eComputeShader,		// Destination stage mask
+												{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
+	void CommandBuffer::barrier_compute_read_storage_buffer_compute_write_storage_buffer()
+	{
+		// WAR hazards don't need a memory barrier between them - a simple execution barrier is sufficient.
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
+												vk::PipelineStageFlagBits::eComputeShader,		// Destination stage mask
+												{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												{}, {}, {});									// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
+	void CommandBuffer::barrier_compute_write_storage_buffer_graphics_read_as_index()
+	{
+		static vk::MemoryBarrier memory_barrier;
+		memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+		memory_barrier.dstAccessMask = vk::AccessFlagBits::eIndexRead;
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
+												vk::PipelineStageFlagBits::eVertexInput,		// Destination stage mask
+												{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
+	void CommandBuffer::barrier_compute_write_storage_buffer_graphics_read_as_draw_indirect()
+	{
+		static vk::MemoryBarrier memory_barrier;
+		memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+		memory_barrier.dstAccessMask = vk::AccessFlagBits::eIndirectCommandRead;
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
+												vk::PipelineStageFlagBits::eDrawIndirect,		// Destination stage mask
+												{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
+	void CommandBuffer::barrier_compute_write_storage_image_graphics_read(const ImageRef& image, const vk::ImageSubresourceRange& image_subresource_range)
+	{
+		vk::ImageMemoryBarrier image_memory_barrier;
+		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		image_memory_barrier.oldLayout = vk::ImageLayout::eGeneral;
+		image_memory_barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		image_memory_barrier.image = image->get_handle();
+		image_memory_barrier.subresourceRange = image_subresource_range;
+
+		image->m_current_layout = image_memory_barrier.newLayout;
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
+												vk::PipelineStageFlagBits::eFragmentShader,		// Destination stage mask
+												{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												{}, {}, image_memory_barrier);					// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
+	void CommandBuffer::barrier_graphics_write_color_attachment_compute_read(const ImageRef& image, const vk::ImageSubresourceRange& image_subresource_range)
+	{
+		vk::ImageMemoryBarrier image_memory_barrier;
+		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		image_memory_barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		image_memory_barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		image_memory_barrier.image = image->get_handle();
+		image_memory_barrier.subresourceRange = image_subresource_range;
+
+		image->m_current_layout = image_memory_barrier.newLayout;
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,	// Source stage mask
+												vk::PipelineStageFlagBits::eComputeShader,			// Destination stage mask
+												{},													// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												{}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
+	void CommandBuffer::barrier_graphics_write_depth_attachment_compute_read(const ImageRef& image, const vk::ImageSubresourceRange& image_subresource_range)
+	{
+		vk::ImageMemoryBarrier image_memory_barrier;
+		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		image_memory_barrier.oldLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		image_memory_barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		image_memory_barrier.image = image->get_handle();
+		image_memory_barrier.subresourceRange = image_subresource_range;
+
+		image->m_current_layout = image_memory_barrier.newLayout;
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eEarlyFragmentTests |
+												vk::PipelineStageFlagBits::eLateFragmentTests,		// Source stage mask
+												vk::PipelineStageFlagBits::eComputeShader,			// Destination stage mask
+												{},													// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												{}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
+	void CommandBuffer::barrier_graphics_write_depth_attachment_graphics_read(const ImageRef& image, const vk::ImageSubresourceRange& image_subresource_range)
+	{
+		vk::ImageMemoryBarrier image_memory_barrier;
+		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		image_memory_barrier.oldLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		image_memory_barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		image_memory_barrier.image = image->get_handle();
+		image_memory_barrier.subresourceRange = image_subresource_range;
+
+		image->m_current_layout = image_memory_barrier.newLayout;
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eEarlyFragmentTests |
+												vk::PipelineStageFlagBits::eLateFragmentTests,		// Source stage mask
+												vk::PipelineStageFlagBits::eFragmentShader,			// Destination stage mask
+												{},													// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												{}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
+	void CommandBuffer::barrier_graphics_write_color_attachment_graphics_read(const ImageRef& image, const vk::ImageSubresourceRange& image_subresource_range)
+	{
+		vk::ImageMemoryBarrier image_memory_barrier;
+		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		image_memory_barrier.oldLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		image_memory_barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		image_memory_barrier.image = image->get_handle();
+		image_memory_barrier.subresourceRange = image_subresource_range;
+
+		image->m_current_layout = image_memory_barrier.newLayout;
+
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,  // Source stage mask
+												vk::PipelineStageFlagBits::eFragmentShader,			// Destination stage mask
+												{},													// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+												{}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
+	}
+
 	void CommandBuffer::end()
 	{
 		if (m_is_recording)

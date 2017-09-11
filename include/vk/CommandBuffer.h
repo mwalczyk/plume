@@ -39,7 +39,7 @@
 
 namespace graphics
 {
-
+	
 	class CommandBuffer;
 	using CommandBufferRef = std::shared_ptr<CommandBuffer>;
 
@@ -206,6 +206,80 @@ namespace graphics
 
 		//! Use an image memory barrier to transition an image from one layout to another.
 		void transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to);
+
+		/* 
+		 * Common synchronization use cases, expressed as pipeline barriers.
+		 *
+		 * For more details, see: https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
+		 * Also: http://gpuopen.com/vulkan-barriers-explained/
+		 *
+		 * TODO: the naming of some of the functions below, i.e. `barrier_graphics_write_color_attachment_graphics_read()`,
+		 * does not express the fact that the depth/color attachment must only be read in the FRAGMENT shader of the second draw, 
+		 * however, we might want to sample this image in the vertex shader. See the link above for more details. Maybe add
+		 * another parameter for the stage we intend to sample the image from?
+		 *
+		 */
+
+		//! Creates a pipeline barrier representing two consecutive compute shader dispatches where the first
+		//! writes to a resource, and the second reads from that same resource. This helps avoid a RAW 
+		//! (read-after-write) hazard.
+		//! 
+		//! Examples of this might be:
+		//! - Dispatch #1 writes to a storage buffer, dispatch #2 reads from that same storage buffer
+		//! - Dispatch #1 writes to a storage image, dispatch #2 reads from that same storage image
+		//!   (note that in this case, we can use the same routine for storage images, as storage image
+		//!   dependencies are always in vk::ImageLayout::eGeneral - no need for a layout transition)
+		//! - Dispatch #1 writes to a storage buffer, dispatch #2 writes to a non-overlapping region
+		//!   of the same storage buffer, dispatch #3 reads from both regions
+		//! - Dispatch #1 writes to a storage buffer, dispatch #2 writes to a different storage buffer,
+		//!   dispatch #3 reads from both storage buffers (note that global memory barriers cover all 
+		//!   resources, which is why this and the previous example are both covered by this same function)
+		void barrier_compute_write_storage_buffer_compute_read_storage_buffer();
+
+		//! Creates a pipeline barrier representing two consecutive compute shader dispatches where the first
+		//! reads from a storage buffer, and the second writes to that same storage buffer. This helps avoid
+		//! a WAR (write-after-read) hazard.
+		void barrier_compute_read_storage_buffer_compute_write_storage_buffer();
+
+		//! Creates a pipeline barrier representing a compute shader dispatch that writes into a storage
+		//! buffer followed by a draw command that consumes that buffer as an index buffer. This avoids
+		//! a RAW (read-after-write) hazard.
+		void barrier_compute_write_storage_buffer_graphics_read_as_index();
+
+		//! Creates a pipeline barrier representing a compute shader dispatch that writes into a storage
+		//! buffer followed by a draw command that consumes that buffer as a draw indirect buffer. This 
+		//! avoids a RAW (read-after-write) hazard.
+		void barrier_compute_write_storage_buffer_graphics_read_as_draw_indirect();
+
+		//! Creates a pipeline barrier representing a compute shader dispatch that writes into a storage
+		//! image followed by a draw command that samples that image in the fragment shader stage. This 
+		//! avoids a RAW (read-after-write) hazard.
+		void barrier_compute_write_storage_image_graphics_read(const ImageRef& image, 
+															   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+
+		//! Creates a pipeline barrier representing a draw command that writes to a color attachment followed 
+		//! by a compute shader dispatch that reads from that image. This avoids a RAW (read-after-write) 
+		//! hazard.
+		void barrier_graphics_write_color_attachment_compute_read(const ImageRef& image,
+																  const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+		
+		//! Creates a pipeline barrier representing a draw command that writes to a depth attachment followed 
+		//! by a compute shader dispatch that reads from that image. This avoids a RAW (read-after-write) 
+		//! hazard.
+		void barrier_graphics_write_depth_attachment_compute_read(const ImageRef& image,
+																  const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+		
+		//! Creates a pipeline barrier representing a draw command that writes to a depth attachment
+		//! followed by another draw command that samples that image in the fragment shader stage. This
+		//! is useful for shadow map rendering. This avoids a RAW (read-after-write) hazard.
+		void barrier_graphics_write_depth_attachment_graphics_read(const ImageRef& image,
+																   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+
+		//! Creates a pipeline barrier representing a draw command that writes to a color attachment
+		//! followed by another draw command that samples that image in the fragment shader stage. This
+		//! This avoids a RAW (read-after-write) hazard.
+		void barrier_graphics_write_color_attachment_graphics_read(const ImageRef& image,
+																   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 		//! Stop recording into the command buffer. Puts the command buffer into an executable state.
 		void end();
