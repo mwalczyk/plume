@@ -210,6 +210,10 @@ namespace graphics
 		/* 
 		 * Common synchronization use cases, expressed as pipeline barriers.
 		 *
+		 * In a pipeline barrier, the source and destination stage masks describe WHERE the synchronization will happen,
+		 * while the source and destination masks in a memory, buffer memory, or image memory barrier describe WHAT
+		 * will be happening when the synchronization occurs.
+		 *
 		 * For more details, see: https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
 		 * Also: http://gpuopen.com/vulkan-barriers-explained/
 		 *
@@ -252,9 +256,16 @@ namespace graphics
 		void barrier_compute_write_storage_buffer_graphics_read_as_draw_indirect();
 
 		//! Creates a pipeline barrier representing a compute shader dispatch that writes into a storage
-		//! image followed by a draw command that samples that image in the fragment shader stage. This 
-		//! avoids a RAW (read-after-write) hazard.
+		//! image followed by a draw command that samples that image in one or more of its subsequent shader
+		//! stages. This avoids a RAW (read-after-write) hazard.
+		//!
+		//! Note that you must also specify which stage of the graphics pipeline you intend to read the
+		//! image in. By default, this function assumes that the image will be read in the fragment shader
+		//! of the second draw call. To read the image in a different stage, supply the appropriate 
+		//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
+		//! that the image will be read in the vertex shader stage of the second draw call.
 		void barrier_compute_write_storage_image_graphics_read(const ImageRef& image, 
+															   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
 															   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 		//! Creates a pipeline barrier representing a draw command that writes to a color attachment followed 
@@ -270,15 +281,30 @@ namespace graphics
 																  const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 		
 		//! Creates a pipeline barrier representing a draw command that writes to a depth attachment
-		//! followed by another draw command that samples that image in the fragment shader stage. This
-		//! is useful for shadow map rendering. This avoids a RAW (read-after-write) hazard.
+		//! followed by another draw command that samples that image in one or more of its subsequent
+		//! shader stages. This is useful for shadow map rendering. This avoids a RAW (read-after-write) 
+		//! hazard.
+		//!
+		//! Note that you must also specify which stage of the graphics pipeline you intend to read the
+		//! image in. By default, this function assumes that the image will be read in the fragment shader
+		//! of the second draw call. To read the image in a different stage, supply the appropriate 
+		//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
+		//! that the image will be read in the vertex shader stage of the second draw call.
 		void barrier_graphics_write_depth_attachment_graphics_read(const ImageRef& image,
+																   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
 																   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 		//! Creates a pipeline barrier representing a draw command that writes to a color attachment
-		//! followed by another draw command that samples that image in the fragment shader stage. This
-		//! This avoids a RAW (read-after-write) hazard.
+		//! followed by another draw command that samples that image in one or more of its subsequent
+		//! shader stages. This avoids a RAW (read-after-write) hazard. 
+		//!
+		//! Note that you must also specify which stage of the graphics pipeline you intend to read the
+		//! image in. By default, this function assumes that the image will be read in the fragment shader
+		//! of the second draw call. To read the image in a different stage, supply the appropriate 
+		//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
+		//! that the image will be read in the vertex shader stage of the second draw call.
 		void barrier_graphics_write_color_attachment_graphics_read(const ImageRef& image,
+																   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
 																   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 		//! Stop recording into the command buffer. Puts the command buffer into an executable state.
