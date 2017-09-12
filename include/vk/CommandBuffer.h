@@ -217,11 +217,6 @@ namespace graphics
 		 * For more details, see: https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
 		 * Also: http://gpuopen.com/vulkan-barriers-explained/
 		 *
-		 * TODO: the naming of some of the functions below, i.e. `barrier_graphics_write_color_attachment_graphics_read()`,
-		 * does not express the fact that the depth/color attachment must only be read in the FRAGMENT shader of the second draw, 
-		 * however, we might want to sample this image in the vertex shader. See the link above for more details. Maybe add
-		 * another parameter for the stage we intend to sample the image from?
-		 *
 		 */
 
 		//! Creates a pipeline barrier representing two consecutive compute shader dispatches where the first

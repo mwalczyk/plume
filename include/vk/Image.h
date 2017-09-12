@@ -199,8 +199,8 @@ namespace graphics
 		//! mipmap levels of an arbitrary image.
 		static vk::ImageSubresourceRange build_multiple_layer_subresource(uint32_t base_layer, 
 																	      uint32_t layer_count, 
-																		  uint32_t base_level,
-																		  uint32_t level_count,
+																		  uint32_t base_level = 0,
+																		  uint32_t level_count = 1,
 																		  vk::ImageAspectFlags image_aspect_flags = vk::ImageAspectFlagBits::eColor)
 		{
 			vk::ImageSubresourceRange image_subresource = {};
