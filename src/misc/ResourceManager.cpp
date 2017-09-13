@@ -29,14 +29,18 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+std::string ResourceManager::default_path = "../assets/";
+
 FileResource ResourceManager::load_file(const std::string& file_name)
 {
+	std::string path_to = default_path + file_name;
+
 	// Start reading at the end of the file to determine file size.
-	std::ifstream file(file_name, std::ios::ate | std::ios::binary);
+	std::ifstream file(path_to, std::ios::ate | std::ios::binary);
 
 	if (!file.is_open())
 	{
-		throw std::runtime_error("Failed to load file: " + file_name);
+		throw std::runtime_error("Failed to load file: " + path_to);
 	}
 
 	// After recording the file size, go back to the beginning of the file.
@@ -54,13 +58,15 @@ FileResource ResourceManager::load_file(const std::string& file_name)
 
 ImageResource ResourceManager::load_image(const std::string& file_name, bool force_channels)
 {
+	std::string path_to = default_path + file_name;
+
 	ImageResource resource;
 
 	// Read the image contents.
-	stbi_uc* pixels = stbi_load(file_name.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(path_to.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
 	if (!pixels)
 	{
-		throw std::runtime_error("Failed to load image: " + file_name);
+		throw std::runtime_error("Failed to load image: " + path_to);
 	}
 	if (force_channels)
 	{
@@ -75,12 +81,14 @@ ImageResource ResourceManager::load_image(const std::string& file_name, bool for
 
 ImageResourceHDR ResourceManager::load_image_hdr(const std::string& file_name, bool force_channels)
 {
+	std::string path_to = default_path + file_name;
+
 	ImageResourceHDR resource;
 
-	float* pixels = stbi_loadf(file_name.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
+	float* pixels = stbi_loadf(path_to.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
 	if (!pixels)
 	{
-		throw std::runtime_error("Failed to load image: " + file_name);
+		throw std::runtime_error("Failed to load image: " + path_to);
 	}
 	if (force_channels)
 	{

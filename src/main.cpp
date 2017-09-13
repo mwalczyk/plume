@@ -236,7 +236,7 @@ int main()
 	std::vector<vk::VertexInputBindingDescription> binds = geometry.get_vertex_input_binding_descriptions();
 	std::vector<vk::VertexInputAttributeDescription> attrs = geometry.get_vertex_input_attribute_descriptions();
 	
-	const std::string base_shader_path = "../assets/shaders/";
+	const std::string base_shader_path = "shaders/";
 	auto v_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_vert.spv"));
 	auto f_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_frag.spv"));
 

@@ -55,14 +55,20 @@ class ResourceManager
 {
 public:
 
+	static std::string default_path;
+
 	static ResourceManager& resource_manager()
 	{
 		static ResourceManager manager;
 		return manager;
 	}
 
+	static void set_default_path(const std::string& path) { default_path = path; }
+
 	static FileResource load_file(const std::string& file_name);
+
 	static ImageResource load_image(const std::string& file_name, bool force_channels = true);
+
 	static ImageResourceHDR load_image_hdr(const std::string& file_name, bool force_channels = true);
 
 	ResourceManager(const ResourceManager& other) = delete;
