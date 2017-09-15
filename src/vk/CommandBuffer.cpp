@@ -61,7 +61,7 @@ namespace graphics
 		vk::CommandBufferBeginInfo command_buffer_begin_info;
 		command_buffer_begin_info.flags = command_buffer_usage_flags;
 		command_buffer_begin_info.pInheritanceInfo = nullptr;
-
+		
 		m_command_buffer_handle.begin(command_buffer_begin_info);
 	}
 

@@ -54,13 +54,20 @@ namespace graphics
 
 		//! Factory method for returning a new BufferRef that will be filled with the supplied vector of data.
 		template<class T>
-		static BufferRef create(DeviceWeakRef device, vk::BufferUsageFlags buffer_usage_flags, const std::vector<T>& data, const std::vector<QueueType> queues = { QueueType::GRAPHICS })
+		static BufferRef create(DeviceWeakRef device, 
+								vk::BufferUsageFlags buffer_usage_flags, 
+								const std::vector<T>& data, 
+								const std::vector<QueueType> queues = { QueueType::GRAPHICS })
 		{
 			return std::make_shared<Buffer>(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues);
 		}
 
 		//! Factory method for returning a new BufferRef that will be filled with the supplied data.
-		static BufferRef create(DeviceWeakRef device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<QueueType> queues = { QueueType::GRAPHICS })
+		static BufferRef create(DeviceWeakRef device, 
+								vk::BufferUsageFlags buffer_usage_flags, 
+								size_t size, 
+								const void* data, 
+								const std::vector<QueueType> queues = { QueueType::GRAPHICS })
 		{
 			return std::make_shared<Buffer>(device, buffer_usage_flags, size, data, queues);
 		}

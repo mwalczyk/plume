@@ -266,9 +266,6 @@ int main()
 			command_buffer->end_render_pass();
 		}
 		device->submit_with_semaphores(QueueType::GRAPHICS, command_buffer, { image_available_sem }, { render_complete_sem });
-
-		// Wait for rendering to finish before attempting to present...
-		device->wait_idle_queue(QueueType::GRAPHICS);
 		
 		// Present the rendered image to the swapchain.
 		device->present(swapchain, image_index, { render_complete_sem });

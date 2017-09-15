@@ -306,7 +306,7 @@ namespace graphics
 			vk::PushConstantRange push_constant_range;
 			push_constant_range.offset = push_constant.offset;
 			push_constant_range.size = push_constant.size;
-			push_constant_range.stageFlags = module->get_stage();
+			push_constant_range.stageFlags = vk::ShaderStageFlagBits::eAll; module->get_stage();
 
 			m_push_constants_mapping.insert({ push_constant.name, push_constant_range });
 		}
