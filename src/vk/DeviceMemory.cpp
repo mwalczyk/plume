@@ -68,7 +68,7 @@ namespace graphics
 		device_shared->get_handle().freeMemory(m_device_memory_handle);
 	}
 
-	void* DeviceMemory::map(size_t offset, size_t size)
+	void* DeviceMemory::map(vk::DeviceSize offset, vk::DeviceSize size)
 	{
 		DeviceRef device_shared = m_device.lock();
 

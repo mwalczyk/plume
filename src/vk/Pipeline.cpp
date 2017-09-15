@@ -91,6 +91,9 @@ namespace graphics
 		m_rasterization_state_create_info.lineWidth = 1.0f;
 		m_rasterization_state_create_info.polygonMode = vk::PolygonMode::eFill;
 		m_rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
+			
+		// Set up the default tessellation state.
+		m_tessellation_state_create_info.patchControlPoints = 3;
 
 		// Set up the default dynamic state.
 		static std::vector<vk::DynamicState> default_dynamic_state = { 

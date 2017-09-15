@@ -75,7 +75,11 @@ namespace graphics
 		//! is responsible for synchronizing both device and host access to that memory range. If the memory 
 		//! is not coherent, a flush command must be used to guarantee that host writes are visible to the
 		//! device.
-		void* map(size_t offset, size_t size);
+		//!
+		//! Here, `offset` refers to the zero-based byte offset from the beginning of the memory object, while
+		//! `size` refers to the size of the memory range to map. By, default, `size` is set to the special
+		//! value VK_WHOLE_SIZE, which will map from `offset` to the end of the memory allocation.
+		void* map(vk::DeviceSize offset = 0, vk::DeviceSize size = VK_WHOLE_SIZE);
 
 		//! Unmaps the memory object.
 		void unmap();

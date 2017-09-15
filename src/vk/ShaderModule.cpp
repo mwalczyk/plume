@@ -77,6 +77,10 @@ namespace graphics
 			return vk::ShaderStageFlagBits::eVertex;
 		case spv::ExecutionModelFragment:
 			return vk::ShaderStageFlagBits::eFragment;
+		case spv::ExecutionModelTessellationControl:
+			return vk::ShaderStageFlagBits::eTessellationControl;
+		case spv::ExecutionModelTessellationEvaluation:
+			return vk::ShaderStageFlagBits::eTessellationEvaluation;
 		case spv::ExecutionModelGeometry:
 			return vk::ShaderStageFlagBits::eGeometry;
 		case spv::ExecutionModelGLCompute:

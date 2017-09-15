@@ -107,6 +107,9 @@ namespace graphics
 		//! Get the height of the underlying GLFW window.
 		uint32_t get_height() const { return m_height; }
 		
+		//! Returns the aspect ratio of the window: width / height.
+		float get_aspect_ratio() const { return static_cast<float>(m_width / m_height); }
+
 		//! Get the title of the underlying GLFW window.
 		const std::string& get_title() const { return m_title; }
 		

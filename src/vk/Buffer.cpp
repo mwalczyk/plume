@@ -70,6 +70,7 @@ namespace graphics
 		m_memory_requirements = device_shared->get_handle().getBufferMemoryRequirements(m_buffer_handle);
 
 		// Allocate device memory.
+		// TODO: these flags should be parameters. Currently, all buffer objects are marked as CPU-accessible.
 		m_device_memory = DeviceMemory::create(device_shared, m_memory_requirements, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
 		// Fill the buffer with the data that was passed into the constructor.

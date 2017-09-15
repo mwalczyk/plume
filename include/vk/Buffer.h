@@ -77,6 +77,7 @@ namespace graphics
 
 		vk::Buffer get_handle() const { return m_buffer_handle; }
 
+		//! Returns the usage flags that were used to create this buffer (i.e. vertex buffer, index buffer, uniform buffer, etc.).
 		vk::BufferUsageFlags get_buffer_usage_flags() const { return m_buffer_usage_flags; }
 
 		//! Returns the memory requirements of this buffer resource, as reported by the driver. Used
@@ -87,8 +88,30 @@ namespace graphics
 		//! allocation size, which can be queried from the buffer's device memory reference.
 		size_t get_requested_size() const { return m_requested_size; }
 
+		//! Uploads data to the buffer's device memory region. Note that if the device memory associated with this buffer is not marked
+		//! as vk::MemoryPropertyFlagBits::eHostCoherent, then you must use a flush command after writing to the memory.
+		template<class T>
+		void upload_immediately(const T* data, vk::DeviceSize offset = 0)
+		{
+			void* mapped_ptr = m_device_memory->map();
+			memcpy(mapped_ptr, data + offset, sizeof(T));
+			m_device_memory->unmap();
+
+			// TODO: if the device memory associated with this buffer is not host coherent, we need to flush.
+		}
+
+		//! Returns a vk::DescriptorBufferInfo for this buffer object. By default, `offset` is set to zero, and `range` is set to
+		//! the special value VK_WHOLE_SIZE, meaning that the descriptor will access the entire extent of this buffer's memory.
 		vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const
 		{
+			// See: https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkDescriptorBufferInfo.html
+			if (range != VK_WHOLE_SIZE &&
+				range < 0 ||
+				range <= m_device_memory->get_allocation_size() - offset)
+			{
+				throw std::runtime_error("Invalid value for `range` parameter of `build_descriptor_info()`");
+			}
+
 			return{ m_buffer_handle, offset, range };
 		}
 

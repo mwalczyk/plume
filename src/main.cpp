@@ -19,7 +19,14 @@ float get_elapsed_seconds()
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current - start).count() / 1000.0f;
 
 	return elapsed;
+} 
+
+void update_buffer_data()
+{
+
 }
+
+UniformBufferData ubo_data;
 
 using namespace graphics;
 
@@ -70,21 +77,18 @@ int main()
 	* Geometry, buffers, and pipeline
 	*
 	***********************************************************************************/
-	auto geometry = geom::Grid();
+	auto geometry = geom::Sphere(2.0f, { 0.0f, 0.0f, 0.0f }, 6, 6);
 	auto vbo = Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_packed_vertex_attributes());
 	auto ibo = Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
-	
-	UniformBufferData ubo_data = 
-	{
-		glm::mat4(),
-		glm::lookAt({ 0.0f, 0.0, 2.0f }, { 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
-		glm::perspective(45.0f, static_cast<float>(width / height), 0.1f, 1000.0f) 
-	};
 
-	void *data = ubo->get_device_memory()->map(0, ubo->get_device_memory()->get_allocation_size());
-	memcpy(data, &ubo_data, sizeof(ubo_data));
-	ubo->get_device_memory()->unmap();
+	ubo_data =
+	{
+		glm::mat4(1.0f),
+		glm::lookAt({ 0.0f, 0.0, 5.0f },{ 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
+		glm::perspective(45.0f, window->get_aspect_ratio(), 0.1f, 1000.0f)
+	};
+	ubo->upload_immediately(&ubo_data);
 
 	std::vector<vk::VertexInputBindingDescription> binds = geometry.get_vertex_input_binding_descriptions();
 	std::vector<vk::VertexInputAttributeDescription> attrs = geometry.get_vertex_input_attribute_descriptions();
@@ -230,6 +234,12 @@ int main()
 	{
 		// Check the windowing system for any user interaction.
 		window->poll_events();
+
+		// Update buffer data.
+		float angle = get_elapsed_seconds();
+		ubo_data.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3{ 0.0f, 1.0f, 0.0f });
+		ubo_data.model = glm::rotate(ubo_data.model, angle * 0.5f, glm::vec3{ 1.0f, 0.0f, 0.0f });
+		ubo->upload_immediately(&ubo_data);
 		
 		// Get the index of the next available image.
 		uint32_t image_index = swapchain->acquire_next_swapchain_image(image_available_sem);

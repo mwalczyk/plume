@@ -21,10 +21,12 @@ out gl_PerVertex
 	vec4 gl_Position;
 };
 
-layout (location = 0) out vec2 vs_texcoord;
+layout (location = 0) out vec3 vs_normal;
+layout (location = 1) out vec2 vs_texcoord;
 
 void main()
 {
+	vs_normal = normal;
 	vs_texcoord = texcoord;
 
 	//gl_Position = ubo.projection * ubo.view * ubo.model * vec4(position, 1.0);
