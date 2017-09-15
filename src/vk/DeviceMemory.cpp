@@ -32,7 +32,9 @@ namespace graphics
 	DeviceMemory::DeviceMemory(DeviceWeakRef device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties) :
 		m_device(device),
 		m_allocation_size(memory_requirements.size),
-		m_selected_memory_index(-1)
+		m_memory_property_flags(required_memory_properties),
+		m_selected_memory_index(-1),
+		m_in_use(false)
 	{
 		DeviceRef device_shared = m_device.lock();
 
@@ -45,7 +47,7 @@ namespace graphics
 			// Bit i is set if and only if the memory type i in the physical device memory properties struct is supported for
 			// this resource. The implementation guarantees that at least one bit of this bitmask will be set.
 			if ((memory_requirements.memoryTypeBits & (1 << i)) &&
-				physical_device_memory_properties.memoryTypes[i].propertyFlags & required_memory_properties)
+				physical_device_memory_properties.memoryTypes[i].propertyFlags & m_memory_property_flags)
 			{
 				m_selected_memory_index = i;
 				break;
@@ -70,6 +72,17 @@ namespace graphics
 
 	void* DeviceMemory::map(vk::DeviceSize offset, vk::DeviceSize size)
 	{
+		if (!(m_memory_property_flags & vk::MemoryPropertyFlagBits::eHostVisible))
+		{
+			throw std::runtime_error("Attempting to map a device memory object that is not host visible");
+		}
+
+		// It is an application error to map a memory object that is already mapped.
+		if (m_in_use)
+		{
+			throw std::runtime_error("Attempting to map the same device memory object more than once");
+		}
+
 		DeviceRef device_shared = m_device.lock();
 
 		if (offset > m_allocation_size && size <= m_allocation_size)

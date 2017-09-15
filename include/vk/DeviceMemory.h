@@ -89,6 +89,7 @@ namespace graphics
 		DeviceWeakRef m_device;
 		vk::DeviceMemory m_device_memory_handle;
 		vk::DeviceSize m_allocation_size;
+		vk::MemoryPropertyFlags m_memory_property_flags;
 		uint32_t m_selected_memory_index;
 		bool m_in_use;
 	};
