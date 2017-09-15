@@ -45,7 +45,7 @@ namespace graphics
 			physical_device.getQueueFamilyProperties(),
 			physical_device.enumerateDeviceExtensionProperties()
 		};
-
+		
 		// Find the indicies of all of the requested queue families (inspired by Sascha Willems' codebase).
 		const float default_queue_priority = 0.0f;
 		const uint32_t default_queue_count = 1;
@@ -132,6 +132,18 @@ namespace graphics
 				}
 			}
 		}
+
+		// TODO: should we do this instead, so as to not avoid the overhead of enabling every physical
+		// device feature?
+		/*vk::PhysicalDeviceFeatures enabled_features;
+		if (m_gpu_details.m_features.tessellationShader)
+		{
+			enabled_features.tessellationShader = VK_TRUE;
+		}
+		if (m_gpu_details.m_features.geometryShader)
+		{
+			enabled_features.geometryShader = VK_TRUE;
+		}*/
 
 		// Create the logical device: note that device layers were deprecated, and device layer 
 		// requests should be ignored by the driver. 

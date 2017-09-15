@@ -152,6 +152,12 @@ namespace graphics
 		{
 			throw std::runtime_error("At least one vertex shader stage is required to build a graphics pipeline");
 		}
+		if (options.m_input_assembly_state_create_info.topology == vk::PrimitiveTopology::ePatchList &&
+			!(found_tessellation_control_shader && found_tessellation_evaluation_shader))	// TODO: are tessellation evaluation shaders optional?
+		{
+			throw std::runtime_error("No tessellation control and/or tessellation evaluation shader were found, but the primitive topology\
+									  is set to vk::PrimitiveTopology::ePatchList");
+		}
 		
 		vk::PipelineVertexInputStateCreateInfo vertex_input_state_create_info;
 		vertex_input_state_create_info.pVertexAttributeDescriptions = options.m_vertex_input_attribute_descriptions.data();
@@ -196,7 +202,7 @@ namespace graphics
 		graphics_pipeline_create_info.pMultisampleState = &options.m_multisample_state_create_info;
 		graphics_pipeline_create_info.pRasterizationState = &options.m_rasterization_state_create_info;
 		graphics_pipeline_create_info.pStages = shader_stage_create_infos.data();
-		graphics_pipeline_create_info.pTessellationState = nullptr;
+		graphics_pipeline_create_info.pTessellationState = &options.m_tessellation_state_create_info;
 		graphics_pipeline_create_info.pVertexInputState = &vertex_input_state_create_info;
 		graphics_pipeline_create_info.pViewportState = &viewport_state_create_info;
 		graphics_pipeline_create_info.renderPass = m_render_pass->get_handle();

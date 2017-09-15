@@ -119,6 +119,10 @@ namespace graphics
 				return *this;
 			}
 
+			//! Set the number of control points per patch - note that this only matters if the pipeline contains a tessellation 
+			//! control and tessellation evaluation shader.
+			Options& patch_control_points(uint32_t control_points) { m_tessellation_state_create_info.patchControlPoints = control_points; return *this; }
+
 			//! A limited amount of the pipeline state can be changed without recreating the entire pipeline.
 			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) 
 			{
@@ -172,7 +176,7 @@ namespace graphics
 			
 			//! Add a shader stage to the pipeline. Note that all graphics pipeline objects must contain a vertex shader.
 			Options& attach_shader_stages(const std::vector<ShaderModuleRef>& modules) { m_shader_stages = modules; return *this; }
-			
+
 			//! Specify which subpass of the render pass that this pipeline will be associated with.
 			Options& subpass_index(uint32_t index) { m_subpass_index = index; return *this; }
 
