@@ -217,7 +217,7 @@ namespace geom
 					  [&]() -> glm::vec3 { return{ distribution(mersenne), distribution(mersenne), distribution(mersenne) }; });
 	}
 
-	Grid::Grid(float width, float height, const glm::vec3& center)
+	Rect::Rect(float width, float height, const glm::vec3& center)
 	{
 		m_positions = 
 		{
@@ -251,7 +251,7 @@ namespace geom
 		};
 	}
 
-	void Grid::texture_coordinates(const glm::vec2& ul, const glm::vec2& ur, const glm::vec2& lr, const glm::vec2& ll)
+	void Rect::texture_coordinates(const glm::vec2& ul, const glm::vec2& ur, const glm::vec2& lr, const glm::vec2& ll)
 	{
 		m_texture_coordinates[0] = ul;
 		m_texture_coordinates[1] = ur;
@@ -259,12 +259,69 @@ namespace geom
 		m_texture_coordinates[3] = ll;
 	}
 
-	void Grid::colors(const glm::vec3& ul, const glm::vec3& ur, const glm::vec3& lr, const glm::vec3& ll)
+	void Rect::colors(const glm::vec3& ul, const glm::vec3& ur, const glm::vec3& lr, const glm::vec3& ll)
 	{
 		m_colors[0] = ul;
 		m_colors[1] = ur;
 		m_colors[2] = lr;
 		m_colors[3] = ll;
+	}
+
+	Grid::Grid(float width, float height, uint32_t u_subdivisions, uint32_t v_subdivisions, const glm::vec3& center)
+	{
+		for (size_t row = 0; row < v_subdivisions; ++row)
+		{
+			for (size_t col = 0; col < u_subdivisions; ++col)
+			{
+				float u = static_cast<float>(col + 1) / u_subdivisions;
+				float v = static_cast<float>(row + 1) / v_subdivisions;
+
+				glm::vec3 pt = { u * 2.0f - 1.0f, 
+								 v * 2.0f - 1.0f, 
+								 0.0f };
+				pt.x *= width;
+				pt.y *= height;
+				pt += center;
+
+				m_positions.push_back(pt);
+				m_texture_coordinates.push_back({ u, v });
+
+				// If `u_divisions` is set to 4, we have:
+				// 
+				// 0 -- 1 -- 2 -- 3
+				// | \  | \  |  \ |
+				// 4 -- 5 -- 6 -- 7
+				// . . . 
+				// .
+				// .
+				// Note: we assume a clockwise winding pattern.
+				
+				// We don't need to form any triangles for the last row
+				size_t cell = col + u_subdivisions * row;
+				if ((row + 1) % v_subdivisions != 0)
+				{
+					// Form the first triangle (i.e. 0 -> 5 -> 4...).
+					if ((col + 1) % u_subdivisions != 0)
+					{
+						m_indices.push_back(cell);
+						m_indices.push_back(cell + u_subdivisions + 1);
+						m_indices.push_back(cell + u_subdivisions);
+					}
+
+					// Only form this triangle if we aren't on the first (0-th) column.
+					if (col % u_subdivisions != 0)
+					{
+						m_indices.push_back(cell);
+						m_indices.push_back(cell + u_subdivisions);
+						m_indices.push_back(cell - 1);
+					}
+				}
+			}
+		}
+
+		m_normals.resize(get_vertex_count(), { 0.0f, 0.0f, 1.0f });
+
+		set_colors_solid({ 1.0f, 1.0f, 1.0f });
 	}
 
 	Circle::Circle(float radius, const glm::vec3& center, uint32_t subdivisions)

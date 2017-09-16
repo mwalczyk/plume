@@ -115,15 +115,15 @@ namespace geom
 		std::vector<uint32_t> m_indices;
 	};
 
-	class Grid : public Geometry
+	class Rect : public Geometry
 	{
 	public:
 
-		Grid() :
-			Grid(1.0f, 1.0f, { 0.0f, 0.0f, 0.0f })
+		Rect() :
+			Rect(1.0f, 1.0f, { 0.0f, 0.0f, 0.0f })
 		{};
 
-		Grid(float width, float height, const glm::vec3& center);
+		Rect(float width, float height, const glm::vec3& center);
 		
 		//! Set the texture coordinates of each of the four corner points of the rectangle. The corners 
 		//! are ordered in a clockwise fashion, beginning with the upper-left.
@@ -132,6 +132,18 @@ namespace geom
 		//! Set the colors of each of the four corner points of the rectangle. The corners are ordered 
 		//! in a clockwise fashion, beginning with the upper-left.
 		void colors(const glm::vec3& ul, const glm::vec3& ur, const glm::vec3& lr, const glm::vec3& ll);
+
+		vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
+	};
+
+	class Grid : public Geometry
+	{
+	public:
+		Grid() :
+			Grid(1.0f, 1.0f)
+		{};
+
+		Grid(float width, float height, uint32_t u_subdivisions = 4, uint32_t v_subdivisions = 4, const glm::vec3& center = { 0.0f, 0.0f, 0.0f });
 
 		vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
 	};
@@ -156,6 +168,7 @@ namespace geom
 		{};
 		
 		Sphere(float radius, const glm::vec3& center, size_t u_divisions = 30, size_t v_divisions = 30);
+		
 		vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
 	};
 

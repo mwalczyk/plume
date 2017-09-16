@@ -82,7 +82,7 @@ void main()
     vec2 s = gl_Position.xy * gl_Position.z * 2.0 + constants.time;
     te_noise = noise(s * 4.0) * a * 3.0;
 
-    gl_Position.xyz -=  te_normal * te_noise;
+    //gl_Position.xyz -=  te_normal * te_noise;
 
     gl_Position = ubo.projection * ubo.view * ubo.model * gl_Position;
 }

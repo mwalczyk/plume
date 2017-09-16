@@ -73,6 +73,8 @@ void main()
         inner *= 24.0;
         outer *= 24.0;
 
+        inner = 1.0f;
+        outer = 1.0f;
         gl_TessLevelInner[0] = inner;
         gl_TessLevelOuter[0] = inner;
         gl_TessLevelOuter[1] = outer;

@@ -77,7 +77,7 @@ int main()
 	* Geometry, buffers, and pipeline
 	*
 	***********************************************************************************/
-	auto geometry = geom::Sphere(2.0f, { 0.0f, 0.0f, 0.0f }, 12, 12);
+	auto geometry = geom::Grid();// geom::Rect();// geom::Sphere(2.0f, { 0.0f, 0.0f, 0.0f }, 12, 12);
 	auto vbo = Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_packed_vertex_attributes());
 	auto ibo = Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
