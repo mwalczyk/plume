@@ -62,8 +62,12 @@ void main()
     {
         vec4 vert = gl_in[gl_InvocationID].gl_Position;
 
-        float inner = noise(vert.xy * 0.75 + constants.time);
-        float outer = noise(vert.zy * 0.75 + constants.time);
+        const vec3 l = vec3(sin(constants.time) * 5.0, 5.0, 0.0);
+        float p = max(0.0, dot(vs_normal[gl_InvocationID], l));
+        p += 1.0;
+
+        float inner = noise(vert.xy * 0.2 + constants.time);
+        float outer = noise(vert.zy * 0.2 + constants.time);
         inner = pow(inner, 4.0);
         outer = pow(outer, 4.0);
         inner *= 24.0;
