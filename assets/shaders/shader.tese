@@ -78,11 +78,11 @@ void main()
 	te_texcoord = gl_TessCoord.x * tc_texcoord[0] + gl_TessCoord.y * tc_texcoord[1] + gl_TessCoord.z * tc_texcoord[2];
 
     // Displacement along normal
-    float a = (tc_tess_inner[0] + tc_tess_outer[0]) / 32.0;
-    vec2 s = gl_Position.xy * gl_Position.z * 2.0 + constants.time;
-    te_noise = noise(s * 4.0) * a * 3.0;
+    float a = (tc_tess_inner[0] + tc_tess_outer[0]) / 64.0;
+    vec2 s = gl_Position.zy * 1.0 + constants.time;
+    te_noise = noise(s * 0.25) * a;
 
-    //gl_Position.xyz -=  te_normal * te_noise;
+    gl_Position.xyz -=  te_normal * te_noise;
 
     gl_Position = ubo.projection * ubo.view * ubo.model * gl_Position;
 }

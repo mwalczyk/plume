@@ -131,7 +131,22 @@ namespace graphics
 		//! Check if any GLFW window events have been triggered.
 		void poll_events() const { glfwPollEvents(); }
 		
-		glm::vec2 get_mouse_position() const { double x, y; glfwGetCursorPos(m_window_handle, &x, &y); return { x, y }; }
+		//! Returns the xy-coordinates of the mouse. If `clamp_to_window` is `true` (the default
+		//! behavior), then the mouse coordinates will be clamped to the range [0..width] and 
+		//! [0..height], respectively.
+		glm::vec2 get_mouse_position(bool clamp_to_window = true) const 
+		{
+			double x, y; 
+			glfwGetCursorPos(m_window_handle, &x, &y); 
+			
+			if (clamp_to_window)
+			{
+				x = std::fmin(std::fmax(x, 0.0), static_cast<double>(m_width));
+				y = std::fmin(std::fmax(y, 0.0), static_cast<double>(m_height));
+			}
+
+			return { x, y }; 
+		}
 
 		//! Add a callback function to this window's mouse moved event.
 		void connect_to_mouse_moved(const MouseMovedFuncType& connection) { m_mouse_moved_connections.push_back(connection); }

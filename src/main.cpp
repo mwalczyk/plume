@@ -76,8 +76,8 @@ int main()
 	*
 	* Geometry, buffers, and pipeline
 	*
-	***********************************************************************************/
-	auto geometry = geom::Grid();// geom::Rect();// geom::Sphere(2.0f, { 0.0f, 0.0f, 0.0f }, 12, 12);
+	***********************************************************************************/ 
+	auto geometry = geom::Sphere(1.0f, { 0.0f, 0.0f, 0.0f }, 6, 6);// geom::Grid(1.0f, 1.0f, 24, 24);// 
 	auto vbo = Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_packed_vertex_attributes());
 	auto ibo = Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
@@ -85,7 +85,7 @@ int main()
 	ubo_data =
 	{
 		glm::mat4(1.0f),
-		glm::lookAt({ 0.0f, 0.0, 5.0f },{ 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
+		glm::lookAt({ 0.0f, 0.0, 3.0f },{ 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
 		glm::perspective(45.0f, window->get_aspect_ratio(), 0.1f, 1000.0f)
 	};
 	ubo->upload_immediately(&ubo_data);
@@ -110,7 +110,7 @@ int main()
 		.cull_mode(vk::CullModeFlagBits::eNone)
 		.enable_depth_test()
 		.samples(msaa)
-		.polygon_mode(vk::PolygonMode::eLine);
+		.polygon_mode(vk::PolygonMode::ePoint);
 	auto pipeline = Pipeline::create(device, render_pass, pipeline_options);
 	std::cout << pipeline << std::endl;
 

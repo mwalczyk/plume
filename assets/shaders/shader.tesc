@@ -66,17 +66,23 @@ void main()
         float p = max(0.0, dot(vs_normal[gl_InvocationID], l));
         p += 1.0;
 
-        float inner = noise(vert.xy * 0.2 + constants.time);
-        float outer = noise(vert.zy * 0.2 + constants.time);
-        inner = pow(inner, 4.0);
+        float t = constants.time;
+        float d = dot(vert.xyz, vert.xyz);
+        float inner = noise(vert.xy  * 1.7 + t);
+        float outer = noise(vert.zy  * 1.7 + t);
+        inner = pow(inner, 4.0) * noise(vec2(d) + t);
         outer = pow(outer, 4.0);
-        inner *= 24.0;
-        outer *= 24.0;
 
-        inner = 1.0f;
-        outer = 1.0f;
+        vec3 mouse = vec3(constants.mouse, 0.0);
+        mouse.x /= 800.0;
+        mouse.y /= 800.0;
+        float d_to_mouse = distance(vert.xyz, mouse * 2.0 - 1.0);
+
+        inner *= 180.0;// * pow(d_to_mouse, 4.0);
+        outer *= 180.0;// * pow(d_to_mouse, 4.0);
+
         gl_TessLevelInner[0] = inner;
-        gl_TessLevelOuter[0] = inner;
+        gl_TessLevelOuter[0] = outer;
         gl_TessLevelOuter[1] = outer;
         gl_TessLevelOuter[2] = outer;
     }

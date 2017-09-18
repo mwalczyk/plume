@@ -59,7 +59,8 @@ void main()
 	float t = constants.time;
 	vec2 m = constants.mouse;
 
-	o_color = vec4(vec3(1.0), 1.0);
+    float p = pow(te_noise, 0.025);
+	o_color = vec4(vec3(te_noise), 1.0);
 }
 
 // const float pi = 3.141592653589793;

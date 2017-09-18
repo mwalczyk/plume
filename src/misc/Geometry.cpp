@@ -269,15 +269,20 @@ namespace geom
 
 	Grid::Grid(float width, float height, uint32_t u_subdivisions, uint32_t v_subdivisions, const glm::vec3& center)
 	{
+		auto map = [](float v, float in_min, float in_max, float out_min, float out_max) 
+		{
+			return (v - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+		};
+
 		for (size_t row = 0; row < v_subdivisions; ++row)
 		{
 			for (size_t col = 0; col < u_subdivisions; ++col)
 			{
-				float u = static_cast<float>(col + 1) / u_subdivisions;
-				float v = static_cast<float>(row + 1) / v_subdivisions;
+				float u = static_cast<float>(col) / (u_subdivisions - 1);
+				float v = static_cast<float>(row) / (v_subdivisions - 1);
 
-				glm::vec3 pt = { u * 2.0f - 1.0f, 
-								 v * 2.0f - 1.0f, 
+				glm::vec3 pt = { map(u, 0.0f, 1.0f, -1.0f, 1.0f),
+								 map(v, 0.0f, 1.0f, -1.0f, 1.0f),
 								 0.0f };
 				pt.x *= width;
 				pt.y *= height;
