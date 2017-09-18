@@ -101,7 +101,12 @@ namespace graphics
 		}
 
 		//! Uses all recorded descriptor sets and their associated layout bindings to create a vector of 
-		//! descriptor set layouts.
+		//! descriptor set layouts. The resulting descriptor set layout handles will be in the order in which
+		//! the descriptor sets were recorded into the LayoutBuilder. For example, if you first record bindings 
+		//! for set #1 then record bindings for set #0, the vk::DescriptorSetLayout at index 0 in the resulting
+		//! vector will correspond to set #1. Similarly, the vk::DescriptorSetLayout at index 1 will correspond
+		//! to set #0. To build a vk::DescriptorSetLayout for a particular set (or to enforce your own ordering),
+		//! use `build_layout_for_set()`.
 		std::vector<vk::DescriptorSetLayout> build_layouts() const
 		{
 			if (m_is_recording)
@@ -128,12 +133,37 @@ namespace graphics
 			return descriptor_set_layouts;
 		}
 
+		//! Creates a descriptor set layout for the set at the specified index `set`. To build descriptor set
+		//! layouts for all sets simultaneously, see `build_layouts()`.
+		vk::DescriptorSetLayout build_layout_for_set(uint32_t set) const
+		{
+			if (m_is_recording)
+			{
+				throw std::runtime_error("The LayoutBuilder is still in a recording state - call `end_descriptor_set_record()` before\
+										  `build_layouts()`.");
+			}
+
+			DeviceRef device_shared = m_device.lock();
+
+			vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
+			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(m_descriptor_sets_mapping.at(set).size());
+			descriptor_set_layout_create_info.pBindings = m_descriptor_sets_mapping.at(set).data();
+
+			return device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+		}
+
 		//! Advances the current binding by `count` places. For example, if the last binding added was at index 0,
 		//! a call to `skip_bindings(3)` would add the next binding at index 3 (rather than 1).
 		void skip_bindings(uint32_t count) { m_current_binding += count; }
 
 		//! Clears all previously recorded descriptor sets and descriptor set layout bindings.
-		void reset() { m_descriptor_sets_mapping.clear(); }
+		void reset() 
+		{ 
+			m_descriptor_sets_mapping.clear(); 
+			m_current_set = 0;
+			m_current_binding = 0;
+			m_is_recording = false;
+		}
 
 		//! Returns the number of descriptor sets that have been recorded.
 		size_t get_num_sets() const { return m_descriptor_sets_mapping.size(); }
