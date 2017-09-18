@@ -42,9 +42,17 @@ namespace graphics
 
 	//! A simple class for creating and aggregating vk::DescriptorSetLayoutBinding structs, which are used
 	//! to create a vk::DescriptorSetLayout. Each descriptor has a binding, which is a unique, numeric index 
-	//! specified in the shader. The LayoutBuilder class creates vk::DescriptorSetLayoutBinding structs 
-	//! starting at the index specified in the constructor. Each time the `add_next_binding()` method is 
-	//! called, this index is incremented by one. 
+	//! specified in the shader. Each binding is associated with a set. 
+	//!
+	//! Descriptor set entries are created by calling `begin_descriptor_set_record()` with the desired set 
+	//! index. After a call to `begin_descriptor_set_record()`, all subsequent calls to `add_binding()`
+	//! will add a binding to the current set. 
+	//!
+	//! Recording is terminated by calling `end_descriptor_set_record()`.
+	//!
+	//! Multiple sets can be recorded into a single LayoutBuilder, and the handles to the corresponding 
+	//! vk::DescriptorSetLayout objects can be retrieved by calling `build_layouts()` or `build_layout_for_set()`
+	//! if you wish to retrieve a vk::DescriptorSetLayout for a particular set.
 	class LayoutBuilder
 	{
 	public:
@@ -58,30 +66,30 @@ namespace graphics
 		LayoutBuilder(DeviceWeakRef device) :
 			m_device(device),
 			m_current_set(0),
-			m_current_binding(0),
 			m_is_recording(false)
 		{
 		}
 		
 		//! Begin recording bindings into a new set.
-		void begin_descriptor_set_record(uint32_t set, uint32_t binding = 0)
+		void begin_descriptor_set_record(uint32_t set)
 		{
 			m_current_set = set;
-			m_current_binding = binding;
 			m_is_recording = true;
 		}
 
 		//! End recording into the current set.
 		void end_descriptor_set_record()
 		{
-			m_current_binding = 0;
 			m_is_recording = false;
 		}
 
 		//! Adds a descriptor to the set at the current binding. By default, it is assumed that the descriptor
 		//! is not an array (`count` is 1) and will be accessed by all shader stages in the pipeline. This function
 		//! must be called between `begin_descriptor_set_record()` and `end_descriptor_set_record()`.
-		void add_next_binding(vk::DescriptorType type, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		void add_binding(vk::DescriptorType type, 
+					     uint32_t binding = 0, 
+						 uint32_t count = 1, 
+						 vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
 		{
 			if (!m_is_recording)
 			{
@@ -90,14 +98,12 @@ namespace graphics
 			}
 
 			m_descriptor_sets_mapping[m_current_set].push_back({
-				m_current_binding,								// binding (as it appears in the shader code)
-				type,											// descriptor type (i.e. vk::DescriptorType::eUniformBuffer)
-				count,											// descriptor count (if the descriptor is an array)
-				stages,											// shader usage stages
-				nullptr											// immutable samplers 
+				binding,		// binding (as it appears in the shader code)
+				type,			// descriptor type (i.e. vk::DescriptorType::eUniformBuffer)
+				count,			// descriptor count (if the descriptor is an array)
+				stages,			// shader usage stages
+				nullptr			// immutable samplers 
 			});
-
-			m_current_binding++;
 		}
 
 		//! Uses all recorded descriptor sets and their associated layout bindings to create a vector of 
@@ -134,7 +140,8 @@ namespace graphics
 		}
 
 		//! Creates a descriptor set layout for the set at the specified index `set`. To build descriptor set
-		//! layouts for all sets simultaneously, see `build_layouts()`.
+		//! layouts for all sets simultaneously, see `build_layouts()`. Note that this function with throw an 
+		//! exception if the set at the specified index does not exist.
 		vk::DescriptorSetLayout build_layout_for_set(uint32_t set) const
 		{
 			if (m_is_recording)
@@ -152,16 +159,11 @@ namespace graphics
 			return device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 		}
 
-		//! Advances the current binding by `count` places. For example, if the last binding added was at index 0,
-		//! a call to `skip_bindings(3)` would add the next binding at index 3 (rather than 1).
-		void skip_bindings(uint32_t count) { m_current_binding += count; }
-
 		//! Clears all previously recorded descriptor sets and descriptor set layout bindings.
 		void reset() 
 		{ 
 			m_descriptor_sets_mapping.clear(); 
 			m_current_set = 0;
-			m_current_binding = 0;
 			m_is_recording = false;
 		}
 
@@ -241,7 +243,6 @@ namespace graphics
 
 		DeviceWeakRef m_device;
 		uint32_t m_current_set;
-		uint32_t m_current_binding;
 		bool m_is_recording;
 		std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> m_descriptor_sets_mapping;
 	};
@@ -276,6 +277,38 @@ namespace graphics
 		~DescriptorPool();
 
 		vk::DescriptorPool get_handle() const { return m_descriptor_pool_handle; }
+
+		//! Allocate one or more descriptor sets from the descriptor pool. The descriptor sets must have been previously 
+		//! recorded into the LayoutBuilder. The vector of `set_indices` is a list of integers that specify which descriptor
+		//! set layouts to allocate descriptor sets with. Each index should match one of the values that was passed to 
+		//! the LayoutBuilder's `begin_descriptor_set_record()` function.
+		//!
+		//! This allows you to allocate a subset of the descriptor sets that have been recorded into the LayoutBuilder.
+		std::vector<vk::DescriptorSet> allocate_descriptor_sets(const LayoutBuilderRef& builder, const std::vector<uint32_t> set_indices)
+		{
+			// TODO: this function should ensure that the requested descriptor sets do not exceed the maximum
+			// number of descriptors per type and maximum number of descriptor sets has been exceeded, based on the
+			// parameters that were used to construct the descriptor pool.
+
+			DeviceRef device_shared = m_device.lock();
+
+			// Build a descriptor set layout object for each of the requested sets.
+			std::vector<vk::DescriptorSetLayout> requested_layouts;
+			for (auto set_index : set_indices)
+			{
+				requested_layouts.push_back(builder->build_layout_for_set(set_index));
+			}
+
+			vk::DescriptorSetAllocateInfo descriptor_set_allocate_info = 
+			{
+				m_descriptor_pool_handle,							// descriptor pool
+				static_cast<uint32_t>(requested_layouts.size()),	// number of sets to allocate
+				requested_layouts.data()							// descriptor set layout
+			};
+
+			// Allocate the descriptor sets.
+			return device_shared->get_handle().allocateDescriptorSets(descriptor_set_allocate_info);
+		}
 
 	public:
 

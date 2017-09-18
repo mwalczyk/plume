@@ -202,25 +202,21 @@ int main()
 
 	// TODO: write a method in the DescriptorPool class that allocates a descriptor set from 
 	// a LayoutBuilder and keeps track of the number of active sets / per-descriptor resources
+	const uint32_t set_id = 0;
+	const uint32_t binding_id_ubo = 0;
+	const uint32_t binding_id_cis = 1;
 	auto layout_builder = LayoutBuilder::create(device);
-	layout_builder->begin_descriptor_set_record(0);		// begin: set #0
-	layout_builder->add_next_binding(vk::DescriptorType::eUniformBuffer);
-	layout_builder->add_next_binding(vk::DescriptorType::eCombinedImageSampler);
-	layout_builder->end_descriptor_set_record();		// end: set #0
+	layout_builder->begin_descriptor_set_record(set_id);										// BEG set 0
+	layout_builder->add_binding(vk::DescriptorType::eUniformBuffer, binding_id_ubo);			// --- binding 0
+	layout_builder->add_binding(vk::DescriptorType::eCombinedImageSampler, binding_id_cis);		// --- binding 1
+	layout_builder->end_descriptor_set_record();												// END set 0
 
-	auto layouts = layout_builder->build_layouts();
-
-	vk::DescriptorSetAllocateInfo descriptor_set_allocate_info = { 
-		descriptor_pool->get_handle(),			// descriptor pool
-		static_cast<uint32_t>(layouts.size()),	// number of sets to allocate
-		layouts.data()							// descriptor set layout
-	};
-	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptor_set_allocate_info)[0];
+	vk::DescriptorSet descriptor_set = descriptor_pool->allocate_descriptor_sets(layout_builder, { set_id })[0];
 
 	auto d_buffer_info = ubo->build_descriptor_info();				
 	auto d_sampler_info = image_sdf_map_view->build_descriptor_info(sampler);
-	vk::WriteDescriptorSet w_descriptor_set_buffer =	{ descriptor_set, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };		
-	vk::WriteDescriptorSet w_descriptor_set_sampler =	{ descriptor_set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
+	vk::WriteDescriptorSet w_descriptor_set_buffer =	{ descriptor_set, binding_id_ubo, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };
+	vk::WriteDescriptorSet w_descriptor_set_sampler =	{ descriptor_set, binding_id_cis, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
 	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer, w_descriptor_set_sampler };
 
 	device->get_handle().updateDescriptorSets(w_descriptor_sets, {});
