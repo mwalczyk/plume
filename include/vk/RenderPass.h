@@ -279,9 +279,9 @@ namespace graphics
 				return m_categories_to_names_map;
 			}
 
-			const std::vector<std::string>& get_attachment_names(AttachmentCategory category) 
+			const std::vector<std::string>& get_attachment_names(AttachmentCategory category) const
 			{
-				return m_categories_to_names_map[category];
+				return m_categories_to_names_map.at(category);
 			}
 		};
 

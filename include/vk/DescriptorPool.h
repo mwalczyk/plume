@@ -50,20 +50,46 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new LayoutBuilderRef. 
-		static LayoutBuilderRef create(DeviceWeakRef device, uint32_t start = 0)
+		static LayoutBuilderRef create(DeviceWeakRef device)
 		{
-			return std::make_shared<LayoutBuilder>(device, start);
+			return std::make_shared<LayoutBuilder>(device);
 		}
 
-		LayoutBuilder(DeviceWeakRef device, uint32_t start = 0) :
+		LayoutBuilder(DeviceWeakRef device) :
 			m_device(device),
-			m_current_binding(start)
+			m_current_set(0),
+			m_current_binding(0),
+			m_is_recording(false)
 		{
 		}
 		
+		//! Begin recording bindings into a new set.
+		void begin_descriptor_set_record(uint32_t set, uint32_t binding = 0)
+		{
+			m_current_set = set;
+			m_current_binding = binding;
+			m_is_recording = true;
+		}
+
+		//! End recording into the current set.
+		void end_descriptor_set_record()
+		{
+			m_current_binding = 0;
+			m_is_recording = false;
+		}
+
+		//! Adds a descriptor to the set at the current binding. By default, it is assumed that the descriptor
+		//! is not an array (`count` is 1) and will be accessed by all shader stages in the pipeline. This function
+		//! must be called between `begin_descriptor_set_record()` and `end_descriptor_set_record()`.
 		void add_next_binding(vk::DescriptorType type, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
 		{
-			m_layout_bindings.push_back({
+			if (!m_is_recording)
+			{
+				throw std::runtime_error("Adding a new binding must be called between `begin_descriptor_set_record()` and\
+										  `end_descriptor_set_record()`");
+			}
+
+			m_descriptor_sets_mapping[m_current_set].push_back({
 				m_current_binding,								// binding (as it appears in the shader code)
 				type,											// descriptor type (i.e. vk::DescriptorType::eUniformBuffer)
 				count,											// descriptor count (if the descriptor is an array)
@@ -74,32 +100,120 @@ namespace graphics
 			m_current_binding++;
 		}
 
-		vk::DescriptorSetLayout build_layout()
+		//! Uses all recorded descriptor sets and their associated layout bindings to create a vector of 
+		//! descriptor set layouts.
+		std::vector<vk::DescriptorSetLayout> build_layouts() const
 		{
+			if (m_is_recording)
+			{
+				throw std::runtime_error("The LayoutBuilder is still in a recording state - call `end_descriptor_set_record()` before\
+										  `build_layouts()`.");
+			}
+
 			DeviceRef device_shared = m_device.lock();
 
-			vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
-			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(m_layout_bindings.size());
-			descriptor_set_layout_create_info.pBindings = m_layout_bindings.data();
+			std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
 
-			return device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+			// Create a new descriptor set layout handle for each of the recorded descriptor sets.
+			for (const auto& mapping : m_descriptor_sets_mapping)
+			{
+				vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
+				descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(mapping.second.size());
+				descriptor_set_layout_create_info.pBindings = mapping.second.data();
+
+				auto layout = device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+				descriptor_set_layouts.push_back(layout);
+			}
+
+			return descriptor_set_layouts;
 		}
 
-		void skip(uint32_t skip_count) { m_current_binding += skip_count; }
+		//! Advances the current binding by `count` places. For example, if the last binding added was at index 0,
+		//! a call to `skip_bindings(3)` would add the next binding at index 3 (rather than 1).
+		void skip_bindings(uint32_t count) { m_current_binding += count; }
 
-		void reset() { m_current_binding = 0; m_layout_bindings.clear(); }
+		//! Clears all previously recorded descriptor sets and descriptor set layout bindings.
+		void reset() { m_descriptor_sets_mapping.clear(); }
 
-		void reset_and_start_at(uint32_t start) { m_current_binding = start; m_layout_bindings.clear(); }
+		//! Returns the number of descriptor sets that have been recorded.
+		size_t get_num_sets() const { return m_descriptor_sets_mapping.size(); }
 
-		size_t get_bindings_count() const { return m_layout_bindings.size(); }
+		//! Returns the number of descriptor set layout bindings that have been recorded into the desciptor set
+		//! at index `set`.
+		size_t get_bindings_count_for_set(uint32_t set) const
+		{ 
+			return m_descriptor_sets_mapping.at(set).size();
+		}
 
-		const std::vector<vk::DescriptorSetLayoutBinding>& get_bindings() const { return m_layout_bindings; }
+		//! Returns a vector of all descriptor set layout bindings that have been recorded into the descriptor 
+		//! set at index `set`.
+		const std::vector<vk::DescriptorSetLayoutBinding>& get_bindings_for_set(uint32_t set) const
+		{
+			return m_descriptor_sets_mapping.at(set); 
+		}
+
+		//! Returns a map containing a key for each descriptor type that points to an integer value, where the 
+		//! value represents the number of descriptor set layout bindings that exist in this LayoutBuilder 
+		//! instance for that descriptor type. Consider the following group of descriptor sets:
+		//!
+		//!				Set #0:
+		//!					Binding #0: uniform buffer
+		//!					Binding #1: uniform buffer
+		//!					Binding #2: combined image sampler
+		//!
+		//!				Set #1:
+		//!					Binding #0: storage buffer
+		//!					Binding #1: input attachment
+		//!
+		//! In this scenario, `get_descriptor_type_count_mapping()` would return the following map:
+		//!
+		//!				{
+		//!					{ vk::DescriptorType::eCombinedImageSampler, 1 },
+		//!					{ vk::DescriptorType::eInputAttachment, 1 },
+		//!					{ vk::DescriptorType::eStorageBuffer, 1 },
+		//!					{ vk::DescriptorType::eUniformBuffer, 2 },
+		//!					...
+		//!				}
+		//!
+		//!	All other keys in the map would have a value of 0.
+		std::map<vk::DescriptorType, uint32_t> get_descriptor_type_count_mapping() const
+		{
+			std::map<vk::DescriptorType, uint32_t> descriptor_type_count_mapping =
+			{
+				{ vk::DescriptorType::eCombinedImageSampler, 0 },
+				{ vk::DescriptorType::eInputAttachment, 0 },
+				{ vk::DescriptorType::eSampledImage, 0 },
+				{ vk::DescriptorType::eSampler, 0 },
+				{ vk::DescriptorType::eStorageBuffer, 0 },
+				{ vk::DescriptorType::eStorageBufferDynamic, 0 },
+				{ vk::DescriptorType::eStorageImage, 0 },
+				{ vk::DescriptorType::eStorageTexelBuffer, 0 },
+				{ vk::DescriptorType::eUniformBuffer, 0 },
+				{ vk::DescriptorType::eUniformBufferDynamic, 0 },
+				{ vk::DescriptorType::eUniformTexelBuffer, 0 }
+			};
+
+			// Iterate over all of the sets.
+			for (const auto& mapping : m_descriptor_sets_mapping)
+			{	
+				// Iterate over all of the bindings associated with this set, and increment the
+				// appropriate entry in the map above.
+				for (const auto& binding : mapping.second)
+				{
+					descriptor_type_count_mapping[binding.descriptorType]++;
+				}
+			}
+
+			return descriptor_type_count_mapping;
+		}
 
 	private:
 
 		DeviceWeakRef m_device;
+		uint32_t m_current_set;
 		uint32_t m_current_binding;
-		std::vector<vk::DescriptorSetLayoutBinding> m_layout_bindings;
+		bool m_is_recording;
+		std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> m_descriptor_sets_mapping;
 	};
 
 	class DescriptorPool;

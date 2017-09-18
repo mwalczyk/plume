@@ -203,14 +203,17 @@ int main()
 	// TODO: write a method in the DescriptorPool class that allocates a descriptor set from 
 	// a LayoutBuilder and keeps track of the number of active sets / per-descriptor resources
 	auto layout_builder = LayoutBuilder::create(device);
+	layout_builder->begin_descriptor_set_record(0);		// begin: set #0
 	layout_builder->add_next_binding(vk::DescriptorType::eUniformBuffer);
 	layout_builder->add_next_binding(vk::DescriptorType::eCombinedImageSampler);
-	vk::DescriptorSetLayout layout = layout_builder->build_layout();
+	layout_builder->end_descriptor_set_record();		// end: set #0
+
+	auto layouts = layout_builder->build_layouts();
 
 	vk::DescriptorSetAllocateInfo descriptor_set_allocate_info = { 
-		descriptor_pool->get_handle(),	// descriptor pool
-		1,								// number of sets to allocate
-		&layout							// descriptor set layout
+		descriptor_pool->get_handle(),			// descriptor pool
+		static_cast<uint32_t>(layouts.size()),	// number of sets to allocate
+		layouts.data()							// descriptor set layout
 	};
 	vk::DescriptorSet descriptor_set = device->get_handle().allocateDescriptorSets(descriptor_set_allocate_info)[0];
 
