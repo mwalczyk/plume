@@ -123,7 +123,6 @@ namespace graphics
 		//! has been called).
 		bool is_inside_render_pass() const { return m_is_inside_render_pass; }
 
-
 		//! Puts the command buffer back into its original state but does not necessarily interact
 		//! with the command pool from which it was allocated. Therefore, if the command buffer
 		//! dynamically allocates resources from the pool as it grows, it can hang on to those
@@ -168,6 +167,7 @@ namespace graphics
 		template<class T>
 		void update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const T& data)
 		{
+			// TODO: does this actually work?
 			m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), stage_flags, offset, size, &data);
 		}
 
@@ -195,13 +195,13 @@ namespace graphics
 
 		//! Clear a color image with the specified clear value.
 		void clear_color_image(const ImageRef& image, 
-			vk::ClearColorValue clear_value = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }, 
-			vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource());
+							   vk::ClearColorValue clear_value = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }, 
+							   vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource());
 
 		//! Clear a depth/stencil image with the specified clear value.
 		void clear_depth_image(const ImageRef& image,
-			vk::ClearDepthStencilValue clear_value = { 1.0f, 0 },
-			vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
+							   vk::ClearDepthStencilValue clear_value = { 1.0f, 0 },
+							   vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
 
 
 		//! Use an image memory barrier to transition an image from one layout to another.

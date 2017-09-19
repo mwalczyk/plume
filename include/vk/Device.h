@@ -133,10 +133,11 @@ namespace graphics
 
 		void one_time_submit(QueueType type, const CommandBufferRef& command_buffer);
 
-		void submit_with_semaphores(QueueType type, const CommandBufferRef& command_buffer,
-			const std::vector<SemaphoreRef>& wait,
-			const std::vector<SemaphoreRef>& signal,
-			const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput });
+		void submit_with_semaphores(QueueType type, 
+								    const CommandBufferRef& command_buffer,
+									const std::vector<SemaphoreRef>& wait,
+									const std::vector<SemaphoreRef>& signal,
+									const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput });
 
 		void present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait);
 		

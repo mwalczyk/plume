@@ -152,21 +152,11 @@ int main()
 	auto command_pool = CommandPool::create(device, QueueType::GRAPHICS);
 	auto temp_command_buffer = CommandBuffer::create(device, command_pool);
 
-	{
-		ScopedRecord scoped(temp_command_buffer);
-		temp_command_buffer->transition_image_layout(image_depth, image_depth->get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
-	}
-
-	device->one_time_submit(QueueType::GRAPHICS, temp_command_buffer);
-
-	temp_command_buffer->reset();
-
-	{
-		ScopedRecord scoped(temp_command_buffer);
-		temp_command_buffer->transition_image_layout(image_sdf_map, image_sdf_map->get_current_layout(), vk::ImageLayout::eGeneral);
-		temp_command_buffer->clear_color_image(image_sdf_map, clear::RED);
-	}
-
+	temp_command_buffer->begin();
+	temp_command_buffer->transition_image_layout(image_depth, image_depth->get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	temp_command_buffer->transition_image_layout(image_sdf_map, image_sdf_map->get_current_layout(), vk::ImageLayout::eGeneral);
+	temp_command_buffer->clear_color_image(image_sdf_map, clear::RED);
+	temp_command_buffer->end();
 	device->one_time_submit(QueueType::GRAPHICS, temp_command_buffer);
 
    /***********************************************************************************

@@ -240,9 +240,9 @@ namespace graphics
 			 * Some useful shortcuts - all of these call `polygon_mode()` and simply fill out the first parameter.
 			 *
 			 */
-			Options& filled() { polygon_mode(vk::PolygonMode::eFill); }
-			Options& wireframe() { polygon_mode(vk::PolygonMode::eLine); }
-			Options& points() { polygon_mode(vk::PolygonMode::ePoint); }
+			Options& filled() { return polygon_mode(vk::PolygonMode::eFill); }
+			Options& wireframe() { return polygon_mode(vk::PolygonMode::eLine); }
+			Options& points() { return polygon_mode(vk::PolygonMode::ePoint); }
 
 			//! Enable rasterizer discard, which forces the pipeline to ignore the entire fragment processing stage.
 			Options& enable_rasterizer_discard() { m_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE; return *this; }
