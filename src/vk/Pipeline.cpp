@@ -132,31 +132,28 @@ namespace graphics
 
 		// Group the shader create info structs together.
 		std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos;
-		bool found_vertex_shader = false;
-		bool found_tessellation_control_shader = false;
-		bool found_tessellation_evaluation_shader = false;
-		bool found_geometry_shader = false;
-		bool found_fragment_shader = false;
 
 		for (const auto& stage : options.m_shader_stages)
 		{
-			if (stage->get_stage() == vk::ShaderStageFlagBits::eVertex) found_vertex_shader = true;
-			if (stage->get_stage() == vk::ShaderStageFlagBits::eTessellationControl) found_tessellation_control_shader = true;
-			if (stage->get_stage() == vk::ShaderStageFlagBits::eTessellationEvaluation) found_tessellation_evaluation_shader = true;
-			if (stage->get_stage() == vk::ShaderStageFlagBits::eGeometry) found_geometry_shader = true;
-			if (stage->get_stage() == vk::ShaderStageFlagBits::eFragment) found_fragment_shader = true;
+			// Mark this shader stage as active.
+			m_shader_stage_active_mapping.at(stage->get_stage()) = true;
 
 			auto shader_stage_info = build_shader_stage_create_info(stage);
 			shader_stage_create_infos.push_back(shader_stage_info);
+
+			// Update the containers used by this pipeline to track push constant / descriptor usage.
 			add_push_constants_to_global_map(stage);
 			add_descriptors_to_global_map(stage);
 		}
-		if (!found_vertex_shader)
+
+		if (!m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eVertex))
 		{
 			throw std::runtime_error("At least one vertex shader stage is required to build a graphics pipeline");
 		}
+
 		if (options.m_input_assembly_state_create_info.topology == vk::PrimitiveTopology::ePatchList &&
-			!(found_tessellation_control_shader && found_tessellation_evaluation_shader))	// TODO: are tessellation evaluation shaders optional?
+			!(m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eTessellationControl) && 
+			  m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eTessellationEvaluation)))	// TODO: are tessellation evaluation shaders optional?
 		{
 			throw std::runtime_error("No tessellation control and/or tessellation evaluation shader were found, but the primitive topology\
 									  is set to vk::PrimitiveTopology::ePatchList");
@@ -174,7 +171,9 @@ namespace graphics
 		viewport_state_create_info.scissorCount = static_cast<uint32_t>(options.m_scissors.size());
 		viewport_state_create_info.viewportCount = static_cast<uint32_t>(options.m_viewports.size());
 
-		build_descriptor_set_layouts();
+		// TODO: there should be another constructor that takes a vector of descriptor set layouts as a parameter.
+		bool infer_layouts = true;
+		if (infer_layouts) build_descriptor_set_layouts();
 
 		// Get all of the values in the push constant ranges map. 
 		std::vector<vk::PushConstantRange> push_constant_ranges;
@@ -223,55 +222,6 @@ namespace graphics
 		device_shared->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
 	}
 
-	vk::PushConstantRange Pipeline::get_push_constants_member(const std::string& name) const
-	{
-		auto it = m_push_constants_mapping.find(name);
-
-		if (it == m_push_constants_mapping.end())
-		{
-			throw std::runtime_error("Push constant with name " + name + " not found");
-		}
-
-		return it->second;
-	}
-
-	vk::DescriptorSetLayout Pipeline::get_descriptor_set_layout(uint32_t set) const
-	{
-		auto it = m_descriptor_set_layouts_mapping.find(set);
-
-		if (it == m_descriptor_set_layouts_mapping.end())
-		{
-			std::ostringstream os;
-			os << "Descriptor set layout at set " << set << " not found";
-			throw std::runtime_error(os.str());
-		}
-
-		return it->second;
-	}
-
-	DescriptorPoolRef Pipeline::create_compatible_descriptor_pool(uint32_t set, uint32_t max_sets)
-	{
-		// First, make sure that a descriptor set with this index has been recorded.
-		if (m_descriptors_mapping.find(set) == m_descriptors_mapping.end())
-		{
-			return VK_NULL_HANDLE;
-		}
-
-		// Create a descriptor pool size structure for each of the descriptors in this set.
-		std::vector<vk::DescriptorPoolSize> descriptor_pool_sizes;
-		for (const auto& descriptor_set_layout_binding : m_descriptors_mapping[set])
-		{
-			vk::DescriptorPoolSize descriptor_pool_size;
-			descriptor_pool_size.descriptorCount = descriptor_set_layout_binding.descriptorCount;
-			descriptor_pool_size.type = descriptor_set_layout_binding.descriptorType;
-
-			descriptor_pool_sizes.push_back(descriptor_pool_size);
-		}
-
-		// Finally, create the descriptor pool from the list of descriptor pool size structures above.
-		return DescriptorPool::create(m_device, descriptor_pool_sizes, max_sets);
-	}
-
 	vk::PipelineShaderStageCreateInfo Pipeline::build_shader_stage_create_info(const ShaderModuleRef& module)
 	{
 		vk::PipelineShaderStageCreateInfo shader_stage_create_info;
@@ -291,22 +241,26 @@ namespace graphics
 
 		for (const auto& push_constant : module->get_push_constants())
 		{
+			if (push_constant.size > max_push_constants_size)
+			{
+				throw std::runtime_error("Push constant named " + push_constant.name + " exceeds the maximum size allowed\
+										  for a single push constant");
+			}
+
 			// If this push constant already exists in the mapping, simply update its stage flags.
 			auto it = m_push_constants_mapping.find(push_constant.name);
 			if (it != m_push_constants_mapping.end() &&
 				it->second.offset == push_constant.offset &&
 				it->second.size == push_constant.size)
 			{
-				// TODO: this isn't working
-				// it->second.stageFlags |= module->get_stage();
-				continue;
+				it->second.stageFlags |= module->get_stage();
 			}
 
 			// Otherwise, create a new entry for this push constant.
 			vk::PushConstantRange push_constant_range;
 			push_constant_range.offset = push_constant.offset;
 			push_constant_range.size = push_constant.size;
-			push_constant_range.stageFlags = vk::ShaderStageFlagBits::eAll; module->get_stage();
+			push_constant_range.stageFlags = module->get_stage(); //vk::ShaderStageFlagBits::eAll; 
 
 			m_push_constants_mapping.insert({ push_constant.name, push_constant_range });
 		}
@@ -316,19 +270,22 @@ namespace graphics
 	{
 		for (const auto& descriptor : module->get_descriptors())
 		{
-			// for every descriptor found in this shader stage
-			uint32_t set = descriptor.set;
+			// Iterate over every descriptor found in this shader stage.
+			uint32_t set = descriptor.layout_set;
 
-			auto it = m_descriptors_mapping.find(set);
-			if (it == m_descriptors_mapping.end())
+			if (m_descriptors_mapping.find(set) == m_descriptors_mapping.end())
 			{
 				std::vector<vk::DescriptorSetLayoutBinding> fresh_descriptor_set_layout_bindings = { descriptor.layout_binding };
 				m_descriptors_mapping.insert(std::make_pair(set, fresh_descriptor_set_layout_bindings));
 			}
 			else
 			{
-				// Only add this entry if it doesn't already exist in this set's list of descriptors.
-				auto& existing_descriptor_set_layout_bindings = (*it).second;
+				// If the descriptor at this binding doesn't already exist in this set's list of descriptors,
+				// add it to the vector of bindings associated with this set. Otherwise, it already exists, 
+				// so simply update its stage flags to account for the fact that this resource is used in multiple 
+				// shader stages.
+				auto& existing_descriptor_set_layout_bindings = m_descriptors_mapping.at(set);
+
 				auto it = std::find_if(existing_descriptor_set_layout_bindings.begin(), existing_descriptor_set_layout_bindings.end(),
 					[&](const vk::DescriptorSetLayoutBinding &tDescriptorSetLayoutBinding) 
 					{
@@ -338,6 +295,17 @@ namespace graphics
 				if (it == existing_descriptor_set_layout_bindings.end())
 				{
 					existing_descriptor_set_layout_bindings.push_back(descriptor.layout_binding);
+				}
+				else
+				{
+					// Update stage flags - for example, from:
+					//				
+					//				vk::ShaderStageFlagBits::eVertex 
+					// 
+					// To:
+					//
+					//				vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment
+					(*it).stageFlags |= module->get_stage();
 				}
 			}
 		}			

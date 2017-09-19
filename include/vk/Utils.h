@@ -101,6 +101,7 @@ namespace graphics
 			}
 		}
 
+		//! Retrieve a string representation of a particular descriptor type.
 		inline std::string descriptor_type_to_string(vk::DescriptorType descriptor_type)
 		{
 			switch (descriptor_type)	

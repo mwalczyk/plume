@@ -49,7 +49,7 @@ int main()
 
 	auto device = Device::create(physical_devices[0], surface);
 	auto queue_family_properties = device->get_physical_device_queue_family_properties();
-	std::cout << device << std::endl;
+	//std::cout << device << std::endl;
 
 	auto swapchain = Swapchain::create(device, surface, width, height);
 	auto swapchain_image_views = swapchain->get_image_view_handles();
@@ -204,10 +204,10 @@ int main()
 	const uint32_t binding_id_ubo = 0;
 	const uint32_t binding_id_cis = 1;
 	auto layout_builder = DescriptorSetLayoutBuilder::create(device);
-	layout_builder->begin_descriptor_set_record(set_id);										// BEG set 0
-	layout_builder->add_binding(vk::DescriptorType::eUniformBuffer, binding_id_ubo);			// --- binding 0
-	layout_builder->add_binding(vk::DescriptorType::eCombinedImageSampler, binding_id_cis);		// --- binding 1
-	layout_builder->end_descriptor_set_record();												// END set 0
+	layout_builder->begin_descriptor_set_record(set_id);				// BEG set 0
+	layout_builder->add_ubo(binding_id_ubo);							// --- binding 0
+	layout_builder->add_cis(binding_id_cis);							// --- binding 1
+	layout_builder->end_descriptor_set_record();						// END set 0
 
 	vk::DescriptorSet descriptor_set = descriptor_pool->allocate_descriptor_sets(layout_builder, { set_id })[0];
 

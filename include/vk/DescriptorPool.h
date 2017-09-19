@@ -69,7 +69,7 @@ namespace graphics
 			m_is_recording(false)
 		{
 		}
-		
+
 		//! Begin recording bindings into a new set.
 		void begin_descriptor_set_record(uint32_t set)
 		{
@@ -86,10 +86,10 @@ namespace graphics
 		//! Adds a descriptor to the set at the current binding. By default, it is assumed that the descriptor
 		//! is not an array (`count` is 1) and will be accessed by all shader stages in the pipeline. This 
 		//! function must be called between `begin_descriptor_set_record()` and `end_descriptor_set_record()`.
-		void add_binding(vk::DescriptorType type, 
-					     uint32_t binding = 0, 
-						 uint32_t count = 1, 
-						 vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		void add_binding(vk::DescriptorType type,
+			uint32_t binding,
+			uint32_t count = 1,
+			vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
 		{
 			if (!m_is_recording)
 			{
@@ -104,6 +104,41 @@ namespace graphics
 				stages,			// shader usage stages
 				nullptr			// immutable samplers 
 			});
+		}
+
+		/* 
+		 *
+		 * Some useful shortcuts - all of these call `add_binding()` and simply fill out the first parameter.
+		 *
+		 */
+		void add_ubo(uint32_t binding, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		{
+			add_binding(vk::DescriptorType::eUniformBuffer, binding, count, stages);
+		}
+
+		void add_ubo_dynamic(uint32_t binding, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		{
+			add_binding(vk::DescriptorType::eUniformBufferDynamic, binding, count, stages);
+		}
+
+		void add_ssbo(uint32_t binding, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		{
+			add_binding(vk::DescriptorType::eStorageBuffer, binding, count, stages);
+		}
+
+		void add_ssbo_dynamic(uint32_t binding, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		{
+			add_binding(vk::DescriptorType::eStorageBufferDynamic, binding, count, stages);
+		}
+
+		void add_tbo(uint32_t binding, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		{
+			add_binding(vk::DescriptorType::eUniformTexelBuffer, binding, count, stages);
+		}
+
+		void add_cis(uint32_t binding, uint32_t count = 1, vk::ShaderStageFlags stages = vk::ShaderStageFlagBits::eAll)
+		{
+			add_binding(vk::DescriptorType::eCombinedImageSampler, binding, count, stages);
 		}
 
 		//! Uses all recorded descriptor sets and their associated layout bindings to create a vector of 
@@ -168,7 +203,10 @@ namespace graphics
 		}
 
 		//! Returns the number of descriptor sets that have been recorded.
-		size_t get_num_sets() const { return m_descriptor_sets_mapping.size(); }
+		size_t get_num_sets() const 
+		{ 
+			return m_descriptor_sets_mapping.size(); 
+		}
 
 		//! Returns the number of descriptor set layout bindings that have been recorded into the desciptor set
 		//! at index `set`.
@@ -268,6 +306,24 @@ namespace graphics
 			return descriptor_type_to_count_mapping;
 		}
 
+		//! Returns the container that is used internally by this DescriptorSetLayoutBuilder to track
+		//! associations between descriptor sets and descriptor set layout bindings. In particular, each
+		//! key is the numeric index of a set. In a shader, this corresponds to:
+		//!
+		//!					layout (set = 0, binding = ...) ...
+		//!							^^^^^^^
+		//!
+		//! Each value is a vector of bindings. In a shader, this corresponds to:
+		//!
+		//!					layout (set = ..., binding = 0) ...
+		//!									   ^^^^^^^^^^^
+		//! 
+		//! Values are, in fact, vectors because each descriptor set can have many bindings.
+		const std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& get_descriptor_sets_mapping() const
+		{
+			return m_descriptor_sets_mapping;
+		}
+
 	private:
 
 		DeviceWeakRef m_device;
@@ -308,14 +364,24 @@ namespace graphics
 
 		vk::DescriptorPool get_handle() const { return m_descriptor_pool_handle; }
 
-		std::map<vk::DescriptorType, uint32_t> get_descriptor_type_to_count_available_mapping() const
+		//! Returns the maximum number of descriptor sets that can be safely allocated from this pool.
+		uint32_t get_max_sets() const { return m_max_sets; }
+
+		//! Returns the number of remaining descriptor sets that can be safely allocated from this pool. 
+		//! This will always be less than or equal to the value returned by `get_max_sets()`.
+		uint32_t get_available_sets() const { return m_available_sets; }
+
+		//! Returns a container that maps each descriptor type to an integer that represents the remaining 
+		//! number of descriptors of that type that can be safely allocated from this pool. If a particular
+		//! key has a value of 0, then no more descriptors of this type can be allocated from the pool.
+		const std::map<vk::DescriptorType, uint32_t>& get_descriptor_type_to_count_available_mapping() const
 		{
 			return m_descriptor_type_to_count_available_mapping;
 		}
 
 		//! Allocate one or more descriptor sets from the descriptor pool. The descriptor sets must have been previously 
 		//! recorded into the DescriptorSetLayoutBuilder. The vector of `set_indices` is a list of integers that specify which 
-		//! descriptor set layouts to allocate descriptor sets with. Each index should match one of the values that was passed  
+		//! descriptor set layouts to allocate descriptor sets for. Each index should match one of the values that was passed  
 		//! to the DescriptorSetLayoutBuilder's `begin_descriptor_set_record()` function.
 		//!
 		//! This allows you to allocate a subset of the descriptor sets that have been recorded into the DescriptorSetLayoutBuilder.
@@ -351,6 +417,10 @@ namespace graphics
 				// Update this pool's internal mapping structure to reflect the new allocation(s). In other 
 				// words, if this allocation requests 2 uniform buffers, subtract 2 from the current value
 				// associated with vk::DescriptorType::eUniformBuffer in the pool's mapping.
+				//
+				// If this number goes below zero for any descriptor type, we need to throw an error. Also,
+				// if the user has requested more sets than the `max_sets` parameter that was passed to the
+				// DescriptorPool's constructor, we need to throw an error.
 				auto descriptor_type_counts = builder->get_descriptor_type_to_count_mapping_for_set(set_index);
 				for (const auto& mapping : descriptor_type_counts)
 				{
@@ -365,9 +435,9 @@ namespace graphics
 					}
 				}
 
-				m_max_sets--;
+				m_available_sets--;
 
-				if (m_max_sets < 0)
+				if (m_available_sets < 0)
 				{
 					throw std::runtime_error("Attempting to allocate more descriptor sets than specified in the constructor for this DescriptorPool");
 				}

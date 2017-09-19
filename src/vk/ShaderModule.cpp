@@ -38,20 +38,25 @@ namespace graphics
 			size = rows * cols * sizeof(float);
 			break;
 		case spirv_cross::SPIRType::Double:
+			size = rows * cols * sizeof(double);
 			break;
 		case spirv_cross::SPIRType::Int:
 			size = rows * cols * sizeof(int);
 			break;
 		case spirv_cross::SPIRType::Int64:
-			size = rows * cols * sizeof(uint64_t);
+			size = rows * cols * sizeof(int64_t);
 			break;
 		case spirv_cross::SPIRType::UInt:
+			size = rows * cols * sizeof(unsigned int);
 			break;
 		case spirv_cross::SPIRType::UInt64:
+			size = rows * cols * sizeof(uint64_t);
 			break;
 		case spirv_cross::SPIRType::Boolean:
+			size = rows * cols * sizeof(bool);
 			break;
 		case spirv_cross::SPIRType::Char:
+			size = rows * cols * sizeof(char);
 			break;
 		case spirv_cross::SPIRType::AtomicCounter:
 			break;
@@ -131,7 +136,7 @@ namespace graphics
 		m_shader_stage = spv_to_vk_execution_mode(compiler_glsl.get_execution_model());
 		m_entry_points = compiler_glsl.get_entry_points();
 
-		// Push constants: note that there can only be one push constant block,
+		// Parse push constants. Note that there can only be one push constant block,
 		// so the outer for-loop below will only ever execute once.
 		for (const auto &resource : shader_resources.push_constant_buffers)
 		{
@@ -144,20 +149,27 @@ namespace graphics
 				push_constant.offset = range.offset;
 				push_constant.size = range.range;
 
+				if (push_constant.offset % 4 != 0 ||
+					push_constant.size % 4 != 0)
+				{
+					throw std::runtime_error("Push constant ranges must have an offset and size that is divisible by 4");
+				}
+
 				m_push_constants.emplace_back(push_constant);
 			}
 		}
 
-		// Stage inputs
+		// Parse stage inputs.
 		for (const auto& resource : shader_resources.stage_inputs)
 		{
 			auto type = compiler_glsl.get_type(resource.type_id);
-
+			
 			StageInput input;
 			input.layout_location = compiler_glsl.get_decoration(resource.id, spv::Decoration::DecorationLocation);
 			input.name = resource.name;
 			input.size = get_size_from_type(type, type.vecsize, 1);
 
+			//std::cout << "Stage input - location: " << input.layout_location << ", name: " << input.name << ", size: " << input.size << " (rows: " << type.vecsize << ", cols: " << type.columns << ")\n";
 			m_stage_inputs.emplace_back(input);
 		}
 
@@ -194,7 +206,7 @@ namespace graphics
 		// Subpass inputs
 		for (const auto &resource : shader_resources.subpass_inputs)
 		{
-			// TODO
+			resource_to_descriptor(compiler_glsl, resource, vk::DescriptorType::eInputAttachment);
 		}
 
 		// Storage buffers (SSBOs)
@@ -219,19 +231,19 @@ namespace graphics
 	void ShaderModule::resource_to_descriptor(const spirv_cross::CompilerGLSL& compiler, const spirv_cross::Resource& resource, vk::DescriptorType descriptor_type)
 	{
 		// TODO: parse the descriptor count (array size)
-		// auto full_type = compiler.get_type(resource.type_id);
-
+		auto full_type = compiler.get_type(resource.type_id);
+	
 		vk::DescriptorSetLayoutBinding descriptor_set_layout_binding;
 		descriptor_set_layout_binding.binding = compiler.get_decoration(resource.id, spv::Decoration::DecorationBinding);
 		descriptor_set_layout_binding.descriptorCount = 1;
 		descriptor_set_layout_binding.descriptorType = descriptor_type;
 		descriptor_set_layout_binding.pImmutableSamplers = nullptr;
-		descriptor_set_layout_binding.stageFlags = vk::ShaderStageFlagBits::eAll;
+		descriptor_set_layout_binding.stageFlags = vk::ShaderStageFlagBits::eAll; // TODO: for now, use `all` to prevent error messages - should be: m_shader_stage;
 		
 		Descriptor descriptor;
-		descriptor.layout_binding = descriptor_set_layout_binding;
+		descriptor.layout_set = compiler.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
 		descriptor.name = resource.name;
-		descriptor.set = compiler.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
+		descriptor.layout_binding = descriptor_set_layout_binding;
 
 		m_descriptors.push_back(descriptor);
 	}

@@ -52,10 +52,11 @@ namespace graphics
 
 		//! A struct representing a memmber within a push constants block inside of a GLSL shader. For example:
 		//!
-		//! layout (std430, push_constant) uniform PushConstants
-		//! {
-		//!		float time;		<--- this
-		//! } constants;
+		//!					layout (std430, push_constant) uniform push_constants
+		//!					{
+		//!						float time;		
+		//!							  ^^^^
+		//!					} constants;
 		//!
 		//! Note that there can only be one push constants block, but it can be shared across multiple shader
 		//! stages.
@@ -69,7 +70,7 @@ namespace graphics
 
 		//! A struct representing an input to a shader stage. For example:
 		//!
-		//! layout (location = 0) in vec3 inPosition;
+		//!					layout (location = 0) in vec3 in_position;
 		struct StageInput
 		{
 			uint32_t layout_location;
@@ -79,15 +80,16 @@ namespace graphics
 
 		//! A struct representing a descriptor inside of a GLSL shader. For example:
 		//!
-		//! layout (set = 0, binding = 1) uniform UniformBufferObject	<--- this
-		//! {
-		//!		mat4 model;
-		//!		mat4 view;
-		//!		mat4 projection
-		//! } ubo;
+		//!					layout (set = 0, binding = 1) uniform uniform_buffer_object	
+		//!														  ^^^^^^^^^^^^^^^^^^^^^
+		//!					{
+		//!						mat4 model;
+		//!						mat4 view;
+		//!						mat4 projection
+		//!					} ubo;
 		struct Descriptor
 		{
-			uint32_t set;
+			uint32_t layout_set;
 			std::string name;
 			vk::DescriptorSetLayoutBinding layout_binding;
 		};

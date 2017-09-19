@@ -220,19 +220,23 @@ namespace graphics
 		vk::PipelineBindPoint get_pipeline_bind_point() const { return vk::PipelineBindPoint::eGraphics; }
 
 		//! Returns a push constant range structure that holds information about the push constant with the given name.
-		vk::PushConstantRange get_push_constants_member(const std::string& name) const;
+		vk::PushConstantRange get_push_constants_member(const std::string& name) const
+		{
+			return m_push_constants_mapping.at(name);
+		}
 
 		//! Returns a descriptor set layout that holds information about the descriptor set with the given index.
-		vk::DescriptorSetLayout get_descriptor_set_layout(uint32_t set) const;
-
-		//! Given a descriptor set index, create and return a handle to a new descriptor pool whose size matches the combined 
-		//! size of all of the descriptors in that set. If there is no descriptor set with the given index, return a null handle.
-		DescriptorPoolRef create_compatible_descriptor_pool(uint32_t set, uint32_t max_sets = 1);
+		vk::DescriptorSetLayout get_descriptor_set_layout(uint32_t set) const
+		{
+			return m_descriptor_set_layouts_mapping.at(set);
+		}
 
 		friend std::ostream& operator<<(std::ostream& stream, const PipelineRef& pipeline);
 
 	private:
-
+		
+		//! Builds the struct required to create a new vk::ShaderModule handle. For now, we assume that the entry point for 
+		//! each shader module is always "main."
 		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(const ShaderModuleRef& module);
 
 		//! Given a shader module and shader stage, add all of the module's push constants to the pipeline object's global map.
@@ -251,6 +255,15 @@ namespace graphics
 		std::map<std::string, vk::PushConstantRange> m_push_constants_mapping;
 		std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> m_descriptors_mapping;
 		std::map<uint32_t, vk::DescriptorSetLayout> m_descriptor_set_layouts_mapping;
+
+		std::map<vk::ShaderStageFlagBits, bool> m_shader_stage_active_mapping
+		{
+			{ vk::ShaderStageFlagBits::eVertex, false },
+			{ vk::ShaderStageFlagBits::eTessellationControl, false },
+			{ vk::ShaderStageFlagBits::eTessellationEvaluation, false },
+			{ vk::ShaderStageFlagBits::eGeometry, false },
+			{ vk::ShaderStageFlagBits::eFragment, false }
+		};
 	};
 
 } // namespace graphics
