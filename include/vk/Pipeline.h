@@ -185,6 +185,18 @@ namespace graphics
 				return *this;
 			}
 
+			//! Set the operation used during depth testing.
+			Options& depth_compare_op(vk::CompareOp op) { m_depth_stencil_state_create_info.depthCompareOp = op; return *this; }
+
+			//! Define the range of values used in the depth bounds test.
+			Options& depth_bounds(float min, float max)
+			{
+				m_depth_stencil_state_create_info.depthBoundsTestEnable = VK_TRUE;
+				m_depth_stencil_state_create_info.minDepthBounds = min;
+				m_depth_stencil_state_create_info.maxDepthBounds = max;
+				return *this;
+			}
+
 			//! Set the number of control points per patch - note that this only matters if the pipeline contains a tessellation 
 			//! control and tessellation evaluation shader.
 			Options& patch_control_points(uint32_t control_points) { m_tessellation_state_create_info.patchControlPoints = control_points; return *this; }
@@ -213,11 +225,27 @@ namespace graphics
 			//! Configure frontface/backface culling.
 			Options& cull_mode(vk::CullModeFlags cull_mode_flags) { m_rasterization_state_create_info.cullMode = cull_mode_flags; return *this; }
 			
+			//! Sets the winding mode to counter-clockwise. By default, it is assumed that the winding mode of all polygons 
+			//! is clockwise.
+			Options& front_face_ccw() { m_rasterization_state_create_info.frontFace = vk::FrontFace::eCounterClockwise; return *this; }
+
 			//! Set the line width - only applies if the primitive topology is set to a vk::PrimitiveTopology::eLine* variant.
 			Options& line_width(float line_width) { m_rasterization_state_create_info.lineWidth = line_width; return *this; }
 
 			//! Set the polygon mode, i.e. vk::PolygonMode::eFill or vk::PolygonMode::eLines.
 			Options& polygon_mode(vk::PolygonMode polygon_mode) { m_rasterization_state_create_info.polygonMode = polygon_mode; return *this; }
+
+			/*
+			 *
+			 * Some useful shortcuts - all of these call `polygon_mode()` and simply fill out the first parameter.
+			 *
+			 */
+			Options& filled() { polygon_mode(vk::PolygonMode::eFill); }
+			Options& wireframe() { polygon_mode(vk::PolygonMode::eLine); }
+			Options& points() { polygon_mode(vk::PolygonMode::ePoint); }
+
+			//! Enable rasterizer discard, which forces the pipeline to ignore the entire fragment processing stage.
+			Options& enable_rasterizer_discard() { m_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE; return *this; }
 
 			//! Vertex input binding descriptions tell the implementation how to fetch the vertex data from the GPU once it has 
 			//! been uploaded. It describes the rate at which data will be loaded from memory (per-vertex or per-instance). It also

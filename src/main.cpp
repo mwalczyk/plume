@@ -33,6 +33,7 @@ using namespace graphics;
 static const uint32_t width = 800;
 static const uint32_t height = 800;
 static const uint32_t msaa = 8;
+const std::string base_shader_path = "shaders/";
 
 int main()
 {
@@ -49,7 +50,6 @@ int main()
 
 	auto device = Device::create(physical_devices[0], surface);
 	auto queue_family_properties = device->get_physical_device_queue_family_properties();
-	//std::cout << device << std::endl;
 
 	auto swapchain = Swapchain::create(device, surface, width, height);
 	auto swapchain_image_views = swapchain->get_image_view_handles();
@@ -77,7 +77,7 @@ int main()
 	* Geometry, buffers, and pipeline
 	*
 	***********************************************************************************/ 
-	auto geometry = geom::Sphere(1.0f, { 0.0f, 0.0f, 0.0f }, 6, 6);// geom::Grid(1.0f, 1.0f, 24, 24);// 
+	auto geometry = geom::Sphere(1.0f, { 0.0f, 0.0f, 0.0f }, 6, 6);	// could be: geom::Grid(1.0f, 1.0f, 24, 24);
 	auto vbo = Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_packed_vertex_attributes());
 	auto ibo = Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
@@ -93,7 +93,6 @@ int main()
 	std::vector<vk::VertexInputBindingDescription> binds = geometry.get_vertex_input_binding_descriptions();
 	std::vector<vk::VertexInputAttributeDescription> attrs = geometry.get_vertex_input_attribute_descriptions();
 	
-	const std::string base_shader_path = "shaders/";
 	auto v_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_vert.spv"));
 	auto tc_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tesc.spv"));
 	auto te_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tese.spv"));
@@ -105,14 +104,12 @@ int main()
 		.viewports({ window->get_fullscreen_viewport() })
 		.scissors({ window->get_fullscreen_scissor_rect2d() })
 		.attach_shader_stages({ v_shader, tc_shader, te_shader, f_shader })
-		//.primitive_topology(geometry.get_topology())
-		.primitive_topology(vk::PrimitiveTopology::ePatchList)
+		.primitive_topology(vk::PrimitiveTopology::ePatchList) // could be: primitive_topology(geometry.get_topology())
 		.cull_mode(vk::CullModeFlagBits::eNone)
 		.enable_depth_test()
 		.samples(msaa)
-		.polygon_mode(vk::PolygonMode::ePoint);
+		.wireframe();
 	auto pipeline = GraphicsPipeline::create(device, render_pass, pipeline_options);
-	std::cout << pipeline << std::endl;
 
    /***********************************************************************************
 	*
