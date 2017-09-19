@@ -100,6 +100,36 @@ namespace graphics
 				return vk::SampleCountFlagBits::e1;
 			}
 		}
+
+		inline std::string descriptor_type_to_string(vk::DescriptorType descriptor_type)
+		{
+			switch (descriptor_type)	
+			{
+			case vk::DescriptorType::eSampler:
+				return "eSampler";
+			case vk::DescriptorType::eCombinedImageSampler:
+				return "eCombinedImageSampler";
+			case vk::DescriptorType::eSampledImage:
+				return "eSampledImage";
+			case vk::DescriptorType::eStorageImage:
+				return "eStorageImage";
+			case vk::DescriptorType::eUniformTexelBuffer:
+				return "eUniformTexelBuffer";
+			case vk::DescriptorType::eStorageTexelBuffer:
+				return "eStorageTexelBuffer";
+			case vk::DescriptorType::eUniformBuffer:
+				return "eUniformBuffer";
+			case vk::DescriptorType::eStorageBuffer:
+				return "eStorageBuffer";
+			case vk::DescriptorType::eUniformBufferDynamic:
+				return "eUniformBufferDynamic";
+			case vk::DescriptorType::eStorageBufferDynamic:
+				return "eStorageBufferDynamic";
+			case vk::DescriptorType::eInputAttachment:
+			default:
+				return "eInputAttachment";
+			}
+		}
 	
 	} // namespace utils
 

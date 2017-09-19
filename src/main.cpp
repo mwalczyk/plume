@@ -200,12 +200,10 @@ int main()
 		{ vk::DescriptorType::eCombinedImageSampler, 1 }
 	});
 
-	// TODO: write a method in the DescriptorPool class that allocates a descriptor set from 
-	// a LayoutBuilder and keeps track of the number of active sets / per-descriptor resources
 	const uint32_t set_id = 0;
 	const uint32_t binding_id_ubo = 0;
 	const uint32_t binding_id_cis = 1;
-	auto layout_builder = LayoutBuilder::create(device);
+	auto layout_builder = DescriptorSetLayoutBuilder::create(device);
 	layout_builder->begin_descriptor_set_record(set_id);										// BEG set 0
 	layout_builder->add_binding(vk::DescriptorType::eUniformBuffer, binding_id_ubo);			// --- binding 0
 	layout_builder->add_binding(vk::DescriptorType::eCombinedImageSampler, binding_id_cis);		// --- binding 1

@@ -30,9 +30,22 @@ namespace graphics
 {
 
 	DescriptorPool::DescriptorPool(DeviceWeakRef device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets) :
-		m_device(device)
+		m_device(device),
+		m_descriptor_pool_sizes(descriptor_pool_sizes),
+		m_max_sets(max_sets)
 	{
 		DeviceRef device_shared = m_device.lock();
+
+		// Fill out the container that maps each descriptor type to the number of descriptors of that type
+		// that can be allocated from this descriptor pool across ALL future descriptor sets. This will be 
+		// used to track allocations from this pool.
+		for (const auto& descriptor_pool_size : m_descriptor_pool_sizes)
+		{
+			auto type = descriptor_pool_size.type;
+			auto count = descriptor_pool_size.descriptorCount;
+
+			m_descriptor_type_to_count_available_mapping.at(type) += count;
+		}
 
 		vk::DescriptorPoolCreateInfo descriptor_pool_create_info;
 		descriptor_pool_create_info.maxSets = max_sets;
