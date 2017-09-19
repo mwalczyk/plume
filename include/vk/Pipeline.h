@@ -63,6 +63,74 @@ namespace graphics
 	{
 	public:
 
+		Pipeline(DeviceWeakRef device) :
+			m_device(device)
+		{}
+
+		virtual ~Pipeline()
+		{
+			DeviceRef device_shared = m_device.lock();
+
+			device_shared->get_handle().destroyPipeline(m_pipeline_handle);
+			device_shared->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
+		}
+
+		virtual vk::Pipeline get_handle() const final { return m_pipeline_handle; }
+		virtual vk::PipelineLayout get_pipeline_layout_handle() const final { return m_pipeline_layout_handle; } 
+		virtual vk::PipelineBindPoint get_pipeline_bind_point() const = 0;
+
+		//! Returns a push constant range structure that holds information about the push constant with the given name.
+		virtual vk::PushConstantRange get_push_constants_member(const std::string& name) const final
+		{
+			return m_push_constants_mapping.at(name);
+		}
+
+		//! Returns a descriptor set layout that holds information about the descriptor set with the given index.
+		virtual vk::DescriptorSetLayout get_descriptor_set_layout(uint32_t set) const final
+		{
+			return m_descriptor_set_layouts_mapping.at(set);
+		}
+
+		//! Returns `true` if this pipeline owns any descriptor set layouts and `false` otherwise. If a pipeline
+		//! is told to infer its own layout during construction, it will examine all of the resources used by its
+		//! shader modules and create an appropriate pipeline layout.
+		bool has_cached_layouts() { return m_descriptor_set_layouts_mapping.size() > 0; }
+
+		friend std::ostream& operator<<(std::ostream& stream, const PipelineRef& pipeline);
+
+	protected:
+
+		//! Builds the struct required to create a new vk::ShaderModule handle. For now, we assume that the entry point for 
+		//! each shader module is always "main."
+		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(const ShaderModuleRef& module);
+
+		//! Given a shader module and shader stage, add all of the module's push constants to the pipeline object's global map.
+		void add_push_constants_to_global_map(const ShaderModuleRef& module);
+
+		//! Given a shader module and shader stage, add all of the module's descriptors to the pipeline object's global map.
+		void add_descriptors_to_global_map(const ShaderModuleRef& module);
+
+		//! Generate all of the descriptor set layout handles.		
+		void build_descriptor_set_layouts();
+
+		DeviceWeakRef m_device;
+		vk::Pipeline m_pipeline_handle;
+		vk::PipelineLayout m_pipeline_layout_handle;
+		std::map<std::string, vk::PushConstantRange> m_push_constants_mapping;
+		std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> m_descriptors_mapping;
+		std::map<uint32_t, vk::DescriptorSetLayout> m_descriptor_set_layouts_mapping;
+	};
+
+	class GraphicsPipeline;
+	using GraphicsPipelineRef = std::shared_ptr<GraphicsPipeline>;
+
+	class GraphicsPipeline : public Pipeline
+	{
+	public:
+
+		//! Helper function for constructing a pipeline color blend attachment state that corresponds to standard alpha blending.
+		static vk::PipelineColorBlendAttachmentState create_alpha_blending_attachment_state();
+
 		class Options
 		{
 		public:
@@ -88,10 +156,8 @@ namespace graphics
 			//! final_color = final_color & color_write_mask;
 			Options& color_blend_attachment_states(const std::vector<vk::PipelineColorBlendAttachmentState>& color_blend_attachment_states) 
 			{
-				// TODO: this will not work when a temporary vector is passed to the function.
-				m_color_blend_state_create_info.attachmentCount = static_cast<uint32_t>(color_blend_attachment_states.size());
-				m_color_blend_state_create_info.pAttachments = color_blend_attachment_states.data();
-				return *this; 
+				// TODO: right now, this doesn't do anything.
+				m_color_blend_attachment_states = color_blend_attachment_states; return *this;
 			}
 			
 			//! Set the logical operation for all framebuffer attachments. Note that if a logical operation is 
@@ -124,13 +190,7 @@ namespace graphics
 			Options& patch_control_points(uint32_t control_points) { m_tessellation_state_create_info.patchControlPoints = control_points; return *this; }
 
 			//! A limited amount of the pipeline state can be changed without recreating the entire pipeline.
-			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) 
-			{
-				// TODO: this will not work when a temporary vector is passed to the function.
-				m_dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
-				m_dynamic_state_create_info.pDynamicStates = dynamic_states.data();
-				return *this; 
-			}
+			Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) { m_dynamic_states = dynamic_states; return *this; }
 
 			//! Enable or disable primitive restart.
 			Options& primitive_restart(vk::Bool32 primitive_restart) { m_input_assembly_state_create_info.primitiveRestartEnable = primitive_restart; return *this; }
@@ -182,79 +242,44 @@ namespace graphics
 
 		private:
 
-			vk::PipelineColorBlendStateCreateInfo m_color_blend_state_create_info;
-			vk::PipelineDepthStencilStateCreateInfo m_depth_stencil_state_create_info;
-			vk::PipelineInputAssemblyStateCreateInfo m_input_assembly_state_create_info;
-			vk::PipelineMultisampleStateCreateInfo m_multisample_state_create_info;
-			vk::PipelineRasterizationStateCreateInfo m_rasterization_state_create_info;
-			vk::PipelineTessellationStateCreateInfo m_tessellation_state_create_info;
-			vk::PipelineDynamicStateCreateInfo m_dynamic_state_create_info;
+			vk::PipelineColorBlendStateCreateInfo		m_color_blend_state_create_info;	// TODO: this needs to be re-worked.
+			vk::PipelineDepthStencilStateCreateInfo		m_depth_stencil_state_create_info;
+			vk::PipelineInputAssemblyStateCreateInfo	m_input_assembly_state_create_info;
+			vk::PipelineMultisampleStateCreateInfo		m_multisample_state_create_info;
+			vk::PipelineRasterizationStateCreateInfo	m_rasterization_state_create_info;
+			vk::PipelineTessellationStateCreateInfo		m_tessellation_state_create_info;
 
-			std::vector<vk::VertexInputBindingDescription> m_vertex_input_binding_descriptions;
-			std::vector<vk::VertexInputAttributeDescription> m_vertex_input_attribute_descriptions;
-			std::vector<vk::Viewport> m_viewports;
-			std::vector<vk::Rect2D> m_scissors;
+			// For vk::Pipeline* structs that take a pointer to a struct(s) as a parameter, we need to actually make a 
+			// copy of those structs here, so as to avoid passing an invalid pointer to a temporary variable. For example, 
+			// a user could call `viewports()` with an initializer list in-line. However, we need the pointer to that data
+			// to remain valid until AFTER the pipeline has been created.
+
+			std::vector<vk::PipelineColorBlendAttachmentState>	m_color_blend_attachment_states;
+			std::vector<vk::DynamicState>						m_dynamic_states;
+			std::vector<vk::VertexInputBindingDescription>		m_vertex_input_binding_descriptions;
+			std::vector<vk::VertexInputAttributeDescription>	m_vertex_input_attribute_descriptions;
+			std::vector<vk::Viewport>							m_viewports;
+			std::vector<vk::Rect2D>								m_scissors;
+
 			std::vector<ShaderModuleRef> m_shader_stages;
 			uint32_t m_subpass_index;
 
-			friend class Pipeline;
+			friend class GraphicsPipeline;
 		};
 
-		//! Factory method for returning a new PipelineRef.
-		static PipelineRef create(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options()) 
+		//! Factory method for returning a new GraphicsPipelineRef.
+		static GraphicsPipelineRef create(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options())
 		{ 
-			return std::make_shared<Pipeline>(device, render_pass, options);
+			return std::make_shared<GraphicsPipeline>(device, render_pass, options);
 		}
 
-		//! Helper function for constructing a pipeline color blend attachment state that corresponds to standard alpha blending.
-		static vk::PipelineColorBlendAttachmentState create_alpha_blending_attachment_state();
+		GraphicsPipeline(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options());
 
-		Pipeline(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options());
-		
-		~Pipeline();
-
-		vk::Pipeline get_handle() const { return m_pipeline_handle; }
-
-		vk::PipelineLayout get_pipeline_layout_handle() const { return m_pipeline_layout_handle; }
-
-		vk::PipelineBindPoint get_pipeline_bind_point() const { return vk::PipelineBindPoint::eGraphics; }
-
-		//! Returns a push constant range structure that holds information about the push constant with the given name.
-		vk::PushConstantRange get_push_constants_member(const std::string& name) const
-		{
-			return m_push_constants_mapping.at(name);
-		}
-
-		//! Returns a descriptor set layout that holds information about the descriptor set with the given index.
-		vk::DescriptorSetLayout get_descriptor_set_layout(uint32_t set) const
-		{
-			return m_descriptor_set_layouts_mapping.at(set);
-		}
-
-		friend std::ostream& operator<<(std::ostream& stream, const PipelineRef& pipeline);
+		vk::PipelineBindPoint get_pipeline_bind_point() const override { return vk::PipelineBindPoint::eGraphics; }
 
 	private:
-		
-		//! Builds the struct required to create a new vk::ShaderModule handle. For now, we assume that the entry point for 
-		//! each shader module is always "main."
-		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(const ShaderModuleRef& module);
 
-		//! Given a shader module and shader stage, add all of the module's push constants to the pipeline object's global map.
-		void add_push_constants_to_global_map(const ShaderModuleRef& module);
-
-		//! Given a shader module and shader stage, add all of the module's descriptors to the pipeline object's global map.
-		void add_descriptors_to_global_map(const ShaderModuleRef& module);
-
-		//! Generate all of the descriptor set layout handles.		
-		void build_descriptor_set_layouts();
-
-		DeviceWeakRef m_device;
 		RenderPassRef m_render_pass;
-		vk::Pipeline m_pipeline_handle;
-		vk::PipelineLayout m_pipeline_layout_handle;
-		std::map<std::string, vk::PushConstantRange> m_push_constants_mapping;
-		std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> m_descriptors_mapping;
-		std::map<uint32_t, vk::DescriptorSetLayout> m_descriptor_set_layouts_mapping;
 
 		std::map<vk::ShaderStageFlagBits, bool> m_shader_stage_active_mapping
 		{
@@ -264,6 +289,27 @@ namespace graphics
 			{ vk::ShaderStageFlagBits::eGeometry, false },
 			{ vk::ShaderStageFlagBits::eFragment, false }
 		};
+	};
+
+	class ComputePipeline;
+	using ComputePipelineRef = std::shared_ptr<ComputePipeline>;
+
+	class ComputePipeline : public Pipeline
+	{
+	public:
+
+		//! Factory method for returning a new ComputePipelineRef.
+		static ComputePipelineRef create(DeviceWeakRef device, const ShaderModuleRef& compute_shader_module)
+		{
+			return std::make_shared<ComputePipeline>(device, compute_shader_module);
+		}
+
+		ComputePipeline(DeviceWeakRef device, const ShaderModuleRef& compute_shader_module);
+
+		vk::PipelineBindPoint get_pipeline_bind_point() const override { return vk::PipelineBindPoint::eCompute; }
+
+	private:
+
 	};
 
 } // namespace graphics

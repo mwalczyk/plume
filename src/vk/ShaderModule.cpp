@@ -29,6 +29,21 @@
 namespace graphics
 {
 
+	static const std::string spectrum_uniform_names[] =
+	{
+		"sp_time",
+		"sp_resolution",
+		"sp_mouse"
+	};
+
+	static const std::string spectrum_input_names[] =
+	{
+		"sp_position",
+		"sp_color",
+		"sp_normal",
+		"sp_texcoord"
+	};
+
 	static uint32_t get_size_from_type(spirv_cross::SPIRType base_type, uint32_t rows, uint32_t cols)
 	{
 		uint32_t size = 0;

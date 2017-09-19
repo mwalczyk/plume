@@ -99,7 +99,7 @@ int main()
 	auto te_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tese.spv"));
 	auto f_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_frag.spv"));
 	
-	auto pipeline_options = Pipeline::Options()
+	auto pipeline_options = GraphicsPipeline::Options()
 		.vertex_input_binding_descriptions(binds)
 		.vertex_input_attribute_descriptions(attrs)
 		.viewports({ window->get_fullscreen_viewport() })
@@ -111,7 +111,7 @@ int main()
 		.enable_depth_test()
 		.samples(msaa)
 		.polygon_mode(vk::PolygonMode::ePoint);
-	auto pipeline = Pipeline::create(device, render_pass, pipeline_options);
+	auto pipeline = GraphicsPipeline::create(device, render_pass, pipeline_options);
 	std::cout << pipeline << std::endl;
 
    /***********************************************************************************
