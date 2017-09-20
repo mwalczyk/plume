@@ -1,4 +1,4 @@
-# Spectrum
+# Plume
 
 ![Logo](https://github.com/mwalczyk/VulkanToolkit/blob/master/logo.png)
 
@@ -6,7 +6,7 @@ A work-in-progress framework and abstraction layer around the Vulkan graphics AP
 
 ## Cloning
 
-Spectrum uses several submodules:
+Plume uses several submodules:
 - [shaderc](https://github.com/google/shaderc) for runtime shader compilation (from GLSL to SPIR-V)
 - [glm](https://github.com/g-truc/glm) for mathematics
 - [spirv-cross](https://github.com/KhronosGroup/SPIRV-Cross) for shader reflection
@@ -25,7 +25,7 @@ More information on working with submodules can be found [here](https://github.c
 
 ## Inspiration
 
-Spectrum's syntax, structure, and design patterns were greatly influenced by several major
+Plume's syntax, structure, and design patterns were greatly influenced by several major
 open source projects:
 
 - [Cinder](https://github.com/cinder/Cinder)
@@ -36,9 +36,9 @@ open source projects:
 - [Anvil](https://github.com/GPUOpen-LibrariesAndSDKs/Anvil)
 - [Vookoo](https://github.com/andy-thomason/Vookoo)
 
-See the [Spectrum C++ style guide](https://github.com/mwalczyk/spectrum_cpp_style) for more information.
+See the [Plume C++ style guide](https://github.com/mwalczyk/plume_cpp_style) for more information.
 
 ## Roadmap:
 
-Many parts of Vulkan have not been implemented in Spectrum. As such, this project should be considered
+Many parts of Vulkan have not been implemented in Plume. As such, this project should be considered
 experimental and breaking changes will happen often.
