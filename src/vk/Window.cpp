@@ -31,7 +31,7 @@ namespace graphics
 
 	Window::Options::Options()
 	{
-		m_title = "Spectrum Application";
+		m_title = "Plume Application";
 		m_resizeable = false;
 		m_mode = WindowMode::WINDOW_MODE_BORDERS;
 	}

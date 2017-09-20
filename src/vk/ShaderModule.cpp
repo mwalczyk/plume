@@ -29,19 +29,19 @@
 namespace graphics
 {
 
-	static const std::string spectrum_uniform_names[] =
+	static const std::string plume_uniform_names[] =
 	{
-		"sp_time",
-		"sp_resolution",
-		"sp_mouse"
+		"pl_time",
+		"pl_resolution",
+		"pl_mouse"
 	};
 
-	static const std::string spectrum_input_names[] =
+	static const std::string plume_input_names[] =
 	{
-		"sp_position",
-		"sp_color",
-		"sp_normal",
-		"sp_texcoord"
+		"pl_position",
+		"pl_color",
+		"pl_normal",
+		"pl_texcoord"
 	};
 
 	static uint32_t get_size_from_type(spirv_cross::SPIRType base_type, uint32_t rows, uint32_t cols)

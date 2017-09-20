@@ -29,14 +29,14 @@
 #define NOMINMAX
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-	#define SPECTRUM_MSW
+	#define PLUME_MSW
 #elif defined(linux) || defined(__linux) || defined(__linux__)
-	#define SPECTRUM_LINUX
+	#define PLUME_LINUX
 #endif
 
-#if defined(SPECTRUM_MSW)
+#if defined(PLUME_MSW)
 	#define VK_USE_PLATFORM_WIN32_KHR
-#elif defined(SPECTRUM_LINUX)
+#elif defined(PLUME_LINUX)
 	#define VK_USE_PLATFORM_XCB_KHR
 #endif
 

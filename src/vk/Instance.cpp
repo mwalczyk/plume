@@ -34,8 +34,8 @@ namespace graphics
 		m_application_info.apiVersion = VK_API_VERSION_1_0;
 		m_application_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		m_application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		m_application_info.pApplicationName = "Spectrum Application";
-		m_application_info.pEngineName = "Spectrum Engine";
+		m_application_info.pApplicationName = "Plume Application";
+		m_application_info.pEngineName = "Plume Engine";
 
 		m_debug_report_flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
 	}
@@ -82,9 +82,9 @@ namespace graphics
 		}
 
 		// Append the instance extensions required by the windowing system.
-#if defined(SPECTRUM_MSW)
+#if defined(PLUME_MSW)
 		m_required_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#elif defined(SPECTRUM_LINUX)
+#elif defined(PLUME_LINUX)
 		m_required_extensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 #endif
 		m_required_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
