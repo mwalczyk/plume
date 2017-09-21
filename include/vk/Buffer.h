@@ -50,8 +50,6 @@ namespace graphics
 	{
 	public:
 
-		static const vk::BufferUsageFlags BUFFER_USAGE_ALL;
-
 		//! Factory method for returning a new BufferRef that will be filled with the supplied vector of data.
 		template<class T>
 		static BufferRef create(DeviceWeakRef device, 

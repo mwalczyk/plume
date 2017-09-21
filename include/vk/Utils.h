@@ -50,14 +50,45 @@ namespace graphics
 		//! A `count` of 4 would return vk::SampleCountFlagBits::e4, for example.
 		vk::SampleCountFlagBits sample_count_to_flags(uint32_t count);
 		
+		namespace flags
+		{
+
+			inline vk::BufferUsageFlags buffer_usage_all() 
+			{
+				return vk::BufferUsageFlagBits::eIndexBuffer |
+					   vk::BufferUsageFlagBits::eIndirectBuffer |
+					   vk::BufferUsageFlagBits::eStorageBuffer |
+					   vk::BufferUsageFlagBits::eStorageTexelBuffer |
+					   vk::BufferUsageFlagBits::eTransferDst |
+					   vk::BufferUsageFlagBits::eTransferSrc |
+				 	   vk::BufferUsageFlagBits::eUniformBuffer |
+					   vk::BufferUsageFlagBits::eUniformTexelBuffer |
+					   vk::BufferUsageFlagBits::eVertexBuffer;
+			}
+
+			inline vk::ImageUsageFlags image_usage_all()
+			{
+				return vk::ImageUsageFlagBits::eColorAttachment |
+					   vk::ImageUsageFlagBits::eDepthStencilAttachment |
+					   vk::ImageUsageFlagBits::eInputAttachment |
+					   vk::ImageUsageFlagBits::eSampled |
+					   vk::ImageUsageFlagBits::eStorage |
+					   vk::ImageUsageFlagBits::eTransferDst |
+					   vk::ImageUsageFlagBits::eTransferSrc |
+					   vk::ImageUsageFlagBits::eTransientAttachment;	
+			}
+
+		} // namespace flags
+
 		namespace clear_color
 		{
 
-			inline vk::ClearColorValue red()	{ return std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f }; }
-			inline vk::ClearColorValue green()	{ return std::array<float, 4>{ 0.0f, 1.0f, 0.0f, 1.0f }; }
-			inline vk::ClearColorValue blue()	{ return std::array<float, 4>{ 0.0f, 0.0f, 1.0f, 1.0f }; }
-			inline vk::ClearColorValue white()	{ return std::array<float, 4>{ 1.0f, 1.0f, 1.0f, 1.0f }; }
-			inline vk::ClearColorValue black()	{ return std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }; }
+			inline vk::ClearColorValue red(float alpha = 1.0f)				{ return std::array<float, 4>{ 1.0f, 0.0f, 0.0f, alpha }; }
+			inline vk::ClearColorValue green(float alpha = 1.0f)			{ return std::array<float, 4>{ 0.0f, 1.0f, 0.0f, alpha }; }
+			inline vk::ClearColorValue blue(float alpha = 1.0f)				{ return std::array<float, 4>{ 0.0f, 0.0f, 1.0f, alpha }; }
+			inline vk::ClearColorValue white(float alpha = 1.0f)			{ return std::array<float, 4>{ 1.0f, 1.0f, 1.0f, alpha }; }
+			inline vk::ClearColorValue black(float alpha = 1.0f)			{ return std::array<float, 4>{ 0.0f, 0.0f, 0.0f, alpha }; }
+			inline vk::ClearColorValue gray(float v, float alpha = 1.0f)	{ return std::array<float, 4>{ v, v, v, alpha }; }
 		
 		} // namespace clear_color
 

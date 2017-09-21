@@ -49,21 +49,6 @@ namespace graphics
 	{
 	public:
 
-		static const vk::ImageUsageFlags image_usage_all()
-		{
-			static const vk::ImageUsageFlags image_usage_all = 
-				vk::ImageUsageFlagBits::eColorAttachment |
-				vk::ImageUsageFlagBits::eDepthStencilAttachment |
-				vk::ImageUsageFlagBits::eInputAttachment |
-				vk::ImageUsageFlagBits::eSampled |
-				vk::ImageUsageFlagBits::eStorage |
-				vk::ImageUsageFlagBits::eTransferDst |
-				vk::ImageUsageFlagBits::eTransferSrc |
-				vk::ImageUsageFlagBits::eTransientAttachment;
-
-			return image_usage_all;
-		}
-
 		//! Factory method for returning a new ImageRef whose device local memory store will be empty.
 		static ImageRef create(DeviceWeakRef device, 
 							   vk::ImageType image_type, 
