@@ -29,87 +29,92 @@
 namespace graphics
 {
 
-	static const std::string plume_uniform_names[] =
+	namespace 
 	{
-		"pl_time",
-		"pl_resolution",
-		"pl_mouse"
-	};
 
-	static const std::string plume_input_names[] =
-	{
-		"pl_position",
-		"pl_color",
-		"pl_normal",
-		"pl_texcoord"
-	};
-
-	static uint32_t get_size_from_type(spirv_cross::SPIRType base_type, uint32_t rows, uint32_t cols)
-	{
-		uint32_t size = 0;
-		switch (base_type.basetype)
+		const std::string plume_uniform_names[] =
 		{
-		case spirv_cross::SPIRType::Float:
-			size = rows * cols * sizeof(float);
-			break;
-		case spirv_cross::SPIRType::Double:
-			size = rows * cols * sizeof(double);
-			break;
-		case spirv_cross::SPIRType::Int:
-			size = rows * cols * sizeof(int);
-			break;
-		case spirv_cross::SPIRType::Int64:
-			size = rows * cols * sizeof(int64_t);
-			break;
-		case spirv_cross::SPIRType::UInt:
-			size = rows * cols * sizeof(unsigned int);
-			break;
-		case spirv_cross::SPIRType::UInt64:
-			size = rows * cols * sizeof(uint64_t);
-			break;
-		case spirv_cross::SPIRType::Boolean:
-			size = rows * cols * sizeof(bool);
-			break;
-		case spirv_cross::SPIRType::Char:
-			size = rows * cols * sizeof(char);
-			break;
-		case spirv_cross::SPIRType::AtomicCounter:
-			break;
-		case spirv_cross::SPIRType::Sampler:
-			break;
-		case spirv_cross::SPIRType::SampledImage:
-			break;
-		case spirv_cross::SPIRType::Struct:
-			break;
-		default:
-			// Unknown type
-			break;
+			"pl_time",
+			"pl_resolution",
+			"pl_mouse"
+		};
+
+		const std::string plume_input_names[] =
+		{
+			"pl_position",
+			"pl_color",
+			"pl_normal",
+			"pl_texcoord"
+		};
+
+		uint32_t get_size_from_type(spirv_cross::SPIRType base_type, uint32_t rows, uint32_t cols)
+		{
+			uint32_t size = 0;
+			switch (base_type.basetype)
+			{
+			case spirv_cross::SPIRType::Float:
+				size = rows * cols * sizeof(float);
+				break;
+			case spirv_cross::SPIRType::Double:
+				size = rows * cols * sizeof(double);
+				break;
+			case spirv_cross::SPIRType::Int:
+				size = rows * cols * sizeof(int);
+				break;
+			case spirv_cross::SPIRType::Int64:
+				size = rows * cols * sizeof(int64_t);
+				break;
+			case spirv_cross::SPIRType::UInt:
+				size = rows * cols * sizeof(unsigned int);
+				break;
+			case spirv_cross::SPIRType::UInt64:
+				size = rows * cols * sizeof(uint64_t);
+				break;
+			case spirv_cross::SPIRType::Boolean:
+				size = rows * cols * sizeof(bool);
+				break;
+			case spirv_cross::SPIRType::Char:
+				size = rows * cols * sizeof(char);
+				break;
+			case spirv_cross::SPIRType::AtomicCounter:
+				break;
+			case spirv_cross::SPIRType::Sampler:
+				break;
+			case spirv_cross::SPIRType::SampledImage:
+				break;
+			case spirv_cross::SPIRType::Struct:
+				break;
+			default:
+				// Unknown type
+				break;
+			}
+
+			return size;
 		}
 
-		return size;
-	}
-
-	static vk::ShaderStageFlagBits spv_to_vk_execution_mode(spv::ExecutionModel mode)
-	{
-		switch (mode)
+		vk::ShaderStageFlagBits spv_to_vk_execution_mode(spv::ExecutionModel mode)
 		{
-		case spv::ExecutionModelVertex:
-			return vk::ShaderStageFlagBits::eVertex;
-		case spv::ExecutionModelFragment:
-			return vk::ShaderStageFlagBits::eFragment;
-		case spv::ExecutionModelTessellationControl:
-			return vk::ShaderStageFlagBits::eTessellationControl;
-		case spv::ExecutionModelTessellationEvaluation:
-			return vk::ShaderStageFlagBits::eTessellationEvaluation;
-		case spv::ExecutionModelGeometry:
-			return vk::ShaderStageFlagBits::eGeometry;
-		case spv::ExecutionModelGLCompute:
-		case spv::ExecutionModelKernel:
-			return vk::ShaderStageFlagBits::eCompute;
-		default:
-			break;
+			switch (mode)
+			{
+			case spv::ExecutionModelVertex:
+				return vk::ShaderStageFlagBits::eVertex;
+			case spv::ExecutionModelFragment:
+				return vk::ShaderStageFlagBits::eFragment;
+			case spv::ExecutionModelTessellationControl:
+				return vk::ShaderStageFlagBits::eTessellationControl;
+			case spv::ExecutionModelTessellationEvaluation:
+				return vk::ShaderStageFlagBits::eTessellationEvaluation;
+			case spv::ExecutionModelGeometry:
+				return vk::ShaderStageFlagBits::eGeometry;
+			case spv::ExecutionModelGLCompute:
+			case spv::ExecutionModelKernel:
+				return vk::ShaderStageFlagBits::eCompute;
+			default:
+				break;
+			}
 		}
-	}
+
+	} // anonymous
 
 	ShaderModule::ShaderModule(DeviceWeakRef device, const FileResource& resource) :
 		m_device(device)

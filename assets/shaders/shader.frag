@@ -59,10 +59,10 @@ void main()
 	float t = constants.time;
 	vec2 m = constants.mouse;
 
-    vec3 s = texture(sfd_map, vec3(te_texcoord, 0.0)).rgb;
+    //vec3 s = texture(sfd_map, vec3(te_texcoord, 0.0)).rgb;
 
     float p = pow(te_noise, 0.025);
-	o_color = vec4(s, 1.0);
+	o_color = vec4(vec3(p), 1.0);
 }
 
 // const float pi = 3.141592653589793;

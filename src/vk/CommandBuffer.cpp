@@ -170,7 +170,11 @@ namespace graphics
 		m_command_buffer_handle.clearDepthStencilImage(image->get_handle(), image->get_current_layout(), clear_value, image_subresource_range);
 	}
 
-	void CommandBuffer::transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to)
+	void CommandBuffer::transition_image_layout(const ImageRef& image, 
+												vk::ImageLayout from, 
+												vk::ImageLayout to, 
+												QueueType src_queue, 
+												QueueType dst_queue)
 	{
 		vk::ImageMemoryBarrier image_memory_barrier;
 
@@ -211,12 +215,14 @@ namespace graphics
 			throw std::invalid_argument("Unsupported layout transition");
 		}
 
+		DeviceRef device_shared = m_device.lock();
+
 		// TODO: the image might be layered
-		image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		image_memory_barrier.dstQueueFamilyIndex = (src_queue == dst_queue) ? VK_QUEUE_FAMILY_IGNORED : device_shared->get_queue_family_index(src_queue);
 		image_memory_barrier.image = image->get_handle();
 		image_memory_barrier.newLayout = to;
 		image_memory_barrier.oldLayout = from;
-		image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		image_memory_barrier.srcQueueFamilyIndex = (src_queue == dst_queue) ? VK_QUEUE_FAMILY_IGNORED : device_shared->get_queue_family_index(src_queue);
 		image_memory_barrier.subresourceRange.aspectMask = utils::format_to_aspect_mask(image->get_format());
 		image_memory_barrier.subresourceRange.baseArrayLayer = 0;
 		image_memory_barrier.subresourceRange.baseMipLevel = 0;

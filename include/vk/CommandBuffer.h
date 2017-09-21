@@ -145,7 +145,7 @@ namespace graphics
 		void begin(vk::CommandBufferUsageFlags command_buffer_usage_flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 		//! Begin recording the commands for a render pass instance. 
-		void begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values = { vk::ClearColorValue(std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }) });
+		void begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values = { utils::clear_color::black() });
 
 		//! Advance to the current render pass' next subpass.
 		void next_subpass();
@@ -195,17 +195,24 @@ namespace graphics
 
 		//! Clear a color image with the specified clear value.
 		void clear_color_image(const ImageRef& image, 
-							   vk::ClearColorValue clear_value = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }, 
+							   vk::ClearColorValue clear_value = utils::clear_color::black(), 
 							   vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource());
 
 		//! Clear a depth/stencil image with the specified clear value.
 		void clear_depth_image(const ImageRef& image,
-							   vk::ClearDepthStencilValue clear_value = { 1.0f, 0 },
+							   vk::ClearDepthStencilValue clear_value = utils::clear_depth::depth_one(),
 							   vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
 
 
-		//! Use an image memory barrier to transition an image from one layout to another.
-		void transition_image_layout(const ImageRef& image, vk::ImageLayout from, vk::ImageLayout to);
+		//! Use an image memory barrier to transition an image from one layout to another. This function can also be 
+		//! used to transfer ownership from one queue family to another. Note that if `src_queue` and `dst_queue` are
+		//! the same, then the image barrier's `srcQueueFamilyIndex` and `dstQueueFamilyIndex` will be set to the special
+		//! value VK_QUEUE_FAMILY_IGNORED, meaning that there will be no transfer of ownership.
+		void transition_image_layout(const ImageRef& image, 
+									 vk::ImageLayout from, 
+									 vk::ImageLayout to, 
+									 QueueType src_queue = QueueType::GRAPHICS, 
+									 QueueType dst_queue = QueueType::GRAPHICS);
 
 		/* 
 		 * Common synchronization use cases, expressed as pipeline barriers.

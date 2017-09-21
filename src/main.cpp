@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Vk.h"
 #include "Geometry.h"
 
@@ -47,7 +49,7 @@ int main()
 
 	auto window = Window::create(instance, width, height);
 	auto surface = window->create_surface();
-
+	
 	auto device = Device::create(physical_devices[0], surface);
 	auto queue_family_properties = device->get_physical_device_queue_family_properties();
 
@@ -155,7 +157,7 @@ int main()
 	temp_command_buffer->begin();
 	temp_command_buffer->transition_image_layout(image_depth, image_depth->get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	temp_command_buffer->transition_image_layout(image_sdf_map, image_sdf_map->get_current_layout(), vk::ImageLayout::eGeneral);
-	temp_command_buffer->clear_color_image(image_sdf_map, clear::RED);
+	temp_command_buffer->clear_color_image(image_sdf_map, utils::clear_color::red());
 	temp_command_buffer->end();
 	device->one_time_submit(QueueType::GRAPHICS, temp_command_buffer);
 
@@ -232,7 +234,9 @@ int main()
 		// 1. multisample color attachment
 		// 2. resolve color attachment
 		// 3. depth/stencil attachment
-		std::vector<vk::ClearValue> clear_vals = { { clear::BLACK }, { clear::BLACK }, { clear::DEPTH_ONE } };
+		std::vector<vk::ClearValue> clear_vals = { { utils::clear_color::black() }, 
+												   { utils::clear_color::black() }, 
+												   { utils::clear_depth::depth_one() } };
 
 		// Set up a new command buffer and record draw calls.
 		auto command_buffer = CommandBuffer::create(device, command_pool);

@@ -27,7 +27,6 @@
 #pragma once
 
 #include "Buffer.h"
-#include "Colors.h"
 #include "CommandBuffer.h"
 #include "CommandPool.h"
 #include "DescriptorPool.h"

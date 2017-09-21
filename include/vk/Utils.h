@@ -27,6 +27,7 @@
 #pragma once
 
 #include <chrono>
+#include <iostream>
 
 #include "Platform.h"
 
@@ -37,101 +38,39 @@ namespace graphics
 	{
 
 		//! Determine whether or not an image format contains a depth component.
-		inline bool is_depth_format(vk::Format format)
-		{
-			return (format == vk::Format::eD16Unorm ||
-				format == vk::Format::eD16UnormS8Uint ||
-				format == vk::Format::eD24UnormS8Uint ||
-				format == vk::Format::eD32Sfloat ||
-				format == vk::Format::eD32SfloatS8Uint);
-		}
+		bool is_depth_format(vk::Format format);
 
 		//! Determine whether or not an image format contains a stencil component.
-		inline bool is_stencil_format(vk::Format format)
-		{
-			return (format == vk::Format::eD16UnormS8Uint ||
-				format == vk::Format::eD24UnormS8Uint ||
-				format == vk::Format::eD32SfloatS8Uint);
-		}
+		bool is_stencil_format(vk::Format format);
 
 		//! Translate an image format into the appropriate aspect mask flags.
-		inline vk::ImageAspectFlags format_to_aspect_mask(vk::Format format)
-		{
-			vk::ImageAspectFlags image_aspect_flags;
-
-			if (is_depth_format(format))
-			{
-				image_aspect_flags = vk::ImageAspectFlagBits::eDepth;
-				if (is_stencil_format(format))
-				{
-					image_aspect_flags |= vk::ImageAspectFlagBits::eStencil;
-				}
-			}
-			else
-			{
-				image_aspect_flags = vk::ImageAspectFlagBits::eColor;
-			}
-
-			return image_aspect_flags;
-		}
+		vk::ImageAspectFlags format_to_aspect_mask(vk::Format format);
 
 		//! Translates a sample count (integer) into the correspond vk::SampleCountFlagBits. 
 		//! A `count` of 4 would return vk::SampleCountFlagBits::e4, for example.
-		inline vk::SampleCountFlagBits sample_count_to_flags(uint32_t count)
+		vk::SampleCountFlagBits sample_count_to_flags(uint32_t count);
+		
+		namespace clear_color
 		{
-			switch (count)
-			{
-			case 1:
-				return vk::SampleCountFlagBits::e1;
-			case 2:
-				return vk::SampleCountFlagBits::e2;
-			case 4: 
-				return vk::SampleCountFlagBits::e4;
-			case 8:
-				return vk::SampleCountFlagBits::e8;
-			case 16:
-				return vk::SampleCountFlagBits::e16;
-			case 32:
-				return vk::SampleCountFlagBits::e32;
-			case 64:
-				return vk::SampleCountFlagBits::e64;
-			default:
-				std::cout << "Warning - the sample count passed to `sample_count_to_flags` was invalid: returning vk::SampleCountFlagBits::e1 \n";
-				return vk::SampleCountFlagBits::e1;
-			}
-		}
 
-		//! Retrieve a string representation of a particular descriptor type.
-		inline std::string descriptor_type_to_string(vk::DescriptorType descriptor_type)
+			inline vk::ClearColorValue red()	{ return std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f }; }
+			inline vk::ClearColorValue green()	{ return std::array<float, 4>{ 0.0f, 1.0f, 0.0f, 1.0f }; }
+			inline vk::ClearColorValue blue()	{ return std::array<float, 4>{ 0.0f, 0.0f, 1.0f, 1.0f }; }
+			inline vk::ClearColorValue white()	{ return std::array<float, 4>{ 1.0f, 1.0f, 1.0f, 1.0f }; }
+			inline vk::ClearColorValue black()	{ return std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }; }
+		
+		} // namespace clear_color
+
+		namespace clear_depth
 		{
-			switch (descriptor_type)	
-			{
-			case vk::DescriptorType::eSampler:
-				return "eSampler";
-			case vk::DescriptorType::eCombinedImageSampler:
-				return "eCombinedImageSampler";
-			case vk::DescriptorType::eSampledImage:
-				return "eSampledImage";
-			case vk::DescriptorType::eStorageImage:
-				return "eStorageImage";
-			case vk::DescriptorType::eUniformTexelBuffer:
-				return "eUniformTexelBuffer";
-			case vk::DescriptorType::eStorageTexelBuffer:
-				return "eStorageTexelBuffer";
-			case vk::DescriptorType::eUniformBuffer:
-				return "eUniformBuffer";
-			case vk::DescriptorType::eStorageBuffer:
-				return "eStorageBuffer";
-			case vk::DescriptorType::eUniformBufferDynamic:
-				return "eUniformBufferDynamic";
-			case vk::DescriptorType::eStorageBufferDynamic:
-				return "eStorageBufferDynamic";
-			case vk::DescriptorType::eInputAttachment:
-			default:
-				return "eInputAttachment";
-			}
-		}
-	
+
+			inline vk::ClearDepthStencilValue depth_zero()				{ return { 0.0f, 0 }; }
+			inline vk::ClearDepthStencilValue depth_one()				{ return { 1.0f, 0 }; }
+			inline vk::ClearDepthStencilValue depth_zero_stencil_one()	{ return { 0.0f, 1 }; }
+			inline vk::ClearDepthStencilValue depth_one_stencil_one()	{ return { 1.0f, 1 }; }
+
+		} // namespace clear_depth
+
 	} // namespace utils
 
 } // namespace graphics

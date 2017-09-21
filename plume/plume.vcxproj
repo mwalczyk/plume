@@ -203,6 +203,7 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\misc\Geometry.cpp" />
     <ClCompile Include="..\src\misc\ResourceManager.cpp" />
+    <ClCompile Include="..\src\misc\Utils.cpp" />
     <ClCompile Include="..\src\vk\Buffer.cpp" />
     <ClCompile Include="..\src\vk\CommandBuffer.cpp" />
     <ClCompile Include="..\src\vk\CommandPool.cpp" />
@@ -236,7 +237,6 @@
     <ClInclude Include="..\include\misc\Log.h" />
     <ClInclude Include="..\include\misc\ResourceManager.h" />
     <ClInclude Include="..\include\vk\Buffer.h" />
-    <ClInclude Include="..\include\vk\Colors.h" />
     <ClInclude Include="..\include\vk\CommandBuffer.h" />
     <ClInclude Include="..\include\vk\CommandPool.h" />
     <ClInclude Include="..\include\vk\DescriptorPool.h" />

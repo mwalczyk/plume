@@ -156,7 +156,7 @@ namespace graphics
 		device_create_info.queueCreateInfoCount = static_cast<uint32_t>(device_queue_create_infos.size());
 
 		m_device_handle = m_gpu_details.m_handle.createDevice(device_create_info);
-
+		
 		// Store handles to each of the newly created queues.
 		m_queue_families_mapping[QueueType::GRAPHICS].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::GRAPHICS].index, 0);
 		m_queue_families_mapping[QueueType::COMPUTE].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::COMPUTE].index, 0);
@@ -240,10 +240,11 @@ namespace graphics
 		return support_details; 
 	}
 
-	void Device::submit_with_semaphores(QueueType type, const CommandBufferRef& command_buffer,
-		const std::vector<SemaphoreRef>& wait,
-		const std::vector<SemaphoreRef>& signal,
-		const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags)
+	void Device::submit_with_semaphores(QueueType type, 
+									    const CommandBufferRef& command_buffer,
+										const std::vector<SemaphoreRef>& wait,
+										const std::vector<SemaphoreRef>& signal,
+										const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags)
 	{
 		// If the command buffer was (erroneously) left in a recorded state,
 		// end recording.
