@@ -30,12 +30,24 @@
 #include <iostream>
 
 #include "Platform.h"
+#include "Log.h"
 
 namespace graphics
 {
 
 	namespace utils
 	{
+
+		namespace app
+		{
+
+			//! Retrieve the number of seconds that have elapsed since the application started.
+			float get_elapsed_milliseconds();
+
+			//! Retrieve the number of seconds that have elapsed since the application started.
+			float get_elapsed_seconds();
+
+		} // namespace app
 
 		//! Determine whether or not an image format contains a depth component.
 		bool is_depth_format(vk::Format format);

@@ -27,7 +27,7 @@
 #pragma once
 
 #if defined(_DEBUG)
-#define SP_LOG_DEBUG(string, ...) printf(string, __VA_ARGS__)
+#define PL_LOG_DEBUG(string, ...) printf(string, __VA_ARGS__)
 #else
-#define SP_LOG_DEBUG(string, ...)
+#define PL_LOG_DEBUG(string, ...)
 #endif

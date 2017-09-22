@@ -18,50 +18,9 @@ layout(std430, push_constant) uniform push_constants
 	vec2 mouse;
 } constants;
 
-vec2 hash2(in vec2 p)
-{
-    p = vec2(dot(p, vec2(12.9898, 78.233)),
-             dot(p, vec2(139.234, 98.187)));
-
-    return fract(sin(p) * 43758.5453123) * 2.0 - 1.0;
-}
-
-vec2 quintic_hermine(in vec2 x)
-{
-    return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
-}
-
-float noise(in vec2 p)
-{
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-
-    // four corners
-    vec2 a = hash2(i + vec2(0.0, 0.0));
-    vec2 b = hash2(i + vec2(1.0, 0.0));
-    vec2 c = hash2(i + vec2(0.0, 1.0));
-    vec2 d = hash2(i + vec2(1.0, 1.0));
-
-    // interpolant
-    vec2 u = quintic_hermine(f);
-
-    // noise
-    float val = mix(mix(dot(a, f - vec2(0.0,0.0)),
-                        dot(b, f - vec2(1.0,0.0)), u.x),
-                    mix(dot(c, f - vec2(0.0,1.0)),
-                        dot(d, f - vec2(1.0,1.0)), u.x), u.y);
-
-    return val * 0.5 + 0.5;
-}
-
 void main()
 {
-	float t = constants.time;
-	vec2 m = constants.mouse;
-
-    //vec3 s = texture(sfd_map, vec3(te_texcoord, 0.0)).rgb;
-
-    float p = pow(te_noise, 0.025);
+    float p = pow(te_noise, 0.5);
 	o_color = vec4(vec3(p), 1.0);
 }
 

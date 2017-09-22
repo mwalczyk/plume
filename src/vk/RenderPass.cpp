@@ -29,6 +29,20 @@
 namespace graphics
 {
 
+	namespace
+	{
+
+		const std::map<AttachmentCategory, vk::ImageLayout> default_image_layouts = 
+		{
+			{ AttachmentCategory::CATEGORY_COLOR,			vk::ImageLayout::eColorAttachmentOptimal },
+			{ AttachmentCategory::CATEGORY_RESOLVE,			vk::ImageLayout::eColorAttachmentOptimal },
+			{ AttachmentCategory::CATEGORY_DEPTH_STENCIL,	vk::ImageLayout::eDepthStencilAttachmentOptimal },
+			{ AttachmentCategory::CATEGORY_INPUT,			vk::ImageLayout::eColorAttachmentOptimal },
+			{ AttachmentCategory::CATEGORY_PRESERVE,		vk::ImageLayout::eColorAttachmentOptimal }
+		};
+
+	} // anonymous
+
 	RenderPass::RenderPass(DeviceWeakRef device, const RenderPassBuilderRef& builder) :
 		m_device(device),
 		m_render_pass_builder(builder)
@@ -63,15 +77,6 @@ namespace graphics
 		// Find and create all attachment references corresponding to this subpass.
 		for (auto& subpass_record : builder->m_recorded_subpasses)
 		{
-			static const std::map<AttachmentCategory, vk::ImageLayout> default_image_layouts = 
-			{
-				{ AttachmentCategory::CATEGORY_COLOR,			vk::ImageLayout::eColorAttachmentOptimal },
-				{ AttachmentCategory::CATEGORY_RESOLVE,			vk::ImageLayout::eColorAttachmentOptimal },
-				{ AttachmentCategory::CATEGORY_DEPTH_STENCIL,	vk::ImageLayout::eDepthStencilAttachmentOptimal },
-				{ AttachmentCategory::CATEGORY_INPUT,			vk::ImageLayout::eColorAttachmentOptimal },
-				{ AttachmentCategory::CATEGORY_PRESERVE,		vk::ImageLayout::eColorAttachmentOptimal }
-			};
-
 			// Iterate over all of the possible attachment categories for this particular subpass.
 			// Each category is associated with a set of attachment names (strings). This mapping is
 			// maintained internally by the SubpassRecord struct. We use the static map above to allow

@@ -178,7 +178,11 @@ namespace graphics
 		{
 			auto pushConstantsMember = pipeline->get_push_constants_member(name);
 
-			m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), pushConstantsMember.stageFlags, pushConstantsMember.offset, pushConstantsMember.size, &data);
+			m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), 
+												  pushConstantsMember.stageFlags, 
+												  pushConstantsMember.offset, 
+												  pushConstantsMember.size, 
+												  &data);
 		}
 
 		//! Binds the specified descriptor sets.

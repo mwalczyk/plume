@@ -39,7 +39,7 @@ namespace graphics
 		vk::SharingMode sharing_mode = vk::SharingMode::eExclusive;
 		if (queues.size() > 1)
 		{
-			SP_LOG_DEBUG("This buffer is used by multiple queue families: setting its share mode to vk::SharingMode::eConcurrent\n");
+			PL_LOG_DEBUG("This buffer is used by multiple queue families: setting its share mode to vk::SharingMode::eConcurrent\n");
 			sharing_mode = vk::SharingMode::eConcurrent;
 		}
 

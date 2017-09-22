@@ -12,22 +12,6 @@ struct UniformBufferData
 	glm::mat4 projection;
 };
 
-// TODO: putting this in `utils.h` causes errors related to "multiply defined symbols"
-//! Retrieve the number of seconds that have elapsed since the application started.
-float get_elapsed_seconds()
-{
-	static auto start = std::chrono::high_resolution_clock::now();
-	auto current = std::chrono::high_resolution_clock::now();
-	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current - start).count() / 1000.0f;
-
-	return elapsed;
-} 
-
-void update_buffer_data()
-{
-
-}
-
 UniformBufferData ubo_data;
 
 using namespace graphics;
@@ -79,7 +63,7 @@ int main()
 	* Geometry, buffers, and pipeline
 	*
 	***********************************************************************************/ 
-	auto geometry = geom::Sphere(1.0f, { 0.0f, 0.0f, 0.0f }, 6, 6);	// could be: geom::Grid(1.0f, 1.0f, 24, 24);
+	auto geometry = geom::Sphere(1.0f, { 0.0f, 0.0f, 0.0f }, 12, 12);	// could be: geom::Grid(1.0f, 1.0f, 24, 24);
 	auto vbo = Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_packed_vertex_attributes());
 	auto ibo = Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
@@ -95,10 +79,10 @@ int main()
 	std::vector<vk::VertexInputBindingDescription> binds = geometry.get_vertex_input_binding_descriptions();
 	std::vector<vk::VertexInputAttributeDescription> attrs = geometry.get_vertex_input_attribute_descriptions();
 	
-	auto v_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_vert.spv"));
-	auto tc_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tesc.spv"));
-	auto te_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tese.spv"));
-	auto f_shader = ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_frag.spv"));
+	auto v_shader =		ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_vert.spv"));
+	auto tc_shader =	ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tesc.spv"));
+	auto te_shader =	ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tese.spv"));
+	auto f_shader =		ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_frag.spv"));
 	
 	auto pipeline_options = GraphicsPipeline::Options()
 		.vertex_input_binding_descriptions(binds)
@@ -110,7 +94,7 @@ int main()
 		.cull_mode(vk::CullModeFlagBits::eNone)
 		.enable_depth_test()
 		.samples(msaa)
-		.wireframe();
+		.points();
 	auto pipeline = GraphicsPipeline::create(device, render_pass, pipeline_options);
 
    /***********************************************************************************
@@ -222,7 +206,7 @@ int main()
 		window->poll_events();
 
 		// Update buffer data.
-		float angle = get_elapsed_seconds();
+		float angle = utils::app::get_elapsed_seconds();
 		ubo_data.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3{ 0.0f, 1.0f, 0.0f });
 		ubo_data.model = glm::rotate(ubo_data.model, angle * 0.5f, glm::vec3{ 1.0f, 0.0f, 0.0f });
 		ubo->upload_immediately(&ubo_data);
@@ -247,7 +231,7 @@ int main()
 			command_buffer->bind_pipeline(pipeline);
 			command_buffer->bind_vertex_buffers({ vbo });
 			command_buffer->bind_index_buffer(ibo);
-			command_buffer->update_push_constant_ranges(pipeline, "time", get_elapsed_seconds());
+			command_buffer->update_push_constant_ranges(pipeline, "time", utils::app::get_elapsed_seconds());
 			command_buffer->update_push_constant_ranges(pipeline, "mouse", window->get_mouse_position());
 			command_buffer->bind_descriptor_sets(pipeline, 0, { descriptor_set });
 			command_buffer->draw_indexed(static_cast<uint32_t>(geometry.num_indices()));
@@ -255,6 +239,7 @@ int main()
 		}
 		device->submit_with_semaphores(QueueType::GRAPHICS, command_buffer, { image_available_sem }, { render_complete_sem });
 		
+		// Wait for all work on this queue to finish.
 		device->wait_idle_queue(QueueType::GRAPHICS);
 
 		// Present the rendered image to the swapchain.

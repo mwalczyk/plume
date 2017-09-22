@@ -6,6 +6,24 @@ namespace graphics
 	namespace utils
 	{
 
+		namespace app
+		{
+
+			float get_elapsed_milliseconds()
+			{
+				static auto start = std::chrono::high_resolution_clock::now();
+				auto current = std::chrono::high_resolution_clock::now();
+				auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current - start).count();
+				return elapsed;
+			}
+
+			float get_elapsed_seconds()
+			{
+				return get_elapsed_milliseconds() / 1000.0f;
+			}
+
+		} // namespace app
+
 		bool is_depth_format(vk::Format format)
 		{
 			return (format == vk::Format::eD16Unorm ||
@@ -61,7 +79,7 @@ namespace graphics
 			case 64:
 				return vk::SampleCountFlagBits::e64;
 			default:
-				std::cout << "Warning - the sample count passed to `sample_count_to_flags` was invalid: returning vk::SampleCountFlagBits::e1 \n";
+				PL_LOG_DEBUG("The sample count passed to `sample_count_to_flags()` was invalid: returning vk::SampleCountFlagBits::e1\n");
 				return vk::SampleCountFlagBits::e1;
 			}
 		}
