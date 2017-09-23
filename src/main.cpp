@@ -15,6 +15,7 @@ struct UniformBufferData
 UniformBufferData ubo_data;
 
 using namespace graphics;
+using namespace fsys;
 
 static const uint32_t width = 800;
 static const uint32_t height = 800;

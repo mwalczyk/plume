@@ -29,74 +29,80 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-std::string ResourceManager::default_path = "../assets/";
-
-FileResource ResourceManager::load_file(const std::string& file_name)
+namespace fsys
 {
-	std::string path_to = default_path + file_name;
 
-	// Start reading at the end of the file to determine file size.
-	std::ifstream file(path_to, std::ios::ate | std::ios::binary);
+	std::string ResourceManager::default_path = "../assets/";
 
-	if (!file.is_open())
+	FileResource ResourceManager::load_file(const std::string& file_name)
 	{
-		throw std::runtime_error("Failed to load file: " + path_to);
+		std::string path_to = default_path + file_name;
+
+		// Start reading at the end of the file to determine file size.
+		std::ifstream file(path_to, std::ios::ate | std::ios::binary);
+
+		if (!file.is_open())
+		{
+			throw std::runtime_error("Failed to load file: " + path_to);
+		}
+
+		// After recording the file size, go back to the beginning of the file.
+		size_t total_size = static_cast<size_t>(file.tellg());
+		file.seekg(0);
+
+		// Read and close the file.
+		FileResource resource = { std::vector<uint8_t>(total_size) };
+		auto data = reinterpret_cast<char*>(resource.contents.data());
+		file.read(data, total_size);
+		file.close();
+
+		return resource;
 	}
 
-	// After recording the file size, go back to the beginning of the file.
-	size_t total_size = static_cast<size_t>(file.tellg());
-	file.seekg(0);
-
-	// Read and close the file.
-	FileResource resource = { std::vector<uint8_t>(total_size) };
-	auto data = reinterpret_cast<char*>(resource.contents.data());
-	file.read(data, total_size);
-	file.close();
-
-	return resource;
-}
-
-ImageResource ResourceManager::load_image(const std::string& file_name, bool force_channels)
-{
-	std::string path_to = default_path + file_name;
-
-	ImageResource resource;
-
-	// Read the image contents.
-	stbi_uc* pixels = stbi_load(path_to.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
-	if (!pixels)
+	ImageResource ResourceManager::load_image(const std::string& file_name, bool force_channels)
 	{
-		throw std::runtime_error("Failed to load image: " + path_to);
+		std::string path_to = default_path + file_name;
+
+		ImageResource resource;
+
+		// Read the image contents.
+		stbi_uc* pixels = stbi_load(path_to.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
+		if (!pixels)
+		{
+			throw std::runtime_error("Failed to load image: " + path_to);
+		}
+		if (force_channels)
+		{
+			resource.channels = 4;
+		}
+		resource.contents = std::vector<uint8_t>(pixels, pixels + resource.width * resource.height * resource.channels);
+
+		stbi_image_free(pixels);
+
+		return resource;
 	}
-	if (force_channels)
+
+	ImageResourceHDR ResourceManager::load_image_hdr(const std::string& file_name, bool force_channels)
 	{
-		resource.channels = 4;
+		std::string path_to = default_path + file_name;
+
+		ImageResourceHDR resource;
+
+		// Read the image contents.
+		float* pixels = stbi_loadf(path_to.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
+		if (!pixels)
+		{
+			throw std::runtime_error("Failed to load image: " + path_to);
+		}
+		if (force_channels)
+		{
+			resource.channels = 4;
+		}
+		resource.contents = std::vector<float>(pixels, pixels + resource.width * resource.height * resource.channels);
+
+		stbi_image_free(pixels);
+
+		return resource;
 	}
-	resource.contents = std::vector<uint8_t>(pixels, pixels + resource.width * resource.height * resource.channels);
 
-	stbi_image_free(pixels);
-
-	return resource;
-}
-
-ImageResourceHDR ResourceManager::load_image_hdr(const std::string& file_name, bool force_channels)
-{
-	std::string path_to = default_path + file_name;
-
-	ImageResourceHDR resource;
-
-	float* pixels = stbi_loadf(path_to.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
-	if (!pixels)
-	{
-		throw std::runtime_error("Failed to load image: " + path_to);
-	}
-	if (force_channels)
-	{
-		resource.channels = 4;
-	}
-	resource.contents = std::vector<float>(pixels, pixels + resource.width * resource.height * resource.channels);
-
-	stbi_image_free(pixels);
-
-	return resource;
-}
+} // namespace fsys

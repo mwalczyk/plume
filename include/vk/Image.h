@@ -70,13 +70,13 @@ namespace graphics
 		}
 
 		//! Factory method for returning a new ImageRef from an LDR image file.
-		static ImageRef create(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource)
+		static ImageRef create(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const fsys::ImageResource& resource)
 		{
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource);
 		}
 
 		//! Factory method for returning a new ImageRef from an HDR image file.
-		static ImageRef create(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource)
+		static ImageRef create(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const fsys::ImageResourceHDR& resource)
 		{
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource);
 		}
@@ -158,10 +158,10 @@ namespace graphics
 			m_device_memory->unmap();
 		}
 
-		Image(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResource& resource) :
+		Image(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const fsys::ImageResource& resource) :
 			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents) {}
 
-		Image(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const ImageResourceHDR& resource) :
+		Image(DeviceWeakRef device, vk::ImageType image_type, vk::ImageUsageFlags image_usage_flags, vk::Format format, const fsys::ImageResourceHDR& resource) :
 			Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, 1, resource.contents) {}
 
 		~Image();
@@ -200,10 +200,13 @@ namespace graphics
 
 		vk::Image get_handle() const { return m_image_handle; }
 
+		//! Returns the internal format of this image (for example, vk::Format::eB8G8R8A8Unorm).
 		vk::Format get_format() const { return m_format; }
 
+		//! Returns the current layout of the image.
 		vk::ImageLayout get_current_layout() const { return m_current_layout; }
 		
+		//! Returns the usage flag(s) that were used to create this image.
 		vk::ImageUsageFlags get_image_usage_flags() const { return m_image_usage_flags; }
 
 	private:
@@ -211,7 +214,28 @@ namespace graphics
 		//! Given the memory requirements of this image, allocate the appropriate type and size of device memory.
 		void initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags);
 
-		vk::ImageViewType image_view_type_from_parent() const;
+		bool is_image_view_type_compatible(vk::ImageViewType image_view_type)
+		{
+			switch (image_view_type)
+			{
+			case vk::ImageViewType::e1D:
+				break;
+			case vk::ImageViewType::e2D:
+				break;
+			case vk::ImageViewType::e3D:
+				break;
+			case vk::ImageViewType::eCube:
+				break;
+			case vk::ImageViewType::e1DArray:
+				break;
+			case vk::ImageViewType::e2DArray:
+				break;
+			case vk::ImageViewType::eCubeArray:
+				break;
+			default:
+				break;
+			}
+		}
 
 		DeviceWeakRef m_device;
 		DeviceMemoryRef m_device_memory;
@@ -277,12 +301,13 @@ namespace graphics
 		//! Factory method for returning a new ImageViewRef from a parent ImageRef and a
 		//! number of details related to a particular subresource range of the parent image.
 		static ImageViewRef create(DeviceWeakRef device, 
-			ImageRef image, 
-			uint32_t base_array_layer = 0, 
-			uint32_t layer_count = 1, 
-			uint32_t base_mip_level = 0,
-			uint32_t level_count = 1,
-			const vk::ComponentMapping& component_mapping = get_component_mapping_preset())
+								   ImageRef image, 
+								   vk::ImageViewType image_view_type = vk::ImageViewType::e2D,
+								   uint32_t base_array_layer = 0, 
+								   uint32_t layer_count = 1, 
+								   uint32_t base_mip_level = 0,
+								   uint32_t level_count = 1,
+								   const vk::ComponentMapping& component_mapping = get_component_mapping_preset())
 		{
 			vk::ImageSubresourceRange subresource_range = 
 			{
@@ -293,31 +318,34 @@ namespace graphics
 				layer_count
 			};
 
-			return std::make_shared<ImageView>(device, image, subresource_range, component_mapping);
+			return std::make_shared<ImageView>(device, image, image_view_type, subresource_range, component_mapping);
 		}
 
 		//! Factory method for returning a new ImageViewRef from a parent ImageRef and a 
 		//! vk::ImageSubresourceRange.
 		static ImageViewRef create(DeviceWeakRef device, 
-			ImageRef image, 
-			const vk::ImageSubresourceRange& subresource_range,
-			const vk::ComponentMapping& component_mapping = get_component_mapping_preset())
+								   ImageRef image, 
+								   vk::ImageViewType image_view_type = vk::ImageViewType::e2D,
+								   const vk::ImageSubresourceRange& subresource_range = Image::build_single_layer_subresource(),
+								   const vk::ComponentMapping& component_mapping = get_component_mapping_preset())
 		{
-			return std::make_shared<ImageView>(device, image, subresource_range, component_mapping);
+			return std::make_shared<ImageView>(device, image, image_view_type, subresource_range, component_mapping);
 		}
 
 		ImageView(DeviceWeakRef device, 
-			ImageRef image, 
-			uint32_t base_array_layer = 0, 
-			uint32_t layer_count = 1, 
-			uint32_t base_mip_level = 0, 
-			uint32_t level_count = 1,
-			const vk::ComponentMapping& component_mapping = get_component_mapping_preset());
+				  ImageRef image, 
+				  vk::ImageViewType image_view_type = vk::ImageViewType::e2D,
+				  uint32_t base_array_layer = 0, 
+				  uint32_t layer_count = 1, 
+				  uint32_t base_mip_level = 0, 
+				  uint32_t level_count = 1,
+				  const vk::ComponentMapping& component_mapping = get_component_mapping_preset());
 		
 		ImageView(DeviceWeakRef device, 
-			ImageRef image, 
-			const vk::ImageSubresourceRange& subresource_range,
-			const vk::ComponentMapping& component_mapping = get_component_mapping_preset());
+				  ImageRef image, 
+				  vk::ImageViewType image_view_type = vk::ImageViewType::e2D,
+				  const vk::ImageSubresourceRange& subresource_range = Image::build_single_layer_subresource(),
+				  const vk::ComponentMapping& component_mapping = get_component_mapping_preset());
 		
 		~ImageView();
 
@@ -334,6 +362,7 @@ namespace graphics
 		ImageRef m_image;
 		vk::ImageSubresourceRange m_subresource_range;
 		vk::ImageView m_image_view_handle;
+		vk::ImageViewType m_image_view_type;
 	};
 
 } // namespace graphics

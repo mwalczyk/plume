@@ -10,9 +10,9 @@ git clone https://github.com/KhronosGroup/SPIRV-Tools.git spirv-tools
 git clone https://github.com/KhronosGroup/SPIRV-Headers.git spirv-tools/external/spirv-headers
 
 # build shaderc
-cd ..
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Debug
-cmake --build . --config Release
+# cd ..
+# mkdir build
+# cd build
+# cmake ..
+# cmake --build . --config Debug
+# cmake --build . --config Release

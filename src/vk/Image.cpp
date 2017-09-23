@@ -118,7 +118,14 @@ namespace graphics
 		}
 	}
 
-	ImageView::ImageView(DeviceWeakRef device, ImageRef image, uint32_t base_array_layer, uint32_t layer_count, uint32_t base_mip_level, uint32_t level_count, const vk::ComponentMapping& component_mapping)
+	ImageView::ImageView(DeviceWeakRef device, 
+						 ImageRef image, 
+						 vk::ImageViewType image_view_type, 
+						 uint32_t base_array_layer, 
+						 uint32_t layer_count, 
+						 uint32_t base_mip_level, 
+						 uint32_t level_count,
+						 const vk::ComponentMapping& component_mapping)
 	{
 		vk::ImageSubresourceRange subresource_range = 
 		{
@@ -129,37 +136,36 @@ namespace graphics
 			layer_count
 		};
 
-		ImageView(device, image, subresource_range, component_mapping);
+		ImageView(device, image, image_view_type, subresource_range, component_mapping);
 	}
 
-	ImageView::ImageView(DeviceWeakRef device, ImageRef image, const vk::ImageSubresourceRange& subresource_range, const vk::ComponentMapping& component_mapping) :
+	ImageView::ImageView(DeviceWeakRef device, 
+						 ImageRef image, 
+						 vk::ImageViewType image_view_type,
+						 const vk::ImageSubresourceRange& subresource_range, 
+						 const vk::ComponentMapping& component_mapping) :
 		m_device(device),
 		m_image(image),
-		m_subresource_range(subresource_range)
+		m_subresource_range(subresource_range),
+		m_image_view_type(m_image_view_type)
 	{
 		DeviceRef device_shared = m_device.lock();
 
 		if (!image->m_is_array && m_subresource_range.layerCount > 1)
 		{
-			throw std::runtime_error("Attempting to build an image view that accesses multiple array layers \
+			throw std::runtime_error("Attempting to build an image view that accesses multiple array layers\
 				of the parent image, but the parent image is not an array");
 		}
 
 		// TODO: during the image view creation process, we make several assumptions. In particular,
-		// we assume that the image view will have the same format as the parent image and that we can
-		// reasonably deduce the view type based on the parent image's type. We may not want to make
-		// these assumptions in the future.
+		// we assume that the image view will have the same format as the parent image.
 
 		vk::ImageViewCreateInfo image_view_create_info;
 		image_view_create_info.format = image->m_format;
 		image_view_create_info.image = image->m_image_handle;
-		image_view_create_info.subresourceRange.aspectMask = m_subresource_range.aspectMask;
-		image_view_create_info.subresourceRange.baseArrayLayer = m_subresource_range.baseArrayLayer;
-		image_view_create_info.subresourceRange.baseMipLevel = m_subresource_range.baseMipLevel;
-		image_view_create_info.subresourceRange.layerCount = m_subresource_range.layerCount;
-		image_view_create_info.subresourceRange.levelCount = m_subresource_range.levelCount;
+		image_view_create_info.subresourceRange = m_subresource_range;
 		image_view_create_info.components = component_mapping;
-		image_view_create_info.viewType = image->image_view_type_from_parent();	
+		image_view_create_info.viewType = m_image_view_type;	
 
 		m_image_view_handle = device_shared->get_handle().createImageView(image_view_create_info);
 	}

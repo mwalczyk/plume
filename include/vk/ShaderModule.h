@@ -95,12 +95,12 @@ namespace graphics
 		};
 
 		//! Factory method for returning a new ShaderModuleRef.
-		static ShaderModuleRef create(DeviceWeakRef device, const FileResource& resouce)
+		static ShaderModuleRef create(DeviceWeakRef device, const fsys::FileResource& resouce)
 		{
 			return std::make_shared<ShaderModule>(device, resouce);
 		}
 
-		ShaderModule(DeviceWeakRef device, const FileResource& resouce);
+		ShaderModule(DeviceWeakRef device, const fsys::FileResource& resouce);
 
 		~ShaderModule();
 
