@@ -221,7 +221,7 @@ int main()
 		std::vector<vk::ClearValue> clear_vals = { { utils::clear_color::black() }, 
 												   { utils::clear_color::black() }, 
 												   { utils::clear_depth::depth_one() } };
-
+		
 		// Set up a new command buffer and record draw calls.
 		auto command_buffer = CommandBuffer::create(device, command_pool);
 		auto command_buffer_handle = command_buffer->get_handle();

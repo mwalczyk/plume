@@ -34,7 +34,6 @@
 #include "CommandPool.h"
 #include "Framebuffer.h"
 #include "Pipeline.h"
-#include "RenderPass.h"
 #include "Buffer.h"
 
 namespace graphics
@@ -215,6 +214,7 @@ namespace graphics
 		void transition_image_layout(const ImageRef& image, 
 									 vk::ImageLayout from, 
 									 vk::ImageLayout to, 
+									 vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(),
 									 QueueType src_queue = QueueType::GRAPHICS, 
 									 QueueType dst_queue = QueueType::GRAPHICS);
 
@@ -317,6 +317,24 @@ namespace graphics
 		void end();
 
 	private:
+
+		//! Called before executing any command to verify that the command buffer is in a valid recording state.
+		void check_recording_state()
+		{
+			if (!m_is_recording)
+			{
+				throw std::runtime_error("Must call `begin()` before attempting to record any command into this CommandBuffer");
+			}
+		}
+		
+		//! Called before executing any draw-related command to verify that the command buffer is inside a render pass.
+		void check_render_pass_state()
+		{
+			if (!m_is_inside_render_pass)
+			{
+				throw std::runtime_error("Must call `begin_render_pass()` before attempting to record any draw-related command into this CommandBuffer");
+			}
+		}
 
 		DeviceWeakRef m_device;
 		CommandPoolRef m_command_pool;

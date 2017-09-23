@@ -80,20 +80,20 @@ namespace graphics
 
 		//! Factory method for returning a new DeviceRef.
 		static DeviceRef create(vk::PhysicalDevice physical_device,
-			const SurfaceRef& surface,
-			vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
-			bool use_swapchain = true,
-			const std::vector<const char*>& required_device_extensions = {})
+								const SurfaceRef& surface,
+								vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
+								bool use_swapchain = true,
+								const std::vector<const char*>& required_device_extensions = {})
 		{
 			return std::make_shared<Device>(physical_device, surface, required_queue_flags, use_swapchain, required_device_extensions);
 		}
 
 		//! Construct a logical device around a physical device (GPU).
 		Device(vk::PhysicalDevice physical_device,
-			const SurfaceRef& surface,
-			vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
-			bool use_swapchain = true, 
-			const std::vector<const char*>& required_device_extensions = {});
+			   const SurfaceRef& surface,
+			   vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
+			   bool use_swapchain = true, 
+			   const std::vector<const char*>& required_device_extensions = {});
 
 		~Device();
 

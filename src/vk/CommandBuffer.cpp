@@ -67,6 +67,8 @@ namespace graphics
 
 	void CommandBuffer::begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values)
 	{
+		check_recording_state();
+
 		if (m_is_inside_render_pass)
 		{
 			throw std::runtime_error("This command buffer is already inside of a render pass");
@@ -87,11 +89,16 @@ namespace graphics
 
 	void CommandBuffer::next_subpass()
 	{
+		check_recording_state();
+		check_render_pass_state();
+
 		m_command_buffer_handle.nextSubpass(vk::SubpassContents::eInline);
 	}
 
 	void CommandBuffer::set_line_width(float width)
 	{
+		check_recording_state();
+
 		DeviceRef device_shared = m_device.lock();
 
 		auto range = device_shared->get_physical_device_properties().limits.lineWidthRange;
@@ -101,11 +108,15 @@ namespace graphics
 
 	void CommandBuffer::bind_pipeline(const PipelineRef& pipeline)
 	{
+		check_recording_state();
+
 		m_command_buffer_handle.bindPipeline(pipeline->get_pipeline_bind_point(), pipeline->get_handle());
 	}
 
 	void CommandBuffer::bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding)
 	{
+		check_recording_state();
+
 		// Gather all of the buffer handles.
 		std::vector<vk::Buffer> buffer_handles(buffers.size());
 		std::transform(buffers.begin(), buffers.end(), buffer_handles.begin(), [](const BufferRef& buffer) { return buffer->get_handle(); } );
@@ -118,16 +129,29 @@ namespace graphics
 
 	void CommandBuffer::bind_index_buffer(const BufferRef& buffer, uint32_t offset, vk::IndexType index_type)
 	{
+		check_recording_state();
+
 		m_command_buffer_handle.bindIndexBuffer(buffer->get_handle(), offset, index_type);
 	}
 
 	void CommandBuffer::bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets)
 	{
-		m_command_buffer_handle.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->get_pipeline_layout_handle(), first_set, static_cast<uint32_t>(descriptor_sets.size()), descriptor_sets.data(), static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+		check_recording_state();
+
+		m_command_buffer_handle.bindDescriptorSets(pipeline->get_pipeline_bind_point(), 
+												   pipeline->get_pipeline_layout_handle(), 
+												   first_set, 
+												   static_cast<uint32_t>(descriptor_sets.size()), 
+												   descriptor_sets.data(), 
+												   static_cast<uint32_t>(dynamic_offsets.size()), 
+												   dynamic_offsets.data());
 	}
 
 	void CommandBuffer::draw(const DrawParamsNonIndexed& draw_params)
 	{
+		check_recording_state();
+		check_render_pass_state();
+
 		m_command_buffer_handle.draw(draw_params.m_vertex_count, 
 									 draw_params.m_instance_count, 
 									 draw_params.m_first_vertex, 
@@ -136,6 +160,9 @@ namespace graphics
 
 	void CommandBuffer::draw_indexed(const DrawParamsIndexed& draw_params)
 	{
+		check_recording_state();
+		check_render_pass_state();
+
 		m_command_buffer_handle.drawIndexed(draw_params.m_index_count, 
 											draw_params.m_instance_count,
 											draw_params.m_first_index,
@@ -145,27 +172,31 @@ namespace graphics
 
 	void CommandBuffer::end_render_pass()
 	{
-		if (m_is_inside_render_pass)
-		{
-			m_command_buffer_handle.endRenderPass();
-			m_is_inside_render_pass = false;
-		}
+		check_recording_state();
+		check_render_pass_state();
+
+		m_command_buffer_handle.endRenderPass();
+		m_is_inside_render_pass = false;
 	}
 
 	void CommandBuffer::clear_color_image(const ImageRef& image, vk::ClearColorValue clear_value, vk::ImageSubresourceRange image_subresource_range)
 	{
+		check_recording_state();
+
 		if (utils::is_depth_format(image->get_format()))
 		{
-			throw std::runtime_error("Attempting to clear a depth/stencil image with `clear_color_image`");
+			throw std::runtime_error("Attempting to clear a depth/stencil image with `clear_color_image()`");
 		}
 		m_command_buffer_handle.clearColorImage(image->get_handle(), image->get_current_layout(), clear_value, image_subresource_range);
 	}
 
 	void CommandBuffer::clear_depth_image(const ImageRef& image, vk::ClearDepthStencilValue clear_value, vk::ImageSubresourceRange image_subresource_range)
 	{
+		check_recording_state();
+
 		if (!utils::is_depth_format(image->get_format()))
 		{
-			throw std::runtime_error("Attempting to clear a color image with `clear_depth_image`");
+			throw std::runtime_error("Attempting to clear a color image with `clear_depth_image()`");
 		}
 		m_command_buffer_handle.clearDepthStencilImage(image->get_handle(), image->get_current_layout(), clear_value, image_subresource_range);
 	}
@@ -173,61 +204,176 @@ namespace graphics
 	void CommandBuffer::transition_image_layout(const ImageRef& image, 
 												vk::ImageLayout from, 
 												vk::ImageLayout to, 
+											    vk::ImageSubresourceRange image_subresource_range,
 												QueueType src_queue, 
 												QueueType dst_queue)
 	{
+		check_recording_state();
+
 		vk::ImageMemoryBarrier image_memory_barrier;
 
-		// Based on the starting and ending layout of this image, select the appropriate access masks.
-		if (from == vk::ImageLayout::ePreinitialized && to == vk::ImageLayout::eTransferSrcOptimal)
+		// Based on the starting and ending layout of this image, select the appropriate access masks. See Sascha Willems' 
+		// examples for more details:
+		// https://github.com/SaschaWillems/Vulkan/blob/master/base/VulkanTools.cpp#L94
+
+		switch (from)
 		{
-			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
-			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
-		}
-		else if (from == vk::ImageLayout::ePreinitialized && to == vk::ImageLayout::eTransferDstOptimal)
-		{
-			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
-			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-		}
-		else if (from == vk::ImageLayout::eTransferDstOptimal && to == vk::ImageLayout::eShaderReadOnlyOptimal)
-		{
+		case vk::ImageLayout::eUndefined:
+			image_memory_barrier.srcAccessMask = {};
+			break;
+		case vk::ImageLayout::eGeneral: 
+			image_memory_barrier.srcAccessMask = {};
+			break;
+		case vk::ImageLayout::eColorAttachmentOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eColorAttachment))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eColorAttachmentOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eColorAttachment");
+			}
+
+			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+			break;
+		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eDepthStencilAttachment))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eDepthStencilAttachmentOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
+			}
+
+			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			break;
+		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eDepthStencilAttachment))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eDepthStencilReadOnlyOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
+			}
+
+			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead;
+			break;
+		case vk::ImageLayout::eShaderReadOnlyOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eSampled) ||
+				!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eInputAttachment))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eShaderReadOnlyOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eSampled or vk::ImageUsageFlagBits::eInputAttachment");
+			}
+
+			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
+			break;
+		case vk::ImageLayout::eTransferSrcOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eTransferSrc))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eTransferSrcOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferSrc");
+			}
+
+			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+			break;
+		case vk::ImageLayout::eTransferDstOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eTransferDst))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eTransferDstOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferDst");
+			}
+
 			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-		}
-		else if (from == vk::ImageLayout::ePreinitialized && to == vk::ImageLayout::eShaderReadOnlyOptimal)
-		{
+			break;
+		case vk::ImageLayout::ePreinitialized:
 			image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
-			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+			break;
+		case vk::ImageLayout::ePresentSrcKHR:		// TODO: this should only be valid for swapchain images.
+		case vk::ImageLayout::eSharedPresentKHR:	// TODO: ...
+		default:
+			break;
 		}
-		else if (from == vk::ImageLayout::eUndefined && to == vk::ImageLayout::eDepthStencilAttachmentOptimal)
+
+		switch (to)
 		{
-			image_memory_barrier.srcAccessMask = {};
-			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-		}
-		else if (from == vk::ImageLayout::eUndefined && to == vk::ImageLayout::eGeneral)
-		{
-			// TODO: what are these suppose to be?
-			image_memory_barrier.srcAccessMask = {};
+		case vk::ImageLayout::eUndefined:
+			throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eUndefined, which\
+									  can only be used as `oldLayout`");
+			break;
+		case vk::ImageLayout::eGeneral:
 			image_memory_barrier.dstAccessMask = {};
-		}
-		else 
-		{
-			throw std::invalid_argument("Unsupported layout transition");
+			break;
+		case vk::ImageLayout::eColorAttachmentOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eColorAttachment))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eColorAttachmentOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eColorAttachment");
+			}
+
+			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+			break;
+		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eDepthStencilAttachment))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eDepthStencilAttachmentOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
+			}
+
+			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			break;
+		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eDepthStencilAttachment))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eDepthStencilReadOnlyOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
+			}
+
+			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead;
+			break;
+		case vk::ImageLayout::eShaderReadOnlyOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eSampled) ||
+				!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eInputAttachment))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eShaderReadOnlyOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eSampled or vk::ImageUsageFlagBits::eInputAttachment");
+			}
+
+			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+			break;
+		case vk::ImageLayout::eTransferSrcOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eTransferSrc))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eTransferSrcOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferSrc");
+			}
+
+			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+			break;
+		case vk::ImageLayout::eTransferDstOptimal:
+			if (!(image->get_image_usage_flags() & vk::ImageUsageFlagBits::eTransferDst))
+			{
+				throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eTransferDstOptimal,\
+										  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferDst");
+			}
+
+			image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+			break;
+		case vk::ImageLayout::ePreinitialized:
+			throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::ePreinitialized, which\
+									  can only be used as `oldLayout`");
+			break;
+		case vk::ImageLayout::ePresentSrcKHR:		// TODO: this should only be valid for swapchain images.
+		case vk::ImageLayout::eSharedPresentKHR:	// TODO: ...
+		default:
+			break;
 		}
 
 		DeviceRef device_shared = m_device.lock();
 
-		// TODO: the image might be layered
 		image_memory_barrier.dstQueueFamilyIndex = (src_queue == dst_queue) ? VK_QUEUE_FAMILY_IGNORED : device_shared->get_queue_family_index(src_queue);
 		image_memory_barrier.image = image->get_handle();
 		image_memory_barrier.newLayout = to;
 		image_memory_barrier.oldLayout = from;
 		image_memory_barrier.srcQueueFamilyIndex = (src_queue == dst_queue) ? VK_QUEUE_FAMILY_IGNORED : device_shared->get_queue_family_index(src_queue);
-		image_memory_barrier.subresourceRange.aspectMask = utils::format_to_aspect_mask(image->get_format());
-		image_memory_barrier.subresourceRange.baseArrayLayer = 0;
-		image_memory_barrier.subresourceRange.baseMipLevel = 0;
-		image_memory_barrier.subresourceRange.layerCount = 1;
-		image_memory_barrier.subresourceRange.levelCount = 1;
+		image_memory_barrier.subresourceRange = image_subresource_range;
+
+		// For now, infer the subresource range's aspect mask from the parent image's format. We might not
+		// want to do this in the future.
+		image_memory_barrier.subresourceRange.aspectMask = utils::format_to_aspect_mask(image->get_format()); 
 
 		// This class is a friend of the image class - store its new layout.
 		image->m_current_layout = to;
@@ -240,11 +386,17 @@ namespace graphics
 		//
 		// The `dependencyFlags` parameter specifies a set of flags that describe how the dependency 
 		// represented by the barrier affects the resources referenced by the barrier. 
-		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTopOfPipe, {}, {}, {}, image_memory_barrier);
+		//
+		// TODO: the `srcStageMask` and `dstStageMask` parameters should probably not be top of pipe.
+		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, 
+												vk::PipelineStageFlagBits::eTopOfPipe, 
+												{}, {}, {}, image_memory_barrier);
 	}
 
 	void CommandBuffer::barrier_compute_write_storage_buffer_compute_read_storage_buffer()
 	{
+		check_recording_state();
+
 		static vk::MemoryBarrier memory_barrier;
 		memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
 		memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -257,6 +409,8 @@ namespace graphics
 
 	void CommandBuffer::barrier_compute_read_storage_buffer_compute_write_storage_buffer()
 	{
+		check_recording_state();
+
 		// WAR hazards don't need a memory barrier between them - a simple execution barrier is sufficient.
 
 		m_command_buffer_handle.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
@@ -267,6 +421,8 @@ namespace graphics
 
 	void CommandBuffer::barrier_compute_write_storage_buffer_graphics_read_as_index()
 	{
+		check_recording_state();
+
 		static vk::MemoryBarrier memory_barrier;
 		memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
 		memory_barrier.dstAccessMask = vk::AccessFlagBits::eIndexRead;
@@ -279,6 +435,8 @@ namespace graphics
 
 	void CommandBuffer::barrier_compute_write_storage_buffer_graphics_read_as_draw_indirect()
 	{
+		check_recording_state();
+
 		static vk::MemoryBarrier memory_barrier;
 		memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
 		memory_barrier.dstAccessMask = vk::AccessFlagBits::eIndirectCommandRead;
@@ -293,6 +451,8 @@ namespace graphics
 																		  vk::PipelineStageFlags read_stage_flags,
 																		  const vk::ImageSubresourceRange& image_subresource_range)
 	{
+		check_recording_state();
+
 		vk::ImageMemoryBarrier image_memory_barrier;
 		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
 		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -311,6 +471,8 @@ namespace graphics
 
 	void CommandBuffer::barrier_graphics_write_color_attachment_compute_read(const ImageRef& image, const vk::ImageSubresourceRange& image_subresource_range)
 	{
+		check_recording_state();
+
 		vk::ImageMemoryBarrier image_memory_barrier;
 		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
 		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -329,6 +491,8 @@ namespace graphics
 
 	void CommandBuffer::barrier_graphics_write_depth_attachment_compute_read(const ImageRef& image, const vk::ImageSubresourceRange& image_subresource_range)
 	{
+		check_recording_state();
+
 		vk::ImageMemoryBarrier image_memory_barrier;
 		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -350,6 +514,8 @@ namespace graphics
 																			  vk::PipelineStageFlags read_stage_flags, 
 																			  const vk::ImageSubresourceRange& image_subresource_range)
 	{
+		check_recording_state();
+
 		vk::ImageMemoryBarrier image_memory_barrier;
 		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -371,6 +537,8 @@ namespace graphics
 																			  vk::PipelineStageFlags read_stage_flags, 
 																			  const vk::ImageSubresourceRange& image_subresource_range)
 	{
+		check_recording_state();
+
 		vk::ImageMemoryBarrier image_memory_barrier;
 		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
 		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -389,11 +557,10 @@ namespace graphics
 
 	void CommandBuffer::end()
 	{
-		if (m_is_recording)
-		{
-			m_command_buffer_handle.end();
-			m_is_recording = false;
-		}
+		check_recording_state();
+
+		m_command_buffer_handle.end();
+		m_is_recording = false;
 	}
 
 } // namespace graphics

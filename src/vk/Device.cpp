@@ -285,10 +285,12 @@ namespace graphics
 		// end recording.
 		if (command_buffer->is_inside_render_pass())
 		{
+			PL_LOG_DEBUG("The command buffer passed to `one_time_submit()` is still inside a render pass: calling `end_render_pass()`\n");
 			command_buffer->end_render_pass();
 		}
 		if (command_buffer->is_recording())
 		{
+			PL_LOG_DEBUG("The command buffer passed to `one_time_submit()` is still in a recording state: calling `end()`\n");
 			command_buffer->end();
 		}
 

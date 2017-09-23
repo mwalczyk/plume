@@ -52,13 +52,13 @@ namespace graphics
 	}
 
 	Image::Image(DeviceWeakRef device,
-		vk::ImageType image_type,
-		vk::ImageUsageFlags image_usage_flags,
-		vk::Format format,
-		vk::Extent3D dimensions,
-		uint32_t mip_levels,
-		vk::ImageTiling image_tiling,
-		uint32_t sample_count) :
+				 vk::ImageType image_type,
+				 vk::ImageUsageFlags image_usage_flags,
+				 vk::Format format,
+				 vk::Extent3D dimensions,
+				 uint32_t mip_levels,
+				 vk::ImageTiling image_tiling,
+				 uint32_t sample_count) :
 
 		m_device(device),
 		m_image_type(image_type),
@@ -73,7 +73,9 @@ namespace graphics
 
 		m_current_layout = vk::ImageLayout::eUndefined;
 
-		// TODO: images should be able to be shared across multiple queue families.
+		// TODO: images should be able to be shared across multiple queue families. This should also be verified
+		// in the CommandBuffer `transition_image_layout()` function.
+
 		vk::ImageCreateInfo image_create_info;
 		image_create_info.arrayLayers = 1;
 		image_create_info.extent.width = m_dimensions.width;

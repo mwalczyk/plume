@@ -203,6 +203,8 @@ namespace graphics
 		vk::Format get_format() const { return m_format; }
 
 		vk::ImageLayout get_current_layout() const { return m_current_layout; }
+		
+		vk::ImageUsageFlags get_image_usage_flags() const { return m_image_usage_flags; }
 
 	private:
 

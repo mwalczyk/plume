@@ -42,6 +42,49 @@
 namespace graphics
 {
 
+	class PipelineLayout;
+	using PipelineLayoutRef = std::shared_ptr<PipelineLayout>;
+
+	class PipelineLayout
+	{
+	public:
+
+		//! Factory method for returning a new PipelineLayoutRef.
+		static PipelineLayoutRef create(DeviceWeakRef device, 
+										const std::vector<vk::PushConstantRange>& push_constant_ranges,
+										const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
+		{ 
+			return std::make_shared<PipelineLayout>(device, push_constant_ranges, descriptor_set_layouts);
+		}
+
+		PipelineLayout(DeviceWeakRef device, 
+					   const std::vector<vk::PushConstantRange>& push_constant_ranges,
+					   const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
+		{
+			DeviceRef device_shared = m_device.lock();
+
+			vk::PipelineLayoutCreateInfo pipeline_layout_create_info;
+			pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
+			pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts.data();
+			pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
+			pipeline_layout_create_info.setLayoutCount = static_cast<uint32_t>(descriptor_set_layouts.size());;
+
+			m_pipeline_layout_handle = device_shared->get_handle().createPipelineLayout(pipeline_layout_create_info);
+		}
+
+		~PipelineLayout()
+		{
+			DeviceRef device_shared = m_device.lock();
+
+			device_shared->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
+		}
+
+	private:
+
+		DeviceWeakRef m_device;
+		vk::PipelineLayout m_pipeline_layout_handle;
+	};
+
 	class Pipeline;
 	using PipelineRef = std::shared_ptr<Pipeline>;
 
