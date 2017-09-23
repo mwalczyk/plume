@@ -103,31 +103,29 @@ int main()
 	* Images, image views, and samplers
 	*
 	***********************************************************************************/
+	const vk::Format swapchain_format = swapchain->get_image_format();
+	const vk::Extent3D fs_extent = { width, height, 1 };
+
 	auto image_ms = Image::create(device,
 		vk::ImageType::e2D,
 		vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
-		swapchain->get_image_format(),
-		{ width, height, 1 }, 1,
-		vk::ImageTiling::eOptimal,
-		msaa);
+		swapchain_format, fs_extent, 1, 1,
+		vk::ImageTiling::eOptimal, msaa);
 	auto image_ms_view = ImageView::create(device, image_ms);
 
 	auto image_depth = Image::create(device, 
 		vk::ImageType::e2D, 
 		vk::ImageUsageFlagBits::eDepthStencilAttachment, 
-		device->get_supported_depth_format(), 
-		{ width, height, 1 }, 1,
-		vk::ImageTiling::eOptimal, 
-		msaa);
-	auto image_depth_view = ImageView::create(device, image_depth);
+		device->get_supported_depth_format(), fs_extent, 1, 1,
+		vk::ImageTiling::eOptimal, msaa);
+	auto image_depth_view = ImageView::create(device, image_depth, vk::ImageViewType::e2D, Image::build_single_layer_subresource(vk::ImageAspectFlagBits::eDepth));
 	
 	auto image_sdf_map = Image::create(device,
 		vk::ImageType::e3D,
 		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
-		swapchain->get_image_format(),
-		{ width, height, 32 }, 1,
+		swapchain_format, { width, height, 32 }, 1, 1,
 		vk::ImageTiling::eOptimal);
-	auto image_sdf_map_view = ImageView::create(device, image_sdf_map);
+	auto image_sdf_map_view = ImageView::create(device, image_sdf_map, vk::ImageViewType::e3D); // by default, ImageView's are 2D.
 
 	auto sampler = Sampler::create(device);
 
