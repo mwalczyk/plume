@@ -48,7 +48,8 @@ namespace graphics
 	{
 	public:
 
-		//! Factory method for returning a new ImageRef whose device local memory store will be empty.
+		//! Factory method for returning a new ImageRef whose device local memory store will be uninitialized. Note that
+		//! this image is not host accessible.
 		static ImageRef create(DeviceWeakRef device, 
 							   vk::ImageType image_type, 
 							   vk::ImageUsageFlags image_usage_flags, 
@@ -56,7 +57,7 @@ namespace graphics
 							   vk::Extent3D dimensions, 
 							   uint32_t array_layers = 1,
 							   uint32_t mip_levels = 1,
-							   vk::ImageTiling image_tiling = vk::ImageTiling::eLinear,
+							   vk::ImageTiling image_tiling = vk::ImageTiling::eOptimal,
 							   uint32_t sample_count = 1)
 		{
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, dimensions, array_layers, mip_levels, image_tiling, sample_count);

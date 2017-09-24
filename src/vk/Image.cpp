@@ -215,15 +215,21 @@ namespace graphics
 			throw std::runtime_error("The requested image view type is not compatible with the parent image type");
 		}
 
-		// TODO: during the image view creation process, we make several assumptions. In particular,
-		// we assume that the image view will have the same format as the parent image.
-
 		vk::ImageViewCreateInfo image_view_create_info;
 		image_view_create_info.format = image->m_format;
 		image_view_create_info.image = image->m_image_handle;
 		image_view_create_info.subresourceRange = m_subresource_range;
 		image_view_create_info.components = component_mapping;
 		image_view_create_info.viewType = m_image_view_type;	
+
+		// TODO: during the image view creation process, we make several assumptions. In particular,
+		// we assume that the image view will have the same format as the parent image.
+		if (image->m_format != image_view_create_info.format &&
+			!(image->m_image_create_flags & vk::ImageCreateFlagBits::eMutableFormat))
+		{
+			throw std::runtime_error("Attempting to create an image view with a different format from the parent image, but the\
+									  parent image was not created with the vk::ImageCreateFlagBits::eMutableFormat bit set");
+		}
 
 		m_image_view_handle = device_shared->get_handle().createImageView(image_view_create_info);
 	}
