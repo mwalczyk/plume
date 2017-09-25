@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="818px" height="275px" viewBox="0 0 818 275" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.3 (12072) - http://www.bohemiancoding.com/sketch -->
+    <title>Plume Logo</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-1">
+            <feOffset dx="0" dy="5" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="0" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0.892059949   0 0 0 0 0.892059949   0 0 0 0 0.892059949  0 0 0 0.7 0" in="shadowBlurOuter1" type="matrix" result="shadowMatrixOuter1"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+        </filter>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-2">
+            <feOffset dx="-1" dy="4" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="0" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0.892059949   0 0 0 0 0.892059949   0 0 0 0 0.892059949  0 0 0 0.7 0" in="shadowBlurOuter1" type="matrix" result="shadowMatrixOuter1"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+        </filter>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-3">
+            <feOffset dx="-6" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="0" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.0933650362 0" in="shadowBlurOuter1" type="matrix" result="shadowMatrixOuter1"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+        </filter>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="icon" sketch:type="MSLayerGroup" transform="translate(0.000000, 53.000000)">
+            <rect id="bg" sketch:type="MSShapeGroup" x="0" y="0" width="200" height="200"></rect>
+            <circle id="circle-mask" fill="#EA6C6C" sketch:type="MSShapeGroup" cx="100" cy="100" r="100"></circle>
+            <g id="smoke" transform="translate(47.000000, 36.000000)" fill="#FFFFFF" sketch:type="MSShapeGroup">
+                <g id="main">
+                    <circle id="Oval-2-Copy-6" cx="30.5" cy="48.5" r="21.5"></circle>
+                    <circle id="Oval-2-Copy-7" cx="55" cy="79" r="25"></circle>
+                    <circle id="Oval-2-Copy-8" cx="55" cy="27" r="27"></circle>
+                    <circle id="Oval-2-Copy-9" cx="77" cy="61" r="27"></circle>
+                    <circle id="Oval-2-Copy-10" cx="80" cy="30" r="27"></circle>
+                    <circle id="Oval-2-Copy-11" cx="52.5" cy="101.5" r="13.5"></circle>
+                    <circle id="Oval-2-Copy-15" cx="47.5" cy="121.5" r="6.5"></circle>
+                    <circle id="Oval-2-Copy-16" cx="53" cy="113" r="11"></circle>
+                    <circle id="Oval-2-Copy-14" cx="13.5" cy="35.5" r="13.5"></circle>
+                    <circle id="Oval-2-Copy-13" cx="30.5" cy="71.5" r="16.5"></circle>
+                    <circle id="Oval-2-Copy-12" cx="30.5" cy="27.5" r="16.5"></circle>
+                </g>
+                <path d="M68,75 C79.045695,75 88,66.045695 88,55 C88,43.954305 79.045695,35 68,35 C56.954305,35 48,43.954305 48,55 C48,66.045695 56.954305,75 68,75 Z" id="shadow-2" filter="url(#filter-1)" transform="translate(68.000000, 55.000000) rotate(37.000000) translate(-68.000000, -55.000000) "></path>
+                <circle id="shadow-1" filter="url(#filter-2)" transform="translate(41.500000, 49.500000) rotate(38.000000) translate(-41.500000, -49.500000) " cx="41.5" cy="49.5" r="17.5"></circle>
+            </g>
+        </g>
+        <text id="plume" fill="white" filter="url(#filter-3)" sketch:type="MSTextLayer" font-family="Avenir Next" font-size="200" font-weight="420">
+            <tspan x="230" y="200" fill="#8D8790">plume</tspan>
+        </text>
+    </g>
+</svg>
