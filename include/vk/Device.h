@@ -72,12 +72,6 @@ namespace graphics
 			std::vector<vk::PresentModeKHR> m_present_modes;
 		};
 
-		struct QueueInternals
-		{
-			uint32_t index = 0;
-			vk::Queue handle = {};
-		};
-
 		//! Factory method for returning a new DeviceRef.
 		static DeviceRef create(vk::PhysicalDevice physical_device,
 								const SurfaceRef& surface,
@@ -124,8 +118,6 @@ namespace graphics
 		{ 
 			return m_gpu_details.get_supported_depth_format(); 
 		}
-
-		const std::map<QueueType, QueueInternals>& get_queue_families_mapping() const { return m_queue_families_mapping; }
 		
 		uint32_t get_queue_family_index(QueueType type) { return m_queue_families_mapping[type].index; }
 		
@@ -199,6 +191,13 @@ namespace graphics
 			}
 		};
 
+		//! A struct for aggregating all of the information about a particular queue family.
+		struct QueueInternals
+		{
+			uint32_t index = 0;
+			vk::Queue handle = {};
+		};
+
 		std::map<QueueType, QueueInternals> m_queue_families_mapping = 
 		{
 			{ QueueType::GRAPHICS, {} },
@@ -211,7 +210,6 @@ namespace graphics
 		uint32_t find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const;
 
 		SurfaceRef m_surface;
-
 		vk::Device m_device_handle;
 		GPUDetails m_gpu_details;
 		std::vector<const char*> m_required_device_extensions;

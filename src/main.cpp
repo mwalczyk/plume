@@ -122,7 +122,7 @@ int main()
 		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
 		swapchain_format, { width, height, 32 }, 1, 1,
 		vk::ImageTiling::eOptimal);
-	auto image_sdf_map_view = ImageView::create(device, image_sdf_map, vk::ImageViewType::e3D); // by default, ImageView's are 2D.
+	auto image_sdf_map_view = ImageView::create(device, image_sdf_map, vk::ImageViewType::e3D);	// by default, ImageView's are 2D.
 
 	auto sampler = Sampler::create(device);
 

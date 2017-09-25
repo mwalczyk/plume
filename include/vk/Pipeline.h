@@ -116,10 +116,20 @@ namespace graphics
 
 			device_shared->get_handle().destroyPipeline(m_pipeline_handle);
 			device_shared->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
+
+			// Destroy all cached descriptor set layouts.
+			for (const auto& mapping : m_descriptor_set_layouts_mapping)
+			{
+				device_shared->get_handle().destroyDescriptorSetLayout(mapping.second);
+			}
 		}
 
 		virtual vk::Pipeline get_handle() const final { return m_pipeline_handle; }
+
 		virtual vk::PipelineLayout get_pipeline_layout_handle() const final { return m_pipeline_layout_handle; } 
+
+		//! Returns the pipeline bind point - must be either vk::PipelineBindPoint::eGraphics or vk::PipelineBindPoint::eCompute.
+		//! Note that this method is pure virtual and must be overridden by any derived class.
 		virtual vk::PipelineBindPoint get_pipeline_bind_point() const = 0;
 
 		//! Returns a push constant range structure that holds information about the push constant with the given name.
@@ -347,6 +357,21 @@ namespace graphics
 		GraphicsPipeline(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options());
 
 		vk::PipelineBindPoint get_pipeline_bind_point() const override { return vk::PipelineBindPoint::eGraphics; }
+
+		//! Returns `true` if the GraphicsPipeline contains a vertex shader stage and `false` otherwise.
+		bool has_vertex() const { return m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eVertex); }
+		
+		//! Returns `true` if the GraphicsPipeline contains a tessellation control shader stage and `false` otherwise.
+		bool has_tessellation_control() const { return m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eTessellationControl); }
+		
+		//! Returns `true` if the GraphicsPipeline contains a tessellation evaluation shader stage and `false` otherwise.
+		bool has_tessellation_evaluation() const { return m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eTessellationEvaluation); }
+		
+		//! Returns `true` if the GraphicsPipeline contains a geometry shader stage and `false` otherwise.
+		bool has_geometry() const { return m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eGeometry); }
+		
+		//! Returns `true` if the GraphicsPipeline contains a fragment shader stage and `false` otherwise.
+		bool has_fragment() const { return m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eFragment); }
 
 	private:
 
