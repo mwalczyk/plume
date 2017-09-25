@@ -26,14 +26,9 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <map>
 #include <iterator>
 #include <string>
 
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "DescriptorPool.h"
 #include "Device.h"
 #include "RenderPass.h"

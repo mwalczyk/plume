@@ -26,14 +26,9 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <iostream>
 #include <string>
 #include <map>
 
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "Instance.h"
 #include "Surface.h"
 
@@ -71,7 +66,9 @@ namespace graphics
 			Options();
 
 			Options& title(const std::string &tTitle) { m_title = tTitle; return *this; }
+			
 			Options& resizeable(bool resizeable) { m_resizeable = resizeable; return *this; }
+			
 			Options& mode(WindowMode mode) { m_mode = mode; return *this; }
 
 		private:
@@ -84,12 +81,12 @@ namespace graphics
 		};
 
 		//! Factory method for returning a new WindowRef
-		static WindowRef create(InstanceWeakRef instance, uint32_t width, uint32_t height, const Options& options = Options())
+		static WindowRef create(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options = Options())
 		{
 			return std::make_shared<Window>(instance, width, height, options);
 		}
 
-		Window(InstanceWeakRef instance, uint32_t width, uint32_t height, const Options& options = Options());
+		Window(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options = Options());
 	
 		~Window();
 
@@ -172,7 +169,7 @@ namespace graphics
 
 		void on_scroll(double x_offset, double y_offset);
 
-		InstanceWeakRef m_instance;
+		InstanceRef m_instance;
 		GLFWwindow* m_window_handle;
 		uint32_t m_width;
 		uint32_t m_height;

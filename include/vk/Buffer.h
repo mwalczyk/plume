@@ -26,12 +26,6 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
-#include "Platform.h"
-#include "Noncopyable.h"
-#include "Device.h"
 #include "DeviceMemory.h"
 #include "Log.h"
 
@@ -71,10 +65,10 @@ namespace graphics
 		}
 
 		Buffer(DeviceWeakRef device,
-			vk::BufferUsageFlags buffer_usage_flags,		
-			size_t size, 
-			const void* data, 
-			const std::vector<QueueType> queues = { QueueType::GRAPHICS });
+			   vk::BufferUsageFlags buffer_usage_flags,		
+			   size_t size, 
+			   const void* data, 
+			   const std::vector<QueueType> queues = { QueueType::GRAPHICS });
 
 		~Buffer();
 

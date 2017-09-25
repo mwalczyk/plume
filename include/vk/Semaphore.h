@@ -26,10 +26,6 @@
 
 #pragma once
 
-#include <memory>
-
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "Device.h"
 
 namespace graphics

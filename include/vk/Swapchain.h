@@ -26,14 +26,9 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "Device.h"
-#include "Semaphore.h"
 #include "Image.h"
+#include "Semaphore.h"
 
 namespace graphics
 {
@@ -48,17 +43,17 @@ namespace graphics
 		//! Factory method for returning a new SwapchainRef. This constructor will automatically
 		//! choose the optimal swapchain image format and presentation mode.
 		static SwapchainRef create(DeviceWeakRef device, 
-			const SurfaceRef& surface, 
-			uint32_t width, 
-			uint32_t height)
+								   const SurfaceRef& surface, 
+								   uint32_t width, 
+								   uint32_t height)
 		{
 			return std::make_shared<Swapchain>(device, surface, width, height);
 		}
 
 		Swapchain(DeviceWeakRef device, 
-			const SurfaceRef& surface,
-			uint32_t width,
-			uint32_t height);
+				  const SurfaceRef& surface,
+			      uint32_t width,
+			      uint32_t height);
 		
 		~Swapchain();
 

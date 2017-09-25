@@ -26,15 +26,10 @@
 
 #pragma once
 
-#include <memory>
-
-#include "Platform.h"
-#include "Noncopyable.h"
-#include "Device.h"
+#include "Buffer.h"
 #include "CommandPool.h"
 #include "Framebuffer.h"
 #include "Pipeline.h"
-#include "Buffer.h"
 
 namespace graphics
 {
@@ -156,7 +151,7 @@ namespace graphics
 		void bind_pipeline(const PipelineRef& pipeline);
 
 		//! Binds the specified vertex buffers for use in subsequent draw commands.
-		void bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding = 0);
+		void bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding = 0, const std::vector<vk::DeviceSize>& offsets = { 0 });
 
 		//! Binds the specified index buffer for use in subsequent indexed draw commands.
 		void bind_index_buffer(const BufferRef& buffer, uint32_t offset = 0, vk::IndexType index_type = vk::IndexType::eUint32);

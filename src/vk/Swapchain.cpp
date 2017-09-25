@@ -30,6 +30,7 @@ namespace graphics
 {
 
 	Swapchain::Swapchain(DeviceWeakRef device, const SurfaceRef& surface, uint32_t width, uint32_t height) :
+		
 		m_device(device),
 		m_surface(surface),
 		m_width(width),
@@ -55,7 +56,7 @@ namespace graphics
 		// In the future, we will need to account for the fact that these two operations may be a part of different queue families.
 		vk::SwapchainCreateInfoKHR swapchain_create_info;
 		swapchain_create_info.clipped = VK_TRUE;											// Make sure to ignore pixels that are obscured by other windows.
-		swapchain_create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;	// This window should not blend with any other windows in the windowing system.
+		swapchain_create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;		// This window should not blend with any other windows in the windowing system.
 		swapchain_create_info.imageArrayLayers = 1;									
 		swapchain_create_info.imageColorSpace = surface_format.colorSpace;
 		swapchain_create_info.imageExtent = extent;

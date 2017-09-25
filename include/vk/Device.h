@@ -26,13 +26,8 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
 #include <map>
-#include <cassert>
 
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "Instance.h"
 #include "Surface.h"
 

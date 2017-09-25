@@ -26,13 +26,6 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <string>
-
-#include "Platform.h"
-#include "Noncopyable.h"
-#include "Device.h"
 #include "DeviceMemory.h"
 #include "ResourceManager.h"
 #include "Sampler.h"
@@ -63,40 +56,37 @@ namespace graphics
 			return std::make_shared<Image>(device, image_type, image_usage_flags, format, dimensions, array_layers, mip_levels, image_tiling, sample_count);
 		}
 
-		//! Factory method for returning a new ImageRef that will be pre-initialized with the user supplied data.
+		//! Factory method for returning a new ImageRef that will be pre-initialized with the user supplied data. The resulting 
+		//! image will be 2D with depth, array layers, and mipmap levels equal to 1.
 		template<class T>
 		static ImageRef create(DeviceWeakRef device, 
-							   vk::ImageType image_type, 
 							   vk::ImageUsageFlags image_usage_flags, 
 							   vk::Format format, 
-							   uint32_t width, 
-							   uint32_t height, 
-							   uint32_t depth, 
-							   uint32_t array_layers,
-							   uint32_t mip_levels, 
+							   uint32_t width,
+							   uint32_t height,
 							   const std::vector<T>& data)
 		{
-			return std::make_shared<Image>(device, image_type, image_usage_flags, format, width, height, depth, array_layers, mip_levels, data);
+			return std::make_shared<Image>(device, vk::ImageType::e2D, image_usage_flags, format, { width, height, 1 }, data);
 		}
 
-		//! Factory method for returning a new ImageRef from an LDR image file.
+		//! Factory method for returning a new ImageRef from an LDR image file. The resulting image will be 2D
+		//! with depth, array layers, and mipmap levels equal to 1.
 		static ImageRef create(DeviceWeakRef device, 
-							   vk::ImageType image_type, 
 							   vk::ImageUsageFlags image_usage_flags, 
 							   vk::Format format, 
 							   const fsys::ImageResource& resource)
 		{
-			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource);
+			return std::make_shared<Image>(device, vk::ImageType::e2D, image_usage_flags, format, resource);
 		}
 
-		//! Factory method for returning a new ImageRef from an HDR image file.
+		//! Factory method for returning a new ImageRef from an HDR image file. The resulting image will be 2D
+		//! with depth, array layers, and mipmap levels equal to 1.
 		static ImageRef create(DeviceWeakRef device, 
-							   vk::ImageType image_type, 
 							   vk::ImageUsageFlags image_usage_flags, 
 							   vk::Format format, 
 							   const fsys::ImageResourceHDR& resource)
 		{
-			return std::make_shared<Image>(device, image_type, image_usage_flags, format, resource);
+			return std::make_shared<Image>(device, vk::ImageType::e2D, image_usage_flags, format, resource);
 		}
 
 		Image(DeviceWeakRef device,
@@ -106,7 +96,7 @@ namespace graphics
 			  vk::Extent3D dimensions,
 			  uint32_t array_layers = 1,
 			  uint32_t mip_levels = 1, 
-			  vk::ImageTiling image_tiling = vk::ImageTiling::eLinear, 
+			  vk::ImageTiling image_tiling = vk::ImageTiling::eOptimal, 
 			  uint32_t sample_count = 1);
 
 		template<typename T>
@@ -126,7 +116,8 @@ namespace graphics
 			m_mip_levels(1),
 			m_image_tiling(vk::ImageTiling::eLinear),
 			m_sample_count(vk::SampleCountFlagBits::e1),
-			m_current_layout(vk::ImageLayout::ePreinitialized)
+			m_current_layout(vk::ImageLayout::ePreinitialized),
+			m_is_host_accessible(true)
 		{
 			DeviceRef device_shared = m_device.lock();
 
@@ -149,10 +140,8 @@ namespace graphics
 			m_image_handle = device_shared->get_handle().createImage(image_create_info);
 
 			initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-			// Fill the image with the provided data.
-			void* mapped_ptr = m_device_memory->map(0, m_device_memory->get_allocation_size());		
-
+			
+			// Fill the first array layer and mipmap level.
 			vk::ImageSubresource image_subresource;
 			image_subresource.aspectMask = utils::format_to_aspect_mask(m_format);
 			image_subresource.arrayLayer = 0;
@@ -164,6 +153,9 @@ namespace graphics
 			// of the image data: floats are 4 bits, for example.
 			const size_t channels = 4;
 			constexpr size_t bit_multipler = sizeof(T);
+
+			// Fill the image with the provided data.
+			void* mapped_ptr = m_device_memory->map(0, m_device_memory->get_allocation_size());		
 
 			// The subresource has no additional padding, so we can directly copy the pixel data into the image.
 			// This usually happens when the requested image is a power-of-two texture.
@@ -244,9 +236,6 @@ namespace graphics
 
 		//! Returns the internal format of this image (for example, vk::Format::eB8G8R8A8Unorm).
 		vk::Format get_format() const { return m_format; }
-
-		//! Returns the current layout of the image.
-		vk::ImageLayout get_current_layout() const { return m_current_layout; }
 		
 		//! Returns a vk::Extent3D struct representing the width, height, and depth of the image.
 		vk::Extent3D get_dimensions() const { return m_dimensions; }
@@ -275,8 +264,14 @@ namespace graphics
 		//! Returns the image create flags used to construct this image.
 		vk::ImageCreateFlags get_image_create_flags() const { return m_image_create_flags; }
 
-		//! Returns `true` if the vk::ImageViewType is compatible with the parent type and `false` otherwise.
+		//! Returns the current layout of the image.
+		vk::ImageLayout get_current_layout() const { return m_current_layout; }
+
+		//! Returns `true` if the vk::ImageViewType is compatible with the parent image type and `false` otherwise.
 		bool is_image_view_type_compatible(vk::ImageViewType image_view_type);
+
+		//! Returns `true` if the device memory backed by this image can be mapped by the application and `false` otherwise.
+		bool is_host_accessible() const { return m_is_host_accessible; }
 
 	private:
 
@@ -286,21 +281,24 @@ namespace graphics
 		//! Prior to image creation, verify that the parameters passed to the constructor are valid.
 		void check_image_parameters();
 
+		//! Called by the CommandBuffer class during image transitions to update this image's current layout.
+		void set_current_layout(vk::ImageLayout layout) { m_current_layout = layout; }
+
 		DeviceWeakRef m_device;
 		DeviceMemoryRef m_device_memory;
 		vk::Image m_image_handle;
 		vk::ImageType m_image_type;
 		vk::ImageUsageFlags m_image_usage_flags;
 		vk::Format m_format;
-		vk::ImageLayout m_current_layout;
 		vk::Extent3D m_dimensions;
 		uint32_t m_array_layers;
-		uint32_t m_channels;
 		uint32_t m_mip_levels;
 		vk::ImageTiling m_image_tiling;
 		vk::SampleCountFlagBits m_sample_count;
 		vk::ImageCreateFlags m_image_create_flags;
-
+		vk::ImageLayout m_current_layout;
+		bool m_is_host_accessible;
+		
 		friend class ImageView;
 		friend class CommandBuffer;
 	};

@@ -26,10 +26,6 @@
 
 #pragma once
 
-#include <memory>
-
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "Instance.h"
 
 namespace graphics
@@ -48,12 +44,12 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new SurfaceRef. Called by the Window class to create a SurfaceRef.
-		static SurfaceRef create(InstanceWeakRef instance)
+		static SurfaceRef create(const InstanceRef& instance)
 		{
 			return std::make_shared<Surface>(instance);
 		}
 
-		Surface(InstanceWeakRef instance);
+		Surface(const InstanceRef& instance);
 		
 		~Surface();
 
@@ -61,7 +57,7 @@ namespace graphics
 
 	private:
 
-		InstanceWeakRef m_instance;
+		InstanceRef m_instance;
 		vk::SurfaceKHR m_surface_handle;
 
 		friend class Window;

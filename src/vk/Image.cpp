@@ -29,13 +29,6 @@
 namespace graphics
 {
 
-	Image::~Image()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyImage(m_image_handle);
-	}
-
 	void Image::initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags)
 	{
 		DeviceRef device_shared = m_device.lock();
@@ -70,7 +63,8 @@ namespace graphics
 		m_mip_levels(mip_levels),
 		m_image_tiling(image_tiling),
 		m_sample_count(utils::sample_count_to_flags(sample_count)),
-		m_current_layout(vk::ImageLayout::eUndefined)
+		m_current_layout(vk::ImageLayout::eUndefined),
+		m_is_host_accessible(false)
 	{
 		DeviceRef device_shared = m_device.lock();
 
@@ -97,6 +91,13 @@ namespace graphics
 		m_image_handle = device_shared->get_handle().createImage(image_create_info);
 
 		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eDeviceLocal);
+	}
+
+	Image::~Image()
+	{
+		DeviceRef device_shared = m_device.lock();
+
+		device_shared->get_handle().destroyImage(m_image_handle);
 	}
 
 	bool Image::is_image_view_type_compatible(vk::ImageViewType image_view_type)

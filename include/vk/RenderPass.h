@@ -26,12 +26,6 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <map>
-
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "Device.h"
 #include "Image.h"
 

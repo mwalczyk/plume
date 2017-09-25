@@ -41,7 +41,6 @@ namespace graphics
 	
 	class Instance;
 	using InstanceRef = std::shared_ptr<Instance>;
-	using InstanceWeakRef = std::weak_ptr<Instance>;
 
 	//! There is no global state in Vulkan and all per-application state is stored in an instance object.
 	//! Creating an instance initializes the Vulkan library and allows the application to pass information

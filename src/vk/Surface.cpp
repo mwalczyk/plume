@@ -29,16 +29,14 @@
 namespace graphics
 {
 
-	Surface::Surface(InstanceWeakRef instance) :
+	Surface::Surface(const InstanceRef& instance) :
 		m_instance(instance)
 	{
 	}
 
 	Surface::~Surface()
 	{
-		InstanceRef instance_shared = m_instance.lock();
-
-		instance_shared->get_handle().destroySurfaceKHR(m_surface_handle);
+		m_instance->get_handle().destroySurfaceKHR(m_surface_handle);
 	}
 
 } // namespace graphics

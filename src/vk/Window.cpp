@@ -36,7 +36,7 @@ namespace graphics
 		m_mode = WindowMode::WINDOW_MODE_BORDERS;
 	}
 
-	Window::Window(InstanceWeakRef instance, uint32_t width, uint32_t height, const Options& options) :
+	Window::Window(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options) :
 		m_instance(instance),
 		m_width(width),
 		m_height(height),
@@ -82,12 +82,10 @@ namespace graphics
 
 	SurfaceRef Window::create_surface()
 	{
-		InstanceRef instance_shared = m_instance.lock();
-
 		auto surface = Surface::create(m_instance);
 
 		// This class is a friend of the Surface class, so we can directly access the VkSurfaceKHR handle.
-		glfwCreateWindowSurface(instance_shared->get_handle(), m_window_handle, nullptr, reinterpret_cast<VkSurfaceKHR*>(&surface->m_surface_handle));
+		glfwCreateWindowSurface(m_instance->get_handle(), m_window_handle, nullptr, reinterpret_cast<VkSurfaceKHR*>(&surface->m_surface_handle));
 
 		return surface;
 	}

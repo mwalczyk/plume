@@ -113,16 +113,22 @@ namespace graphics
 		m_command_buffer_handle.bindPipeline(pipeline->get_pipeline_bind_point(), pipeline->get_handle());
 	}
 
-	void CommandBuffer::bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding)
+	void CommandBuffer::bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding, const std::vector<vk::DeviceSize>& offsets)
 	{
 		check_recording_state();
+
+		for (const auto& buffer : buffers)
+		{
+			if (!(buffer->get_buffer_usage_flags() & vk::BufferUsageFlagBits::eVertexBuffer))
+			{
+				throw std::runtime_error("One or more of the buffer objects passed to `bind_vertex_buffers()` was not created with the\
+										  vk::BufferUsageFlagBits::eVertexBuffer bit set");
+			}
+		}
 
 		// Gather all of the buffer handles.
 		std::vector<vk::Buffer> buffer_handles(buffers.size());
 		std::transform(buffers.begin(), buffers.end(), buffer_handles.begin(), [](const BufferRef& buffer) { return buffer->get_handle(); } );
-
-		// TODO: for now, set all buffer offsets to 0.
-		std::vector<vk::DeviceSize> offsets(buffers.size(), 0);
 
 		m_command_buffer_handle.bindVertexBuffers(first_binding, buffer_handles, offsets);
 	}
@@ -130,6 +136,12 @@ namespace graphics
 	void CommandBuffer::bind_index_buffer(const BufferRef& buffer, uint32_t offset, vk::IndexType index_type)
 	{
 		check_recording_state();
+
+		if (!(buffer->get_buffer_usage_flags() & vk::BufferUsageFlagBits::eIndexBuffer))
+		{
+			throw std::runtime_error("The buffer object passed to `bind_index_buffer()` was not created with the\
+									  vk::BufferUsageFlagBits::eIndexBuffer bit set");
+		}
 
 		m_command_buffer_handle.bindIndexBuffer(buffer->get_handle(), offset, index_type);
 	}
@@ -213,9 +225,13 @@ namespace graphics
 		vk::ImageMemoryBarrier image_memory_barrier;
 
 		// Based on the starting and ending layout of this image, select the appropriate access masks. See Sascha Willems' 
-		// examples for more details:
-		// https://github.com/SaschaWillems/Vulkan/blob/master/base/VulkanTools.cpp#L94
+		// examples for more details: https://github.com/SaschaWillems/Vulkan/blob/master/base/VulkanTools.cpp#L94
 
+	   /***********************************************************************************
+		*
+		* Source
+		*
+		***********************************************************************************/
 		switch (from)
 		{
 		case vk::ImageLayout::eUndefined:
@@ -288,6 +304,12 @@ namespace graphics
 			break;
 		}
 
+
+	   /***********************************************************************************
+		*
+		* Destination
+		*
+		***********************************************************************************/
 		switch (to)
 		{
 		case vk::ImageLayout::eUndefined:
@@ -376,7 +398,7 @@ namespace graphics
 		image_memory_barrier.subresourceRange.aspectMask = utils::format_to_aspect_mask(image->get_format()); 
 
 		// This class is a friend of the image class - store its new layout.
-		image->m_current_layout = to;
+		image->set_current_layout(to);
 
 		// The `srcStageMask` and `dstStageMask` specify which pipeline stages wrote to the resource
 		// last and which stages will read from the resource next, respectively. That is, they specify

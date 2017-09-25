@@ -26,12 +26,8 @@
 
 #pragma once
 
-#include <memory>
-
 #include "spirv_glsl.hpp"
 
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "Device.h"
 #include "ResourceManager.h"
 
