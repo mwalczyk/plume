@@ -30,6 +30,7 @@ namespace graphics
 {
 
 	Buffer::Buffer(DeviceWeakRef device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<QueueType> queues) :
+		
 		m_device(device),
 		m_buffer_usage_flags(buffer_usage_flags),
 		m_requested_size(size)

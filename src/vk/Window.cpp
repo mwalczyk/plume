@@ -37,6 +37,7 @@ namespace graphics
 	}
 
 	Window::Window(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options) :
+
 		m_instance(instance),
 		m_width(width),
 		m_height(height),

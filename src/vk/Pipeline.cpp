@@ -247,6 +247,7 @@ namespace graphics
 	}
 
 	GraphicsPipeline::GraphicsPipeline(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options) :
+		
 		Pipeline(device),
 		m_render_pass(render_pass)
 	{		
@@ -344,6 +345,7 @@ namespace graphics
 	}
 	
 	ComputePipeline::ComputePipeline(DeviceWeakRef device, const ShaderModuleRef& compute_shader_module) :
+		
 		Pipeline(device)
 	{
 		DeviceRef device_shared = m_device.lock();

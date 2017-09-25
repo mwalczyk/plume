@@ -46,10 +46,13 @@ int main()
 	* Render pass
 	*
 	***********************************************************************************/
+	const vk::Format swapchain_format = swapchain->get_image_format();
+	const vk::Extent3D fs_extent = { width, height, 1 };
+	
 	auto render_pass_builder = RenderPassBuilder::create();
-	render_pass_builder->add_color_transient_attachment("color_inter", vk::Format::eB8G8R8A8Unorm, msaa);
-	render_pass_builder->add_color_present_attachment("color_final", vk::Format::eB8G8R8A8Unorm);
-	render_pass_builder->add_depth_stencil_attachment("depth", vk::Format::eD32SfloatS8Uint, msaa);
+	render_pass_builder->add_color_transient_attachment("color_inter", swapchain_format, msaa);	// multisampling
+	render_pass_builder->add_color_present_attachment("color_final", swapchain_format);			// no multisampling
+	render_pass_builder->add_depth_stencil_attachment("depth", device->get_supported_depth_format(), msaa);
 
 	render_pass_builder->begin_subpass_record();
 	render_pass_builder->append_attachment_to_subpass("color_inter", AttachmentCategory::CATEGORY_COLOR);
@@ -64,7 +67,7 @@ int main()
 	* Geometry, buffers, and pipeline
 	*
 	***********************************************************************************/ 
-	auto geometry = geom::Rect(); // could be: geom::Sphere(1.0f, { 0.0f, 0.0f, 0.0f }, 12, 12);	
+	auto geometry = geom::Rect(); 
 	auto vbo = Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_packed_vertex_attributes());
 	auto ibo = Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
@@ -100,9 +103,6 @@ int main()
 	* Images, image views, and samplers
 	*
 	***********************************************************************************/
-	const vk::Format swapchain_format = swapchain->get_image_format();
-	const vk::Extent3D fs_extent = { width, height, 1 };
-
 	auto image_ms = Image::create(device,
 		vk::ImageType::e2D,
 		vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
@@ -182,9 +182,9 @@ int main()
 
 	auto d_buffer_info = ubo->build_descriptor_info();				
 	auto d_sampler_info = image_sdf_map_view->build_descriptor_info(sampler);
-	vk::WriteDescriptorSet w_descriptor_set_buffer =	{ descriptor_set, binding_id_ubo, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };
-	vk::WriteDescriptorSet w_descriptor_set_sampler =	{ descriptor_set, binding_id_cis, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
-	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_descriptor_set_buffer, w_descriptor_set_sampler };
+	vk::WriteDescriptorSet w_desc_buffer =	{ descriptor_set, binding_id_ubo, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };
+	vk::WriteDescriptorSet w_desc_sampler =	{ descriptor_set, binding_id_cis, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
+	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_desc_buffer, w_desc_sampler };
 
 	device->get_handle().updateDescriptorSets(w_descriptor_sets, {});
 
@@ -200,12 +200,6 @@ int main()
 	{
 		// Check the windowing system for any user interaction.
 		window->poll_events();
-
-		// Update buffer data.
-		//float angle = utils::app::get_elapsed_seconds();
-		//ubo_data.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3{ 0.0f, 1.0f, 0.0f });
-		//ubo_data.model = glm::rotate(ubo_data.model, angle * 0.5f, glm::vec3{ 1.0f, 0.0f, 0.0f });
-		//ubo->upload_immediately(&ubo_data);
 		
 		// Get the index of the next available image.
 		uint32_t image_index = swapchain->acquire_next_swapchain_image(image_available_sem);
@@ -229,7 +223,7 @@ int main()
 			command_buffer->bind_index_buffer(ibo);
 			command_buffer->update_push_constant_ranges(pipeline, "time", utils::app::get_elapsed_seconds());
 			command_buffer->update_push_constant_ranges(pipeline, "mouse", window->get_mouse_position());
-			command_buffer->bind_descriptor_sets(pipeline, 0, { descriptor_set });
+			command_buffer->bind_descriptor_sets(pipeline, set_id, { descriptor_set });
 			command_buffer->draw_indexed(static_cast<uint32_t>(geometry.num_indices()));
 			command_buffer->end_render_pass();
 		}

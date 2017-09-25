@@ -386,10 +386,6 @@ namespace graphics
 		//! vk::DescriptorSet corresponding to the descriptor set layout that was recorded for set 0.
 		std::vector<vk::DescriptorSet> allocate_descriptor_sets(const DescriptorSetLayoutBuilderRef& builder, const std::vector<uint32_t> set_indices)
 		{
-			// TODO: this function should ensure that the requested descriptor sets do not exceed the maximum
-			// number of descriptors per type and maximum number of descriptor sets, based on the parameters 
-			// that were used to construct the descriptor pool.
-
 			// Verify that all of the requested sets actually exist in the DescriptorSetLayoutBuilder's map.
 			for (auto set_index : set_indices)
 			{

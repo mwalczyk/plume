@@ -44,6 +44,7 @@ namespace graphics
 	} // anonymous
 
 	RenderPass::RenderPass(DeviceWeakRef device, const RenderPassBuilderRef& builder) :
+		
 		m_device(device),
 		m_render_pass_builder(builder)
 	{

@@ -30,6 +30,7 @@ namespace graphics
 {
 
 	Semaphore::Semaphore(DeviceWeakRef device) :
+		
 		m_device(device)
 	{
 		DeviceRef device_shared = m_device.lock();

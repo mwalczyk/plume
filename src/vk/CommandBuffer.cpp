@@ -30,6 +30,7 @@ namespace graphics
 {
 
 	CommandBuffer::CommandBuffer(DeviceWeakRef device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level) :
+		
 		m_device(device),
 		m_command_pool(command_pool),
 		m_command_buffer_level(command_buffer_level),

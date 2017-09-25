@@ -30,6 +30,7 @@ namespace graphics
 {
 	
 	CommandPool::CommandPool(DeviceWeakRef device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags) :
+		
 		m_device(device)
 	{
 		DeviceRef device_shared = m_device.lock();

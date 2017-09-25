@@ -330,8 +330,7 @@ void main()
 			vec3 n = calculate_normal(hit);
 			vec3 l = normalize(camera_position);
 
-			float d = max(0.15, dot(n, l));
-			color = vec3(pow(d, 4.25));
+			float d = max(0.45, dot(n, l));
             color = vec3(d);
             //color *= n * 0.5 + 0.5;
 

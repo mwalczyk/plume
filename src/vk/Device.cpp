@@ -32,6 +32,7 @@
 namespace graphics
 {
 	Device::Device(vk::PhysicalDevice physical_device, const SurfaceRef& surface, vk::QueueFlags required_queue_flags, bool use_swapchain, const std::vector<const char*>& required_device_extensions) :
+		
 		m_surface(surface),
 		m_required_device_extensions(required_device_extensions)
 	{		

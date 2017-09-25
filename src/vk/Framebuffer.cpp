@@ -35,6 +35,7 @@ namespace graphics
 							 uint32_t width, 
 							 uint32_t height,
 							 uint32_t layers) :
+		
 		m_device(device),
 		m_render_pass(render_pass),
 		m_name_to_image_view_map(name_to_image_view_map),

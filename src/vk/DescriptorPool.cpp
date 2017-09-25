@@ -30,6 +30,7 @@ namespace graphics
 {
 
 	DescriptorPool::DescriptorPool(DeviceWeakRef device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets) :
+		
 		m_device(device),
 		m_descriptor_pool_sizes(descriptor_pool_sizes),
 		m_max_sets(max_sets),

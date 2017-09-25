@@ -30,6 +30,7 @@ namespace graphics
 {
 
 	Surface::Surface(const InstanceRef& instance) :
+
 		m_instance(instance)
 	{
 	}

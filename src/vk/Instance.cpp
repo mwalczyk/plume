@@ -67,6 +67,7 @@ namespace graphics
 	}
 
 	Instance::Instance(const Options& options) :
+		
 		m_required_layers(options.m_required_layers),
 		m_required_extensions(options.m_required_extensions)
 	{

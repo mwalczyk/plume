@@ -30,6 +30,7 @@ namespace graphics
 {
 
 	DeviceMemory::DeviceMemory(DeviceWeakRef device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties) :
+		
 		m_device(device),
 		m_allocation_size(memory_requirements.size),
 		m_memory_property_flags(required_memory_properties),

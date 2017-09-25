@@ -117,6 +117,7 @@ namespace graphics
 	} // anonymous
 
 	ShaderModule::ShaderModule(DeviceWeakRef device, const fsys::FileResource& resource) :
+		
 		m_device(device)
 	{
 		DeviceRef device_shared = m_device.lock();

@@ -18,6 +18,7 @@ namespace graphics
 	}
 
 	Sampler::Sampler(DeviceWeakRef device, const Options& options) :
+		
 		m_device(device)
 	{
 		DeviceRef device_shared = m_device.lock();
