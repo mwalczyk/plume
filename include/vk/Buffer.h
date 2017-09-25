@@ -97,6 +97,17 @@ namespace graphics
 			m_device_memory->unmap();
 
 			// TODO: if the device memory associated with this buffer is not host coherent, we need to flush.
+			if (false)
+			{
+				vk::MappedMemoryRange mapped_memory_range;
+				mapped_memory_range.memory = m_device_memory->get_handle();
+				mapped_memory_range.offset = offset;
+				mapped_memory_range.size = sizeof(T);
+
+				DeviceRef device_shared = m_device.lock();
+
+				device_shared->get_handle().flushMappedMemoryRanges(mapped_memory_range);
+			}
 		}
 
 		//! Returns a vk::DescriptorBufferInfo for this buffer object. By default, `offset` is set to zero, and `range` is set to

@@ -29,6 +29,131 @@
 namespace graphics
 {
 
+	void RenderPassBuilder::add_generic_attachment(const std::string& name, const vk::AttachmentDescription& attachment_description)
+	{
+		check_attachment_name_unique(name);
+
+		// Add to global map of string names to attachment descriptions.
+		m_attachment_mapping.insert({ name, attachment_description });
+	}
+
+	void RenderPassBuilder::add_generic_attachment(const std::string& name, 
+												   vk::Format format,
+												   uint32_t sample_count,
+												   vk::ImageLayout initial_layout,
+												   vk::ImageLayout final_layout,
+												   vk::AttachmentLoadOp load_op,
+												   vk::AttachmentStoreOp store_op,
+												   vk::AttachmentLoadOp stencil_load_op,
+												   vk::AttachmentStoreOp stencil_store_op)
+	{
+		check_attachment_name_unique(name);
+
+		vk::AttachmentDescription attachment_description;
+		attachment_description.finalLayout = final_layout;
+		attachment_description.format = format;
+		attachment_description.initialLayout = initial_layout;
+		attachment_description.loadOp = load_op;
+		attachment_description.samples = utils::sample_count_to_flags(sample_count);
+		attachment_description.stencilLoadOp = stencil_load_op;
+		attachment_description.stencilStoreOp = stencil_store_op;
+		attachment_description.storeOp = store_op;
+
+		// Add to global map of string names to attachment descriptions.
+		m_attachment_mapping.insert({ name, attachment_description });
+	}
+
+	void RenderPassBuilder::add_color_present_attachment(const std::string& name, vk::Format format, uint32_t sample_count)
+	{
+		check_attachment_name_unique(name);
+
+		vk::AttachmentDescription attachment_description;
+		attachment_description.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+		attachment_description.format = format;
+		attachment_description.initialLayout = vk::ImageLayout::eUndefined;
+		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
+		attachment_description.samples = utils::sample_count_to_flags(sample_count);
+		attachment_description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+		attachment_description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+		attachment_description.storeOp = vk::AttachmentStoreOp::eStore;
+
+		// Add to global map of string names to attachment descriptions.
+		m_attachment_mapping.insert({ name, attachment_description });
+	}
+
+	void RenderPassBuilder::add_color_transient_attachment(const std::string& name, vk::Format format, uint32_t sample_count)
+	{
+		check_attachment_name_unique(name);
+
+		// For the store op, vk::AttachmentStoreOp::eDontCare is critical, since it allows tile based renderers 
+		// to completely avoid writing out the multisampled framebuffer to memory. This is a huge performance and 
+		// bandwidth improvement.
+		vk::AttachmentDescription attachment_description;
+		attachment_description.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		attachment_description.format = format;
+		attachment_description.initialLayout = vk::ImageLayout::eUndefined;
+		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
+		attachment_description.samples = utils::sample_count_to_flags(sample_count);
+		attachment_description.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+		attachment_description.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+		attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
+
+		// Add to global map of string names to attachment descriptions.
+		m_attachment_mapping.insert({ name, attachment_description });
+	}
+
+	void RenderPassBuilder::add_depth_stencil_attachment(const std::string& name, vk::Format format, uint32_t sample_count)
+	{
+		check_attachment_name_unique(name);
+
+		if (!utils::is_depth_format(format))
+		{
+			throw std::runtime_error("Attempting to create a depth stencil attachment with an invalid image format");
+		}
+
+		vk::AttachmentDescription attachment_description;
+		attachment_description.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		attachment_description.format = format;
+		attachment_description.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		attachment_description.loadOp = vk::AttachmentLoadOp::eClear;
+		attachment_description.samples = utils::sample_count_to_flags(sample_count);
+		attachment_description.stencilLoadOp = utils::is_stencil_format(format) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
+		attachment_description.stencilStoreOp = utils::is_stencil_format(format) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
+		attachment_description.storeOp = vk::AttachmentStoreOp::eDontCare;
+
+		// Add to global map of string names to attachment descriptions.
+		m_attachment_mapping.insert({ name, attachment_description });
+	}
+
+	void RenderPassBuilder::append_attachment_to_subpass(const std::string& name, AttachmentCategory category)
+	{
+		if (!m_is_recording)
+		{
+			throw std::runtime_error("The RenderPassBuilder must be in a recording state in order to receive this\
+										  command - see the `begin_subpass_record()` command for details.");
+		}
+
+		m_recorded_subpasses.back().m_categories_to_names_map[category].push_back(name);
+	}
+
+	std::vector<std::string> RenderPassBuilder::get_attachment_names() const
+	{
+		std::vector<std::string> attachment_names;
+		for (const auto& mapping : m_attachment_mapping)
+		{
+			attachment_names.push_back(mapping.first);
+		}
+		return attachment_names;
+	}
+
+	void RenderPassBuilder::check_attachment_name_unique(const std::string& name)
+	{
+		if (m_attachment_mapping.find(name) != m_attachment_mapping.end())
+		{
+			throw std::runtime_error("Attachments created with a RenderPassBuilder must have unique names: " + name + " already exists.");
+		}
+	}
+
 	namespace
 	{
 
