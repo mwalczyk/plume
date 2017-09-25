@@ -79,7 +79,7 @@ void main()
 
     // Displacement along normal
     float a = (tc_tess_inner[0] + tc_tess_outer[0]) / 64.0;
-    vec2 s = gl_Position.zy + constants.time;
+    vec2 s = gl_Position.xy + constants.time;
     te_noise = noise(s * (constants.mouse.x / 800.0) * 4.0) * a;
 
     gl_Position.xyz -=  te_normal * te_noise;

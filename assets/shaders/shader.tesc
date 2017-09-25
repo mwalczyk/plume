@@ -69,8 +69,8 @@ void main()
         float t = constants.time;
         float d = dot(vert.xyz, vert.xyz);
         float m = constants.mouse.y / 800.0;
-        float inner = noise(vert.xy * m * 4.0 + t);
-        float outer = noise(vert.zy * m * 4.0 + t);
+        float inner = noise(vert.xy * m * 12.0 + t);
+        float outer = noise(vert.zy * m * 12.0 + t);
         inner = pow(inner, 4.0) * noise(vec2(d) + t);
         outer = pow(outer, 4.0);
 
@@ -79,8 +79,8 @@ void main()
         mouse.y /= 800.0;
         float d_to_mouse = distance(vert.xyz, mouse * 2.0 - 1.0);
 
-        inner *= 40.0 * pow(d_to_mouse, 2.0);
-        outer *= 40.0 * pow(d_to_mouse, 2.0);
+        inner *= 4.0 * pow(d_to_mouse, 2.0);
+        outer *= 4.0 * pow(d_to_mouse, 2.0);
 
         gl_TessLevelInner[0] = inner;
         gl_TessLevelOuter[0] = outer;
