@@ -64,7 +64,7 @@ int main()
 	* Geometry, buffers, and pipeline
 	*
 	***********************************************************************************/ 
-	auto geometry = geom::Sphere(1.0f, { 0.0f, 0.0f, 0.0f }, 12, 12);	// could be: geom::Grid(1.0f, 1.0f, 24, 24);
+	auto geometry = geom::Rect(); // could be: geom::Sphere(1.0f, { 0.0f, 0.0f, 0.0f }, 12, 12);	
 	auto vbo = Buffer::create(device, vk::BufferUsageFlagBits::eVertexBuffer, geometry.get_packed_vertex_attributes());
 	auto ibo = Buffer::create(device, vk::BufferUsageFlagBits::eIndexBuffer, geometry.get_indices());
 	auto ubo = Buffer::create(device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(UniformBufferData), nullptr);
@@ -80,22 +80,19 @@ int main()
 	std::vector<vk::VertexInputBindingDescription> binds = geometry.get_vertex_input_binding_descriptions();
 	std::vector<vk::VertexInputAttributeDescription> attrs = geometry.get_vertex_input_attribute_descriptions();
 	
-	auto v_shader =		ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_vert.spv"));
-	auto tc_shader =	ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tesc.spv"));
-	auto te_shader =	ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_tese.spv"));
-	auto f_shader =		ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "shader_frag.spv"));
+	auto v_shader =		ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "raymarch_vert.spv"));
+	auto f_shader =		ShaderModule::create(device, ResourceManager::load_file(base_shader_path + "raymarch_frag.spv"));
 	
 	auto pipeline_options = GraphicsPipeline::Options()
 		.vertex_input_binding_descriptions(binds)
 		.vertex_input_attribute_descriptions(attrs)
 		.viewports({ window->get_fullscreen_viewport() })
 		.scissors({ window->get_fullscreen_scissor_rect2d() })
-		.attach_shader_stages({ v_shader, tc_shader, te_shader, f_shader })
-		.primitive_topology(vk::PrimitiveTopology::ePatchList) // could be: primitive_topology(geometry.get_topology())
+		.attach_shader_stages({ v_shader, f_shader })
+		.primitive_topology(geometry.get_topology())
 		.cull_mode(vk::CullModeFlagBits::eNone)
 		.enable_depth_test()
-		.samples(msaa)
-		.points();
+		.samples(msaa);
 	auto pipeline = GraphicsPipeline::create(device, render_pass, pipeline_options);
 
    /***********************************************************************************
@@ -205,10 +202,10 @@ int main()
 		window->poll_events();
 
 		// Update buffer data.
-		float angle = utils::app::get_elapsed_seconds();
-		ubo_data.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3{ 0.0f, 1.0f, 0.0f });
-		ubo_data.model = glm::rotate(ubo_data.model, angle * 0.5f, glm::vec3{ 1.0f, 0.0f, 0.0f });
-		ubo->upload_immediately(&ubo_data);
+		//float angle = utils::app::get_elapsed_seconds();
+		//ubo_data.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3{ 0.0f, 1.0f, 0.0f });
+		//ubo_data.model = glm::rotate(ubo_data.model, angle * 0.5f, glm::vec3{ 1.0f, 0.0f, 0.0f });
+		//ubo->upload_immediately(&ubo_data);
 		
 		// Get the index of the next available image.
 		uint32_t image_index = swapchain->acquire_next_swapchain_image(image_available_sem);
