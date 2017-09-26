@@ -33,9 +33,6 @@
 
 namespace graphics
 {
-	
-	class CommandBuffer;
-	using CommandBufferRef = std::shared_ptr<CommandBuffer>;
 
 	//! Command buffers are objects used to record commands which can be subsequently submitted to a device
 	//! queue for execution. When a command buffer begins recording, all state in that command buffer is 
@@ -56,7 +53,7 @@ namespace graphics
 	//! queues can be expressed with semaphores and fences. There are a few implicit ordering constraints
 	//! between commands within a command buffer but only covering a subset of execution. Additional explicit
 	//! ordering constraints can be expressed with events, pipeline barriers, and subpass dependencies.
-	class CommandBuffer : public Noncopyable
+	class CommandBuffer
 	{
 	public:
 
@@ -95,16 +92,9 @@ namespace graphics
 		//!
 		//! Primary command buffers can execute secondary command buffers. Note that secondary command buffers
 		//! are not directly submitted to queues like primary command buffers.
-		static CommandBufferRef create(DeviceWeakRef device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level = vk::CommandBufferLevel::ePrimary)
-		{
-			return std::make_shared<CommandBuffer>(device, command_pool, command_buffer_level);
-		}
+		CommandBuffer(const Device& device, const CommandPool& command_pool, vk::CommandBufferLevel command_buffer_level = vk::CommandBufferLevel::ePrimary);
 
-		CommandBuffer(DeviceWeakRef device, const CommandPoolRef& command_pool, vk::CommandBufferLevel command_buffer_level = vk::CommandBufferLevel::ePrimary);
-		
-		~CommandBuffer();
-
-		vk::CommandBuffer get_handle() const { return m_command_buffer_handle; };
+		vk::CommandBuffer get_handle() const { return m_command_buffer_handle.get(); };
 
 		//! Determine whether or not this command buffer is a primary or secondary command buffer.
 		bool is_primary() const { return m_command_buffer_level == vk::CommandBufferLevel::ePrimary; }
@@ -125,7 +115,7 @@ namespace graphics
 		{
 			m_is_recording = false;
 			m_is_inside_render_pass = false;
-			m_command_buffer_handle.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
+			m_command_buffer_handle.get().reset(vk::CommandBufferResetFlagBits::eReleaseResources);
 		}
 
 		//! Start recording into the command buffer. Puts the command buffer into a recording state.
@@ -139,7 +129,7 @@ namespace graphics
 		void begin(vk::CommandBufferUsageFlags command_buffer_usage_flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 		//! Begin recording the commands for a render pass instance. 
-		void begin_render_pass(const RenderPassRef& render_pass, const FramebufferRef& framebuffer, const std::vector<vk::ClearValue>& clear_values = { utils::clear_color::black() });
+		void begin_render_pass(const RenderPass& render_pass, const Framebuffer& framebuffer, const std::vector<vk::ClearValue>& clear_values = { utils::clear_color::black() });
 
 		//! Advance to the current render pass' next subpass.
 		void next_subpass();
@@ -148,18 +138,18 @@ namespace graphics
 		void set_line_width(float width);
 
 		//! Bind a pipeline for use in subsequent graphics or compute operations.
-		void bind_pipeline(const PipelineRef& pipeline);
+		void bind_pipeline(const Pipeline& pipeline);
 
 		//! Binds the specified vertex buffers for use in subsequent draw commands.
-		void bind_vertex_buffers(const std::vector<BufferRef>& buffers, uint32_t first_binding = 0, const std::vector<vk::DeviceSize>& offsets = { 0 });
+		void bind_vertex_buffer(const Buffer& buffer, uint32_t binding = 0, vk::DeviceSize offset = 0);
 
 		//! Binds the specified index buffer for use in subsequent indexed draw commands.
-		void bind_index_buffer(const BufferRef& buffer, uint32_t offset = 0, vk::IndexType index_type = vk::IndexType::eUint32);
+		void bind_index_buffer(const Buffer& buffer, uint32_t offset = 0, vk::IndexType index_type = vk::IndexType::eUint32);
 
 		//! Update a series of push constants, starting at the specified offset. Note that 
 		//! all push constants are undefined at the start of a command buffer.
 		template<class T>
-		void update_push_constant_ranges(const PipelineRef& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const T& data)
+		void update_push_constant_ranges(const Pipeline& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const T& data)
 		{
 			// TODO: does this actually work?
 			m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), stage_flags, offset, size, &data);
@@ -168,19 +158,19 @@ namespace graphics
 		//! During shader reflection, the pipeline object grabs and stores information about the available push
 		//! constants. This let's us refer to a push constant by its string name.
 		template<class T>
-		void update_push_constant_ranges(const PipelineRef& pipeline, const std::string& name, const T& data)
+		void update_push_constant_ranges(const Pipeline& pipeline, const std::string& name, const T& data)
 		{
-			auto pushConstantsMember = pipeline->get_push_constants_member(name);
+			auto pushConstantsMember = pipeline.get_push_constants_member(name);
 
-			m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), 
-												  pushConstantsMember.stageFlags, 
-												  pushConstantsMember.offset, 
-												  pushConstantsMember.size, 
-												  &data);
+			get_handle().pushConstants(pipeline.get_pipeline_layout_handle(), 
+									   pushConstantsMember.stageFlags, 
+									   pushConstantsMember.offset, 
+									   pushConstantsMember.size, 
+									   &data);
 		}
 
 		//! Binds the specified descriptor sets.
-		void bind_descriptor_sets(const PipelineRef& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets = {});
+		void bind_descriptor_sets(const Pipeline& pipeline, uint32_t first_set, const std::vector<vk::DescriptorSet>& descriptor_sets, const std::vector<uint32_t>& dynamic_offsets = {});
 
 		//! Issue a non-indexed draw command.
 		void draw(const DrawParamsNonIndexed& draw_params);
@@ -192,12 +182,12 @@ namespace graphics
 		void end_render_pass();
 
 		//! Clear a color image with the specified clear value.
-		void clear_color_image(const ImageRef& image, 
+		void clear_color_image(const Image& image, 
 							   vk::ClearColorValue clear_value = utils::clear_color::black(), 
 							   vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource());
 
 		//! Clear a depth/stencil image with the specified clear value.
-		void clear_depth_image(const ImageRef& image,
+		void clear_depth_image(const Image& image,
 							   vk::ClearDepthStencilValue clear_value = utils::clear_depth::depth_one(),
 							   vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
 
@@ -206,7 +196,7 @@ namespace graphics
 		//! used to transfer ownership from one queue family to another. Note that if `src_queue` and `dst_queue` are
 		//! the same, then the image barrier's `srcQueueFamilyIndex` and `dstQueueFamilyIndex` will be set to the special
 		//! value VK_QUEUE_FAMILY_IGNORED, meaning that there will be no transfer of ownership.
-		void transition_image_layout(const ImageRef& image, 
+		void transition_image_layout(const Image& image, 
 									 vk::ImageLayout from, 
 									 vk::ImageLayout to, 
 									 vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(),
@@ -265,20 +255,20 @@ namespace graphics
 		//! of the second draw call. To read the image in a different stage, supply the appropriate 
 		//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
 		//! that the image will be read in the vertex shader stage of the second draw call.
-		void barrier_compute_write_storage_image_graphics_read(const ImageRef& image, 
+		void barrier_compute_write_storage_image_graphics_read(const Image& image, 
 															   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
 															   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 		//! Creates a pipeline barrier representing a draw command that writes to a color attachment followed 
 		//! by a compute shader dispatch that reads from that image. This avoids a RAW (read-after-write) 
 		//! hazard.
-		void barrier_graphics_write_color_attachment_compute_read(const ImageRef& image,
+		void barrier_graphics_write_color_attachment_compute_read(const Image& image,
 																  const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 		
 		//! Creates a pipeline barrier representing a draw command that writes to a depth attachment followed 
 		//! by a compute shader dispatch that reads from that image. This avoids a RAW (read-after-write) 
 		//! hazard.
-		void barrier_graphics_write_depth_attachment_compute_read(const ImageRef& image,
+		void barrier_graphics_write_depth_attachment_compute_read(const Image& image,
 																  const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 		
 		//! Creates a pipeline barrier representing a draw command that writes to a depth attachment
@@ -291,7 +281,7 @@ namespace graphics
 		//! of the second draw call. To read the image in a different stage, supply the appropriate 
 		//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
 		//! that the image will be read in the vertex shader stage of the second draw call.
-		void barrier_graphics_write_depth_attachment_graphics_read(const ImageRef& image,
+		void barrier_graphics_write_depth_attachment_graphics_read(const Image& image,
 																   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
 																   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
@@ -304,7 +294,7 @@ namespace graphics
 		//! of the second draw call. To read the image in a different stage, supply the appropriate 
 		//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
 		//! that the image will be read in the vertex shader stage of the second draw call.
-		void barrier_graphics_write_color_attachment_graphics_read(const ImageRef& image,
+		void barrier_graphics_write_color_attachment_graphics_read(const Image& image,
 																   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
 																   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
@@ -331,34 +321,36 @@ namespace graphics
 			}
 		}
 
-		DeviceWeakRef m_device;
-		CommandPoolRef m_command_pool;
-		vk::CommandBuffer m_command_buffer_handle;
+		const Device* m_device_ptr;
+		const CommandPool* m_command_pool_ptr;
+		vk::UniqueCommandBuffer m_command_buffer_handle;
+
 		vk::CommandBufferLevel m_command_buffer_level;
 		bool m_is_recording;
 		bool m_is_inside_render_pass;
 	};
 
-	class ScopedRecord : Noncopyable
+	class ScopedRecord
 	{
 	public:
 
 		// On construction, begin recording into the specified command buffer
-		ScopedRecord(const CommandBufferRef& command_buffer) :
-			m_command_buffer(command_buffer)
+		ScopedRecord(CommandBuffer& command_buffer) :
+
+			m_command_buffer_ptr(&command_buffer)
 		{
-			m_command_buffer->begin();
+			m_command_buffer_ptr->begin();
 		}
 
 		// On destruction, end recording into the specified command buffer
 		~ScopedRecord()
 		{
-			m_command_buffer->end();
+			m_command_buffer_ptr->end();
 		}
 
 	private:
 
-		CommandBufferRef m_command_buffer;
+		CommandBuffer* m_command_buffer_ptr;
 	};
 
 } // namespace graphics

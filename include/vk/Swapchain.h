@@ -33,31 +33,13 @@
 namespace graphics
 {
 
-	class Swapchain;
-	using SwapchainRef = std::shared_ptr<Swapchain>;
-
-	class Swapchain : public Noncopyable
+	class Swapchain
 	{
 	public:
 
-		//! Factory method for returning a new SwapchainRef. This constructor will automatically
-		//! choose the optimal swapchain image format and presentation mode.
-		static SwapchainRef create(DeviceWeakRef device, 
-								   const SurfaceRef& surface, 
-								   uint32_t width, 
-								   uint32_t height)
-		{
-			return std::make_shared<Swapchain>(device, surface, width, height);
-		}
+		Swapchain(const Device& device, const vk::UniqueSurfaceKHR& surface, uint32_t width, uint32_t height);
 
-		Swapchain(DeviceWeakRef device, 
-				  const SurfaceRef& surface,
-			      uint32_t width,
-			      uint32_t height);
-		
-		~Swapchain();
-
-		vk::SwapchainKHR get_handle() const { return m_swapchain_handle; };
+		vk::SwapchainKHR get_handle() const { return m_swapchain_handle.get(); };
 		
 		const std::vector<vk::Image>& get_image_handles() const { return m_image_handles; }
 		
@@ -69,8 +51,6 @@ namespace graphics
 		
 		vk::Format get_image_format() const { return m_swapchain_image_format; }
 		
-		uint32_t acquire_next_swapchain_image(const SemaphoreRef& semaphore, uint32_t timeout = std::numeric_limits<uint64_t>::max());
-
 	private:
 
 		vk::SurfaceFormatKHR select_swapchain_surface_format(const std::vector<vk::SurfaceFormatKHR>& surface_formats) const;
@@ -81,9 +61,9 @@ namespace graphics
 		
 		void create_image_views();
 
-		DeviceWeakRef m_device;
-		SurfaceRef m_surface;
-		vk::SwapchainKHR m_swapchain_handle;
+		const Device* m_device_ptr;
+		vk::UniqueSwapchainKHR m_swapchain_handle;
+
 		std::vector<vk::Image> m_image_handles;
 		std::vector<vk::ImageView> m_image_view_handles;
 		vk::Format m_swapchain_image_format;

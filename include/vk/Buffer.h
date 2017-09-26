@@ -32,49 +32,33 @@
 namespace graphics
 {
 
-	class Buffer;
-	using BufferRef = std::shared_ptr<Buffer>;
-
 	//! Buffers represent linear arrays of data. They are created with a usage bitmask which describes the
 	//! allowed usages of the buffer (i.e. vk::BufferUsageFlagBits::eUniformBuffer). Any combination of bits
 	//! can be specified. Buffers are created with a sharing mode that controls how they can be accessed 
 	//! from queues. Note that if a buffer is created with the vk::SharingMode::eExclusive sharing mode, 
 	//! ownership can be transferred to another queue.
-	class Buffer : public Noncopyable
+	class Buffer
 	{
 	public:
 
-		//! Factory method for returning a new BufferRef that will be filled with the supplied vector of data.
 		template<class T>
-		static BufferRef create(DeviceWeakRef device, 
-								vk::BufferUsageFlags buffer_usage_flags, 
-								const std::vector<T>& data, 
-								const std::vector<QueueType> queues = { QueueType::GRAPHICS })
-		{
-			return std::make_shared<Buffer>(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues);
-		}
+		Buffer(const Device& device,
+			   vk::BufferUsageFlags buffer_usage_flags,
+			   const std::vector<T>& data,
+			   const std::vector<QueueType> queues = { QueueType::GRAPHICS }) :
 
-		//! Factory method for returning a new BufferRef that will be filled with the supplied data.
-		static BufferRef create(DeviceWeakRef device, 
-								vk::BufferUsageFlags buffer_usage_flags, 
-								size_t size, 
-								const void* data, 
-								const std::vector<QueueType> queues = { QueueType::GRAPHICS })
-		{
-			return std::make_shared<Buffer>(device, buffer_usage_flags, size, data, queues);
-		}
+			Buffer(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues) {}
+		
 
-		Buffer(DeviceWeakRef device,
+		Buffer(const Device& device,
 			   vk::BufferUsageFlags buffer_usage_flags,		
 			   size_t size, 
 			   const void* data, 
 			   const std::vector<QueueType> queues = { QueueType::GRAPHICS });
 
-		~Buffer();
+		const std::unique_ptr<DeviceMemory>& get_device_memory() const { return m_device_memory; }
 
-		DeviceMemoryRef get_device_memory() const { return m_device_memory; }
-
-		vk::Buffer get_handle() const { return m_buffer_handle; }
+		vk::Buffer get_handle() const { return m_buffer_handle.get(); }
 
 		//! Returns the usage flags that were used to create this buffer (i.e. vertex buffer, index buffer, uniform buffer, etc.).
 		vk::BufferUsageFlags get_buffer_usage_flags() const { return m_buffer_usage_flags; }
@@ -104,9 +88,7 @@ namespace graphics
 				mapped_memory_range.offset = offset;
 				mapped_memory_range.size = sizeof(T);
 
-				DeviceRef device_shared = m_device.lock();
-
-				device_shared->get_handle().flushMappedMemoryRanges(mapped_memory_range);
+				m_device_ptr->get_handle().flushMappedMemoryRanges(mapped_memory_range);
 			}
 		}
 
@@ -122,14 +104,15 @@ namespace graphics
 				throw std::runtime_error("Invalid value for `range` parameter of `build_descriptor_info()`");
 			}
 
-			return{ m_buffer_handle, offset, range };
+			return{ m_buffer_handle.get(), offset, range };
 		}
 
 	private:
 
-		DeviceWeakRef m_device;
-		DeviceMemoryRef m_device_memory;
-		vk::Buffer m_buffer_handle;
+		const Device* m_device_ptr;
+		vk::UniqueBuffer m_buffer_handle;
+		std::unique_ptr<DeviceMemory> m_device_memory;
+
 		vk::BufferUsageFlags m_buffer_usage_flags;
 		vk::MemoryRequirements m_memory_requirements;
 		size_t m_requested_size;

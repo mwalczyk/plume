@@ -41,9 +41,6 @@ namespace graphics
 		CATEGORY_PRESERVE
 	};
 
-	class RenderPassBuilder;
-	using RenderPassBuilderRef = std::shared_ptr<RenderPassBuilder>;
-
 	//! A helper class for constructing render passes.
 	//!
 	//! Each vk::AttachmentDescription describes a particular attachment that will be used during the
@@ -91,14 +88,11 @@ namespace graphics
 			return subpass_dependency;
 		}
 
-		static RenderPassBuilderRef create()
+		//! Factory method for constructing a new shared RenderPassBuilder.
+		static std::shared_ptr<RenderPassBuilder> RenderPassBuilder::create()
 		{
-			return std::make_shared<RenderPassBuilder>();
+			return std::shared_ptr<RenderPassBuilder>(new RenderPassBuilder());
 		}
-
-		RenderPassBuilder() :
-			m_is_recording(false)
-		{}
 
 		//! Constructs an attachment description for a generic attachment.
 		void add_generic_attachment(const std::string& name, const vk::AttachmentDescription& attachment_description);
@@ -160,6 +154,12 @@ namespace graphics
 		//! Returns a vector of all of the user-defined names for render pass attachments.
 		std::vector<std::string> get_attachment_names() const;
 
+	protected:
+
+		RenderPassBuilder() :
+			m_is_recording(false)
+		{}
+
 	private:
 
 		struct SubpassRecord
@@ -198,38 +198,28 @@ namespace graphics
 		friend class RenderPass;
 	};
 
-	class RenderPass;
-	using RenderPassRef = std::shared_ptr<RenderPass>;
-
 	//! In Vulkan, a render pass represents a collection of attachments, subpasses, and dependencies between
 	//! the subpasses, and describes how the attachments are used over the course of the subpasses. A subpass
 	//! represents a phase of rendering that reads and writes to a subset of the attachments in a render pass.
 	//! Rendering commands are recorded into a particular subpass of a render pass. The specific image views
 	//! that will be used for the attachments are specified by framebuffer objects. Framebuffers are created
 	//! with respect to a specific render pass that the framebuffer is compatible with.
-	class RenderPass : public Noncopyable
+	class RenderPass
 	{
 	public:
 
-		//! Factory method for returning a new RenderPassRef from a RenderPassBuilderRef.
-		static RenderPassRef create(DeviceWeakRef device, const RenderPassBuilderRef& builder)
-		{
-			return std::make_shared<RenderPass>(device, builder);
-		}
+		RenderPass(const Device& device, const std::shared_ptr<RenderPassBuilder>& builder);
 
-		RenderPass(DeviceWeakRef, const RenderPassBuilderRef& builder);
+		vk::RenderPass get_handle() const { return m_render_pass_handle.get(); }
 
-		~RenderPass();
-
-		vk::RenderPass get_handle() const { return m_render_pass_handle; }
-
-		RenderPassBuilderRef get_render_pass_builder() { return m_render_pass_builder; }
+		std::shared_ptr<RenderPassBuilder> get_render_pass_builder() const { return m_render_pass_builder; }
 
 	private:
 
-		DeviceWeakRef m_device;
-		RenderPassBuilderRef m_render_pass_builder;
-		vk::RenderPass m_render_pass_handle;
+		const Device* m_device_ptr;
+		vk::UniqueRenderPass m_render_pass_handle;
+
+		std::shared_ptr<RenderPassBuilder> m_render_pass_builder;
 	};
 
 } // namespace graphics

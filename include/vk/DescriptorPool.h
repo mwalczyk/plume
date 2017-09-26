@@ -52,13 +52,14 @@ namespace graphics
 	public:
 
 		//! Factory method for returning a new DescriptorSetLayoutBuilderRef. 
-		static DescriptorSetLayoutBuilderRef create(DeviceWeakRef device)
+		static DescriptorSetLayoutBuilderRef create(const Device& device)
 		{
 			return std::make_shared<DescriptorSetLayoutBuilder>(device);
 		}
 
-		DescriptorSetLayoutBuilder(DeviceWeakRef device) :
-			m_device(device),
+		DescriptorSetLayoutBuilder(const Device& device) :
+
+			m_device_ptr(&device),
 			m_current_set(0),
 			m_is_recording(false)
 		{
@@ -209,7 +210,8 @@ namespace graphics
 
 	private:
 
-		DeviceWeakRef m_device;
+		const Device* m_device_ptr;
+
 		uint32_t m_current_set;
 		bool m_is_recording;
 		std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> m_descriptor_sets_mapping;
@@ -224,7 +226,7 @@ namespace graphics
 	//! constructed by specifying one or more descriptor pool size structs, each of which contains a descriptor
 	//! type (i.e. vk::DescriptorType::eUniformBuffer) and a descriptor count. The descriptor pool will 
 	//! allocate enough storage for the total number of descriptors of each type.
-	class DescriptorPool : public Noncopyable
+	class DescriptorPool
 	{
 	public:
 
@@ -236,16 +238,9 @@ namespace graphics
 		//!															   { vk::DescriptorType::eCombinedImageSampler, 4},
 		//!															   { vk::DescriptorType::eStorageBuffer, 1} });
 		//!
-		static DescriptorPoolRef create(DeviceWeakRef device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1)
-		{
-			return std::make_shared<DescriptorPool>(device, descriptor_pool_sizes, max_sets);
-		}
+		DescriptorPool(const Device& device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1);
 
-		DescriptorPool(DeviceWeakRef device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets = 1);
-
-		~DescriptorPool();
-
-		vk::DescriptorPool get_handle() const { return m_descriptor_pool_handle; }
+		vk::DescriptorPool get_handle() const { return m_descriptor_pool_handle.get(); }
 
 		//! Returns the maximum number of descriptor sets that can be safely allocated from this pool.
 		uint32_t get_max_sets() const { return m_max_sets; }
@@ -285,8 +280,6 @@ namespace graphics
 				}
 			}
 
-			DeviceRef device_shared = m_device.lock();
-
 			// Build a descriptor set layout object for each of the requested sets.
 			std::vector<vk::DescriptorSetLayout> requested_layouts;
 			for (auto set_index : set_indices)
@@ -324,19 +317,20 @@ namespace graphics
 
 			vk::DescriptorSetAllocateInfo descriptor_set_allocate_info = 
 			{
-				m_descriptor_pool_handle,							// descriptor pool
+				m_descriptor_pool_handle.get(),						// descriptor pool
 				static_cast<uint32_t>(requested_layouts.size()),	// number of sets to allocate
 				requested_layouts.data()							// descriptor set layout
 			};
 
 			// Allocate the descriptor sets.
-			return device_shared->get_handle().allocateDescriptorSets(descriptor_set_allocate_info);
+			return m_device_ptr->get_handle().allocateDescriptorSets(descriptor_set_allocate_info);
 		}
 
 	public:
 
-		DeviceWeakRef m_device;
-		vk::DescriptorPool m_descriptor_pool_handle;
+		const Device* m_device_ptr;
+		vk::UniqueDescriptorPool m_descriptor_pool_handle;
+
 		std::vector<vk::DescriptorPoolSize> m_descriptor_pool_sizes;
 		uint32_t m_max_sets;
 		uint32_t m_available_sets;

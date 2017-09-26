@@ -31,34 +31,23 @@
 namespace graphics
 {
 
-	class Semaphore;
-	using SemaphoreRef = std::shared_ptr<Semaphore>;
-
 	//! Semaphores are a synchronization primitive that can be used to insert a dependency between batches
 	//! submitted to queues. A semaphore can be in one of two states: signaled or unsignaled. Semaphores can be
 	//! used during the queue submission process to signal that a batch of work has completed (i.e. rendering
 	//! has finished). They can also be used to delay the start of a batch of work (i.e. presenting an image to 
 	//! the screen should not start until rendering has finished).
-	class Semaphore : public Noncopyable
+	class Semaphore
 	{
 	public:
 
-		//! Factory method for returning a new SemaphoreRef.
-		static SemaphoreRef create(DeviceWeakRef device)
-		{
-			return std::make_shared<Semaphore>(device);
-		}
-
-		Semaphore(DeviceWeakRef device);
+		Semaphore(const Device& device);
 		
-		~Semaphore();
-
-		vk::Semaphore get_handle() const { return m_semaphore_handle; };
+		vk::Semaphore get_handle() const { return m_semaphore_handle.get(); };
 
 	private:
 
-		DeviceWeakRef m_device;
-		vk::Semaphore m_semaphore_handle;
+		const Device* m_device_ptr;
+		vk::UniqueSemaphore m_semaphore_handle;
 	};
 
 } // namespace graphics

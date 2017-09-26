@@ -26,29 +26,22 @@
 
 #pragma once
 
-#include <memory>
-
-#include "Platform.h"
-#include "Noncopyable.h"
 #include "Device.h"
 
 namespace graphics
 {
-	class CommandPool;
-	using CommandPoolRef = std::shared_ptr<CommandPool>;
 
 	//! Command pools are opaque objects that command buffer memory is allocated from, and which allow the 
 	//! implementation to reduce the cost of resource creation across multiple command buffers. Command pools
 	//! should not be used concurrently by multiple threads. This includes any recording commands issued to 
 	//! command buffers from the pool, as well as operations that allocate, free, and/or reset command 
 	//! buffers or the pool itself.
-	class CommandPool : public Noncopyable
+	class CommandPool
 	{
 	public:
 
-		//! Factory method for returning a new CommandPoolRef. The vk::CommandPoolCreateFlags parameter   
-		//! determines how and when individual command buffers allocated from this pool can be re-recorded. 
-		//! Possible flags are:
+		//! The vk::CommandPoolCreateFlags parameter determines how and when individual command buffers allocated  
+		//! from this pool can be re-recorded. Possible flags are:
 		//!
 		//! vk::CommandPoolCreateFlagBits::eTransient: command buffers allocated from this pool will be 
 		//!		short lived (reset or freed in a relatively short timeframe).
@@ -58,30 +51,21 @@ namespace graphics
 		//!		command buffers must be reset together.
 		//!
 		//! Both flags will be set by default.
-		static CommandPoolRef create(DeviceWeakRef device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient)
-		{
-			return std::make_shared<CommandPool>(device, queue_type, command_pool_create_flags);
-		}
+		CommandPool(const Device& device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
 
-		CommandPool(DeviceWeakRef device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
-		
-		~CommandPool();
-
-		vk::CommandPool get_handle() const { return m_command_pool_handle; };
+		vk::CommandPool get_handle() const { return m_command_pool_handle.get(); };
 
 		// TODO: this should notify all command buffers that have been allocated from this pool, which means
 		// that the command pool class needs to maintain a list of all command buffer objects.
 		void reset_pool() 
 		{ 
-			DeviceRef device_shared = m_device.lock();
-
-			device_shared->get_handle().resetCommandPool(m_command_pool_handle, vk::CommandPoolResetFlagBits::eReleaseResources);
+			m_device_ptr->get_handle().resetCommandPool(m_command_pool_handle.get(), vk::CommandPoolResetFlagBits::eReleaseResources);
 		}
 
 	private:
 
-		DeviceWeakRef m_device;
-		vk::CommandPool m_command_pool_handle;
+		const Device* m_device_ptr;
+		vk::UniqueCommandPool m_command_pool_handle;
 	};
 
 } // namespace graphics

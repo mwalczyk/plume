@@ -168,13 +168,11 @@ namespace graphics
 
 	} // anonymous
 
-	RenderPass::RenderPass(DeviceWeakRef device, const RenderPassBuilderRef& builder) :
+	RenderPass::RenderPass(const Device& device, const std::shared_ptr<RenderPassBuilder>& builder) :
 		
-		m_device(device),
+		m_device_ptr(&device),
 		m_render_pass_builder(builder)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		// First, separate the names and attachment descriptions into two independent
 		// vectors - we need to do this so that we can pass the vk::AttachmentDescription
 		// structs to the render pass constructor.
@@ -287,14 +285,7 @@ namespace graphics
 		render_pass_create_info.pSubpasses = all_subpass_descs.data();
 		render_pass_create_info.subpassCount = static_cast<uint32_t>(all_subpass_descs.size());
 
-		m_render_pass_handle = device_shared->get_handle().createRenderPass(render_pass_create_info);
-	}
-
-	RenderPass::~RenderPass()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyRenderPass(m_render_pass_handle);
+		m_render_pass_handle = m_device_ptr->get_handle().createRenderPassUnique(render_pass_create_info);
 	}
 
 } // namespace graphics

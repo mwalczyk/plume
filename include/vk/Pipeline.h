@@ -37,51 +37,36 @@
 namespace graphics
 {
 
-	class PipelineLayout;
-	using PipelineLayoutRef = std::shared_ptr<PipelineLayout>;
-
 	class PipelineLayout
 	{
 	public:
 
-		//! Factory method for returning a new PipelineLayoutRef.
-		static PipelineLayoutRef create(DeviceWeakRef device, 
-										const std::vector<vk::PushConstantRange>& push_constant_ranges,
-										const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
+		//! Factory method for returning a shared PipelineLayout.
+		static std::shared_ptr<PipelineLayout> create(const Device& device, 
+													  const std::vector<vk::PushConstantRange>& push_constant_ranges,
+										              const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
 		{ 
 			return std::make_shared<PipelineLayout>(device, push_constant_ranges, descriptor_set_layouts);
 		}
 
-		PipelineLayout(DeviceWeakRef device, 
+		PipelineLayout(const Device& device, 
 					   const std::vector<vk::PushConstantRange>& push_constant_ranges,
 					   const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
 		{
-			DeviceRef device_shared = m_device.lock();
-
 			vk::PipelineLayoutCreateInfo pipeline_layout_create_info;
 			pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
 			pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts.data();
 			pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
 			pipeline_layout_create_info.setLayoutCount = static_cast<uint32_t>(descriptor_set_layouts.size());;
 
-			m_pipeline_layout_handle = device_shared->get_handle().createPipelineLayout(pipeline_layout_create_info);
-		}
-
-		~PipelineLayout()
-		{
-			DeviceRef device_shared = m_device.lock();
-
-			device_shared->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
+			m_pipeline_layout_handle = m_device_ptr->get_handle().createPipelineLayoutUnique(pipeline_layout_create_info);
 		}
 
 	private:
 
-		DeviceWeakRef m_device;
-		vk::PipelineLayout m_pipeline_layout_handle;
+		const Device* m_device_ptr;
+		vk::UniquePipelineLayout m_pipeline_layout_handle;
 	};
-
-	class Pipeline;
-	using PipelineRef = std::shared_ptr<Pipeline>;
 
 	//! Each pipeline is controlled by a monolithic object created from a description of all of the shader
 	//! stages and any relevant fixed-function stages. Linking the whole pipeline together allows the optimization
@@ -97,31 +82,17 @@ namespace graphics
 	//!
 	//! Specialization constants are a mechanism whereby constants in a SPIR-V module can have their constant
 	//! value specified at the time the pipeline is created.
-	class Pipeline : public Noncopyable
+	class Pipeline 
 	{
 	public:
 
-		Pipeline(DeviceWeakRef device) :
-			m_device(device)
+		Pipeline(const Device& device) :
+			m_device_ptr(&device)
 		{}
 
-		virtual ~Pipeline()
-		{
-			DeviceRef device_shared = m_device.lock();
+		virtual vk::Pipeline get_handle() const final { return m_pipeline_handle.get(); }
 
-			device_shared->get_handle().destroyPipeline(m_pipeline_handle);
-			device_shared->get_handle().destroyPipelineLayout(m_pipeline_layout_handle);
-
-			// Destroy all cached descriptor set layouts.
-			for (const auto& mapping : m_descriptor_set_layouts_mapping)
-			{
-				device_shared->get_handle().destroyDescriptorSetLayout(mapping.second);
-			}
-		}
-
-		virtual vk::Pipeline get_handle() const final { return m_pipeline_handle; }
-
-		virtual vk::PipelineLayout get_pipeline_layout_handle() const final { return m_pipeline_layout_handle; } 
+		virtual vk::PipelineLayout get_pipeline_layout_handle() const final { return m_pipeline_layout_handle.get(); } 
 
 		//! Returns the pipeline bind point - must be either vk::PipelineBindPoint::eGraphics or vk::PipelineBindPoint::eCompute.
 		//! Note that this method is pure virtual and must be overridden by any derived class.
@@ -134,7 +105,7 @@ namespace graphics
 		}
 
 		//! Returns a descriptor set layout that holds information about the descriptor set with the given index.
-		virtual vk::DescriptorSetLayout get_descriptor_set_layout(uint32_t set) const final
+		virtual const vk::DescriptorSetLayout& get_descriptor_set_layout(uint32_t set) const final
 		{
 			return m_descriptor_set_layouts_mapping.at(set);
 		}
@@ -144,26 +115,27 @@ namespace graphics
 		//! shader modules and create an appropriate pipeline layout.
 		bool has_cached_layouts() { return m_descriptor_set_layouts_mapping.size() > 0; }
 
-		friend std::ostream& operator<<(std::ostream& stream, const PipelineRef& pipeline);
+		friend std::ostream& operator<<(std::ostream& stream, const Pipeline& pipeline);
 
 	protected:
 
 		//! Builds the struct required to create a new vk::ShaderModule handle. For now, we assume that the entry point for 
 		//! each shader module is always "main."
-		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(const ShaderModuleRef& module);
+		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(const std::shared_ptr<ShaderModule>& module);
 
 		//! Given a shader module and shader stage, add all of the module's push constants to the pipeline object's global map.
-		void add_push_constants_to_global_map(const ShaderModuleRef& module);
+		void add_push_constants_to_global_map(const std::shared_ptr<ShaderModule>& module);
 
 		//! Given a shader module and shader stage, add all of the module's descriptors to the pipeline object's global map.
-		void add_descriptors_to_global_map(const ShaderModuleRef& module);
+		void add_descriptors_to_global_map(const std::shared_ptr<ShaderModule>& module);
 
 		//! Generate all of the descriptor set layout handles.		
 		void build_descriptor_set_layouts();
 
-		DeviceWeakRef m_device;
-		vk::Pipeline m_pipeline_handle;
-		vk::PipelineLayout m_pipeline_layout_handle;
+		const Device* m_device_ptr;
+		vk::UniquePipeline m_pipeline_handle;
+		vk::UniquePipelineLayout m_pipeline_layout_handle;
+
 		std::map<std::string, vk::PushConstantRange> m_push_constants_mapping;
 		std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> m_descriptors_mapping;
 		std::map<uint32_t, vk::DescriptorSetLayout> m_descriptor_set_layouts_mapping;
@@ -311,7 +283,7 @@ namespace graphics
 			Options& scissors(const std::vector<vk::Rect2D>& scissors) { m_scissors = scissors; return *this; }
 			
 			//! Add a shader stage to the pipeline. Note that all graphics pipeline objects must contain a vertex shader.
-			Options& attach_shader_stages(const std::vector<ShaderModuleRef>& modules) { m_shader_stages = modules; return *this; }
+			Options& attach_shader_stages(const std::vector<std::shared_ptr<ShaderModule>>& modules) { m_shader_stages = modules; return *this; }
 
 			//! Specify which subpass of the render pass that this pipeline will be associated with.
 			Options& subpass_index(uint32_t index) { m_subpass_index = index; return *this; }
@@ -337,19 +309,13 @@ namespace graphics
 			std::vector<vk::Viewport>							m_viewports;
 			std::vector<vk::Rect2D>								m_scissors;
 
-			std::vector<ShaderModuleRef> m_shader_stages;
+			std::vector<std::shared_ptr<ShaderModule>> m_shader_stages;
 			uint32_t m_subpass_index;
 
 			friend class GraphicsPipeline;
 		};
 
-		//! Factory method for returning a new GraphicsPipelineRef.
-		static GraphicsPipelineRef create(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options())
-		{ 
-			return std::make_shared<GraphicsPipeline>(device, render_pass, options);
-		}
-
-		GraphicsPipeline(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options = Options());
+		GraphicsPipeline(const Device& device, const RenderPass& render_pass, const Options& options = Options());
 
 		vk::PipelineBindPoint get_pipeline_bind_point() const override { return vk::PipelineBindPoint::eGraphics; }
 
@@ -370,8 +336,6 @@ namespace graphics
 
 	private:
 
-		RenderPassRef m_render_pass;
-
 		std::map<vk::ShaderStageFlagBits, bool> m_shader_stage_active_mapping
 		{
 			{ vk::ShaderStageFlagBits::eVertex, false },
@@ -382,20 +346,11 @@ namespace graphics
 		};
 	};
 
-	class ComputePipeline;
-	using ComputePipelineRef = std::shared_ptr<ComputePipeline>;
-
 	class ComputePipeline : public Pipeline
 	{
 	public:
 
-		//! Factory method for returning a new ComputePipelineRef.
-		static ComputePipelineRef create(DeviceWeakRef device, const ShaderModuleRef& compute_shader_module)
-		{
-			return std::make_shared<ComputePipeline>(device, compute_shader_module);
-		}
-
-		ComputePipeline(DeviceWeakRef device, const ShaderModuleRef& compute_shader_module);
+		ComputePipeline(const Device& device, const std::shared_ptr<ShaderModule>& compute_shader_module);
 
 		vk::PipelineBindPoint get_pipeline_bind_point() const override { return vk::PipelineBindPoint::eCompute; }
 

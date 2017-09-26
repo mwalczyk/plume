@@ -116,12 +116,10 @@ namespace graphics
 
 	} // anonymous
 
-	ShaderModule::ShaderModule(DeviceWeakRef device, const fsys::FileResource& resource) :
-		
-		m_device(device)
-	{
-		DeviceRef device_shared = m_device.lock();
+	ShaderModule::ShaderModule(const Device& device, const fsys::FileResource& resource) :
 
+		m_device_ptr(&device)
+	{
 		auto shader_src = resource.contents;
 		if (shader_src.size() % 4)
 		{
@@ -137,16 +135,9 @@ namespace graphics
 		shader_module_create_info.codeSize = shader_src.size();
 		shader_module_create_info.pCode = p_code;
 		
-		m_shader_module_handle = device_shared->get_handle().createShaderModule(shader_module_create_info);
+		m_shader_module_handle = m_device_ptr->get_handle().createShaderModuleUnique(shader_module_create_info);
 
 		perform_reflection();
-	}
-
-	ShaderModule::~ShaderModule()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyShaderModule(m_shader_module_handle);
 	}
 
 	void ShaderModule::perform_reflection()

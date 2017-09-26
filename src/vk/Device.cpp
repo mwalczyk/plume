@@ -31,9 +31,8 @@
 
 namespace graphics
 {
-	Device::Device(vk::PhysicalDevice physical_device, const SurfaceRef& surface, vk::QueueFlags required_queue_flags, bool use_swapchain, const std::vector<const char*>& required_device_extensions) :
+	Device::Device(vk::PhysicalDevice physical_device, const vk::UniqueSurfaceKHR& surface, vk::QueueFlags required_queue_flags, bool use_swapchain, const std::vector<const char*>& required_device_extensions) :
 		
-		m_surface(surface),
 		m_required_device_extensions(required_device_extensions)
 	{		
 		// Store the general properties, features, and memory properties of the chosen physical device.
@@ -125,11 +124,12 @@ namespace graphics
 			// supports presentation with respect to the requested surface.
 			for (size_t i = 0; i < m_gpu_details.m_queue_family_properties.size(); ++i)
 			{
-				vk::Bool32 support = m_gpu_details.m_handle.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface->get_handle());
-				if (support) 
+				vk::Bool32 support = m_gpu_details.m_handle.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface.get());
+				if (!support) 
 				{  
-					// TODO: is this necessary?
 					break;
+					// TODO: shouldn't this throw an error?
+					//throw std::runtime_error("This physical device does not support presentation to the requested surface");
 				}
 			}
 		}
@@ -156,25 +156,24 @@ namespace graphics
 		device_create_info.pQueueCreateInfos = device_queue_create_infos.data();
 		device_create_info.queueCreateInfoCount = static_cast<uint32_t>(device_queue_create_infos.size());
 
-		m_device_handle = m_gpu_details.m_handle.createDevice(device_create_info);
+		m_device_handle = m_gpu_details.m_handle.createDeviceUnique(device_create_info);
 		
 		// Store handles to each of the newly created queues.
-		m_queue_families_mapping[QueueType::GRAPHICS].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::GRAPHICS].index, 0);
-		m_queue_families_mapping[QueueType::COMPUTE].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::COMPUTE].index, 0);
-		m_queue_families_mapping[QueueType::TRANSFER].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::TRANSFER].index, 0);
-		m_queue_families_mapping[QueueType::SPARSE_BINDING].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::SPARSE_BINDING].index, 0);
-		m_queue_families_mapping[QueueType::PRESENTATION].handle = m_device_handle.getQueue(m_queue_families_mapping[QueueType::PRESENTATION].index, 0);
+		m_queue_families_mapping[QueueType::GRAPHICS].handle = m_device_handle->getQueue(m_queue_families_mapping[QueueType::GRAPHICS].index, 0);
+		m_queue_families_mapping[QueueType::COMPUTE].handle = m_device_handle->getQueue(m_queue_families_mapping[QueueType::COMPUTE].index, 0);
+		m_queue_families_mapping[QueueType::TRANSFER].handle = m_device_handle->getQueue(m_queue_families_mapping[QueueType::TRANSFER].index, 0);
+		m_queue_families_mapping[QueueType::SPARSE_BINDING].handle = m_device_handle->getQueue(m_queue_families_mapping[QueueType::SPARSE_BINDING].index, 0);
+		m_queue_families_mapping[QueueType::PRESENTATION].handle = m_device_handle->getQueue(m_queue_families_mapping[QueueType::PRESENTATION].index, 0);
 	}
 
 	Device::~Device()
 	{
 		// The logical device is likely to be the last object created (aside from objects used at
 		// runtime). Before destroying the device, ensure that it is not executing any work.
-		wait_idle();
-		
+		//
 		// Note that queues are created along with the logical device. All queues associated with 
 		// this device will automatically be destroyed when vkDestroyDevice is called.
-		m_device_handle.destroy();
+		wait_idle();
 	}
 
 	uint32_t Device::find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const
@@ -220,18 +219,18 @@ namespace graphics
 		throw std::runtime_error("Could not find a matching queue family");
 	}
 
-	Device::SwapchainSupportDetails Device::get_swapchain_support_details(const SurfaceRef& surface) const
+	Device::SwapchainSupportDetails Device::get_swapchain_support_details(const vk::UniqueSurfaceKHR& surface) const
 	{
 		SwapchainSupportDetails support_details;
 
 		// Return the basic surface capabilities, i.e. min/max number of images, min/max width and height, etc.
-		support_details.m_capabilities = m_gpu_details.m_handle.getSurfaceCapabilitiesKHR(surface->get_handle());
+		support_details.m_capabilities = m_gpu_details.m_handle.getSurfaceCapabilitiesKHR(surface.get());
 
 		// Retrieve the available surface formats, i.e. pixel formats and color spaces.
-		support_details.m_formats = m_gpu_details.m_handle.getSurfaceFormatsKHR(surface->get_handle());
+		support_details.m_formats = m_gpu_details.m_handle.getSurfaceFormatsKHR(surface.get());
 
 		// Retrieve the surface presentation modes, i.e. VK_PRESENT_MODE_MAILBOX_KHR.
-		support_details.m_present_modes = m_gpu_details.m_handle.getSurfacePresentModesKHR(surface->get_handle());
+		support_details.m_present_modes = m_gpu_details.m_handle.getSurfacePresentModesKHR(surface.get());
 
 		if (support_details.m_formats.size() == 0 || support_details.m_present_modes.size() == 0)
 		{
@@ -241,61 +240,47 @@ namespace graphics
 		return support_details; 
 	}
 
-	void Device::submit_with_semaphores(QueueType type, 
-									    const CommandBufferRef& command_buffer,
-										const std::vector<SemaphoreRef>& wait,
-										const std::vector<SemaphoreRef>& signal,
-										const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags)
+	uint32_t Device::acquire_next_swapchain_image(const Swapchain& swapchain, const Semaphore& semaphore, uint32_t timeout)
 	{
-		// If the command buffer was (erroneously) left in a recorded state,
-		// end recording.
-		if (command_buffer->is_inside_render_pass())
-		{
-			command_buffer->end_render_pass();
-		}
-		if (command_buffer->is_recording())
-		{
-			command_buffer->end();
-		}
+		auto result = m_device_handle.get().acquireNextImageKHR(swapchain.get_handle(), timeout, semaphore.get_handle(), {});
+		return result.value;
+	}
 
-		vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
-
-		// Gather all semaphore handles.
-		std::vector<vk::Semaphore> wait_handles(wait.size());
-		std::transform(wait.begin(), wait.end(), wait_handles.begin(), [](const SemaphoreRef& semaphore) { return semaphore->get_handle(); });
-
-		std::vector<vk::Semaphore> signal_handles(signal.size());
-		std::transform(signal.begin(), signal.end(), signal_handles.begin(), [](const SemaphoreRef& semaphore) { return semaphore->get_handle(); });
+	void Device::submit_with_semaphores(QueueType type, 
+									    const CommandBuffer& command_buffer,
+										const Semaphore& wait,
+										const Semaphore& signal,
+								        vk::PipelineStageFlags pipeline_stage_flags)
+	{
+		vk::CommandBuffer command_buffer_handle = command_buffer.get_handle();
 
 		vk::SubmitInfo submit_info = {};
-		submit_info.waitSemaphoreCount = static_cast<uint32_t>(wait_handles.size());
-		submit_info.pWaitSemaphores = wait_handles.data();
-		submit_info.pWaitDstStageMask = pipeline_stage_flags.data();
+		submit_info.waitSemaphoreCount = 1;
+		submit_info.pWaitSemaphores = &wait.get_handle();
+		submit_info.pWaitDstStageMask = &pipeline_stage_flags;
 		submit_info.commandBufferCount = 1;
 		submit_info.pCommandBuffers = &command_buffer_handle;
-		submit_info.signalSemaphoreCount = static_cast<uint32_t>(signal_handles.size());
-		submit_info.pSignalSemaphores = signal_handles.data();
+		submit_info.signalSemaphoreCount = 1;
+		submit_info.pSignalSemaphores = &signal.get_handle();
 
 		// TODO: this should support fences.
 		get_queue_handle(type).submit(submit_info, {});
 	}
 
-	void Device::one_time_submit(QueueType type, const CommandBufferRef& command_buffer)
+	void Device::one_time_submit(QueueType type, const CommandBuffer& command_buffer)
 	{
 		// If the command buffer was (erroneously) left in a recorded state,
 		// end recording.
-		if (command_buffer->is_inside_render_pass())
+		if (command_buffer.is_inside_render_pass())
 		{
 			PL_LOG_DEBUG("The command buffer passed to `one_time_submit()` is still inside a render pass: calling `end_render_pass()`\n");
-			command_buffer->end_render_pass();
 		}
-		if (command_buffer->is_recording())
+		if (command_buffer.is_recording())
 		{
 			PL_LOG_DEBUG("The command buffer passed to `one_time_submit()` is still in a recording state: calling `end()`\n");
-			command_buffer->end();
 		}
 
-		vk::CommandBuffer command_buffer_handle = command_buffer->get_handle();
+		vk::CommandBuffer command_buffer_handle = command_buffer.get_handle();
 
 		vk::SubmitInfo submit_info = {};
 		submit_info.commandBufferCount = 1;
@@ -305,17 +290,13 @@ namespace graphics
 		get_queue_handle(type).waitIdle();
 	}
 
-	void Device::present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait)
+	void Device::present(const Swapchain& swapchain, uint32_t image_index, const Semaphore& wait)
 	{
-		// Gather all semaphore handles.
-		std::vector<vk::Semaphore> wait_handles(wait.size());
-		std::transform(wait.begin(), wait.end(), wait_handles.begin(), [](const SemaphoreRef& semaphore) { return semaphore->get_handle(); });
-
-		std::vector<vk::SwapchainKHR> swapchain_handles = { swapchain->get_handle() };
+		std::vector<vk::SwapchainKHR> swapchain_handles = { swapchain.get_handle() };
 
 		vk::PresentInfoKHR present_info = {};
-		present_info.waitSemaphoreCount = static_cast<uint32_t>(wait_handles.size());
-		present_info.pWaitSemaphores = wait_handles.data();
+		present_info.waitSemaphoreCount = 1;
+		present_info.pWaitSemaphores = &wait.get_handle();
 		present_info.swapchainCount = static_cast<uint32_t>(swapchain_handles.size());
 		present_info.pSwapchains = swapchain_handles.data();
 		present_info.pImageIndices = &image_index;
@@ -324,21 +305,20 @@ namespace graphics
 		get_queue_handle(QueueType::PRESENTATION).presentKHR(present_info);
 	}
 
-	std::ostream& operator<<(std::ostream& stream, const DeviceRef& device)
+	std::ostream& operator<<(std::ostream& stream, const Device& device)
 	{
-		stream << "Device object: " << device->m_device_handle << std::endl;
-		
-		stream << "Chosen physical device object: " << device->m_gpu_details.m_handle << std::endl;
-		std::cout << "\tDevice ID: " << device->m_gpu_details.m_properties.deviceID << std::endl;
-		std::cout << "\tDevice name: " << device->m_gpu_details.m_properties.deviceName << std::endl;
-		std::cout << "\tVendor ID: " << device->m_gpu_details.m_properties.vendorID << std::endl;
+		stream << "Device object: " <<					device.m_device_handle.get() << std::endl;
+		stream << "Chosen physical device object: " <<	device.m_gpu_details.m_handle << std::endl;
+		std::cout << "\tDevice ID: " <<					device.m_gpu_details.m_properties.deviceID << std::endl;
+		std::cout << "\tDevice name: " <<				device.m_gpu_details.m_properties.deviceName << std::endl;
+		std::cout << "\tVendor ID: " <<					device.m_gpu_details.m_properties.vendorID << std::endl;
 
 		stream << "Queue family details:" << std::endl;
-		stream << "\tQueue family - graphics index: " << device->m_queue_families_mapping[QueueType::GRAPHICS].index << std::endl;
-		stream << "\tQueue family - compute index: " << device->m_queue_families_mapping[QueueType::COMPUTE].index << std::endl;
-		stream << "\tQueue family - transfer index: " << device->m_queue_families_mapping[QueueType::TRANSFER].index << std::endl;
-		stream << "\tQueue family - sparse binding index: " << device->m_queue_families_mapping[QueueType::SPARSE_BINDING].index << std::endl;
-		stream << "\tQueue family - present index: " << device->m_queue_families_mapping[QueueType::PRESENTATION].index << std::endl;
+		stream << "\tQueue family - graphics index: " <<		device.m_queue_families_mapping.at(QueueType::GRAPHICS).index << std::endl;
+		stream << "\tQueue family - compute index: " <<			device.m_queue_families_mapping.at(QueueType::COMPUTE).index << std::endl;
+		stream << "\tQueue family - transfer index: " <<		device.m_queue_families_mapping.at(QueueType::TRANSFER).index << std::endl;
+		stream << "\tQueue family - sparse binding index: " <<	device.m_queue_families_mapping.at(QueueType::SPARSE_BINDING).index << std::endl;
+		stream << "\tQueue family - present index: " <<			device.m_queue_families_mapping.at(QueueType::PRESENTATION).index << std::endl;
 
 		return stream;
 	}

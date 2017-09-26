@@ -52,8 +52,6 @@ namespace graphics
 			throw std::runtime_error("The LayoutBuilder is still in a recording state - call `end_descriptor_set_record()` before `build_layouts()`.");
 		}
 
-		DeviceRef device_shared = m_device.lock();
-
 		std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
 
 		// Create a new descriptor set layout handle for each of the recorded descriptor sets.
@@ -63,7 +61,7 @@ namespace graphics
 			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(mapping.second.size());
 			descriptor_set_layout_create_info.pBindings = mapping.second.data();
 
-			auto layout = device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+			auto layout = m_device_ptr->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 			descriptor_set_layouts.push_back(layout);
 		}
 
@@ -77,13 +75,11 @@ namespace graphics
 			throw std::runtime_error("The LayoutBuilder is still in a recording state - call `end_descriptor_set_record()` before `build_layouts()`.");
 		}
 
-		DeviceRef device_shared = m_device.lock();
-
 		vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
 		descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(m_descriptor_sets_mapping.at(set).size());
 		descriptor_set_layout_create_info.pBindings = m_descriptor_sets_mapping.at(set).data();
 
-		return device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+		return m_device_ptr->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 	}
 
 	std::map<vk::DescriptorType, uint32_t> DescriptorSetLayoutBuilder::get_descriptor_type_to_count_mapping() const
@@ -144,15 +140,13 @@ namespace graphics
 		return descriptor_type_to_count_mapping;
 	}
 
-	DescriptorPool::DescriptorPool(DeviceWeakRef device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets) :
+	DescriptorPool::DescriptorPool(const Device& device, const std::vector<vk::DescriptorPoolSize>& descriptor_pool_sizes, uint32_t max_sets) :
 		
-		m_device(device),
+		m_device_ptr(&device),
 		m_descriptor_pool_sizes(descriptor_pool_sizes),
 		m_max_sets(max_sets),
 		m_available_sets(max_sets)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		// Fill out the container that maps each descriptor type to the number of descriptors of that type
 		// that can be allocated from this descriptor pool across ALL future descriptor sets. This will be 
 		// used to track allocations from this pool.
@@ -169,14 +163,7 @@ namespace graphics
 		descriptor_pool_create_info.poolSizeCount = static_cast<uint32_t>(descriptor_pool_sizes.size());
 		descriptor_pool_create_info.pPoolSizes = descriptor_pool_sizes.data();
 
-		m_descriptor_pool_handle = device_shared->get_handle().createDescriptorPool(descriptor_pool_create_info);
-	}
-
-	DescriptorPool::~DescriptorPool()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyDescriptorPool(m_descriptor_pool_handle);
+		m_descriptor_pool_handle = m_device_ptr->get_handle().createDescriptorPoolUnique(descriptor_pool_create_info);
 	}
 
 } // namespace graphics

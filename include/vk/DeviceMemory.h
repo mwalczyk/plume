@@ -31,9 +31,6 @@
 namespace graphics
 {
 
-	class DeviceMemory;
-	using DeviceMemoryRef = std::shared_ptr<DeviceMemory>;
-
 	//! Device memory is memory that is visible to the device. The memory properties of a physical device 
 	//! describe the memory heaps and memory types available. Each heap describes a memory resource of
 	//! a particular size, and each memory type describes a set of memory properties (e.g. host cached vs.
@@ -44,22 +41,16 @@ namespace graphics
 	//!
 	//! Memory objects created with the vk::MemoryPropertyFlagBits::eHostVisible bit are considered 
 	//! mappable.
-	class DeviceMemory : public Noncopyable
+	class DeviceMemory
 	{
 	public:
-		
-		//! Factory method for returning a new DeviceMemoryRef.
-		static DeviceMemoryRef create(DeviceWeakRef device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties)
-		{
-			return std::make_shared<DeviceMemory>(device, memory_requirements, required_memory_properties);
-		}
 
 		//! Construct a stack allocated, non-copyable container that manages a device memory allocation.
-		DeviceMemory(DeviceWeakRef device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties);
+		DeviceMemory(const Device& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties);
 		
 		~DeviceMemory();
 
-		vk::DeviceMemory get_handle() const { return m_device_memory_handle; }
+		vk::DeviceMemory get_handle() const { return m_device_memory_handle.get(); }
 
 		vk::DeviceSize get_allocation_size() const { return m_allocation_size; }
 
@@ -82,8 +73,9 @@ namespace graphics
 
 	private:
 
-		DeviceWeakRef m_device;
-		vk::DeviceMemory m_device_memory_handle;
+		const Device* m_device_ptr;
+		vk::UniqueDeviceMemory m_device_memory_handle;
+
 		vk::DeviceSize m_allocation_size;
 		vk::MemoryPropertyFlags m_memory_property_flags;
 		uint32_t m_selected_memory_index;

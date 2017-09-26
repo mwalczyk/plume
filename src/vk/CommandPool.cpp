@@ -29,24 +29,15 @@
 namespace graphics
 {
 	
-	CommandPool::CommandPool(DeviceWeakRef device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags) :
+	CommandPool::CommandPool(const Device& device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags) :
 		
-		m_device(device)
+		m_device_ptr(&device)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		vk::CommandPoolCreateInfo command_pool_create_info;
 		command_pool_create_info.flags = command_pool_create_flags;
-		command_pool_create_info.queueFamilyIndex = device_shared->get_queue_family_index(queue_type);
+		command_pool_create_info.queueFamilyIndex = m_device_ptr->get_queue_family_index(queue_type);
 
-		m_command_pool_handle = device_shared->get_handle().createCommandPool(command_pool_create_info);
-	}
-
-	CommandPool::~CommandPool()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyCommandPool(m_command_pool_handle);
+		m_command_pool_handle = m_device_ptr->get_handle().createCommandPoolUnique(command_pool_create_info);
 	}
 
 } // namespace graphics

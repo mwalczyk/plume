@@ -31,13 +31,10 @@
 namespace graphics
 {
 
-	class Sampler;
-	using SamplerRef = std::shared_ptr<Sampler>;
-
 	//! Image samplers are used by the implementation to read image data and apply filtering and other transformations
 	//! inside of a shader. Note that a single sampler can be used with multiple attachments when constructing 
 	//! descriptor sets. 
-	class Sampler : public Noncopyable
+	class Sampler
 	{
 	public:
 
@@ -131,22 +128,14 @@ namespace graphics
 			friend class Sampler;
 		};
 
-		//! Factory method for returning a new SamplerRef.
-		static SamplerRef create(DeviceWeakRef device, const Options& options = Options())
-		{
-			return std::make_shared<Sampler>(device, options);
-		}
+		Sampler(const Device& device, const Options& options = Options());
 
-		Sampler(DeviceWeakRef device, const Options& options = Options());
-		
-		~Sampler();
-
-		vk::Sampler get_handle() const { return m_sampler_handle; }
+		vk::Sampler get_handle() const { return m_sampler_handle.get(); }
 
 	private:
 
-		DeviceWeakRef m_device;
-		vk::Sampler m_sampler_handle;
+		const Device* m_device_ptr;
+		vk::UniqueSampler m_sampler_handle;
 	};
 
 } // namespace graphics

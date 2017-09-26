@@ -34,18 +34,14 @@
 #include <functional>
 
 #include "Platform.h"
-#include "Noncopyable.h"
 
 namespace graphics
 {
-	
-	class Instance;
-	using InstanceRef = std::shared_ptr<Instance>;
 
 	//! There is no global state in Vulkan and all per-application state is stored in an instance object.
 	//! Creating an instance initializes the Vulkan library and allows the application to pass information
 	//! about itself to the implementation.
-	class Instance : public Noncopyable
+	class Instance 
 	{
 	public:
 
@@ -87,16 +83,11 @@ namespace graphics
 			friend class Instance;
 		};
 
-		//! Factory method for returning a new InstanceRef.
-		static InstanceRef create(const Options& options = Options()) 
-		{ 
-			return std::make_shared<Instance>(options); 
-		}
-
 		Instance(const Options& options = Options());
+
 		~Instance();
 
-		vk::Instance get_handle() const { return m_instance_handle; }
+		vk::Instance get_handle() const { return m_instance_handle.get(); }
 
 		const std::vector<vk::ExtensionProperties>& get_instance_extension_properties() const { return m_instance_extension_properties; }
 
@@ -112,8 +103,9 @@ namespace graphics
 
 		void setup_debug_report_callback(VkDebugReportFlagsEXT debug_report_flags);
 
-		vk::Instance m_instance_handle;
+		vk::UniqueInstance m_instance_handle;
 		VkDebugReportCallbackEXT m_debug_report_callback;
+
 		std::vector<vk::ExtensionProperties> m_instance_extension_properties;
 		std::vector<vk::LayerProperties> m_instance_layer_properties;
 		std::vector<vk::PhysicalDevice> m_physical_devices;

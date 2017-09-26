@@ -28,7 +28,8 @@
 
 namespace graphics
 {
-	vk::PipelineShaderStageCreateInfo Pipeline::build_shader_stage_create_info(const ShaderModuleRef& module)
+
+	vk::PipelineShaderStageCreateInfo Pipeline::build_shader_stage_create_info(const std::shared_ptr<ShaderModule>& module)
 	{
 		vk::PipelineShaderStageCreateInfo shader_stage_create_info;
 		shader_stage_create_info.module = module->get_handle();
@@ -39,20 +40,10 @@ namespace graphics
 		return shader_stage_create_info;
 	}
 
-	void Pipeline::add_push_constants_to_global_map(const ShaderModuleRef& module)
+	void Pipeline::add_push_constants_to_global_map(const std::shared_ptr<ShaderModule>& module)
 	{
-		DeviceRef device_shared = m_device.lock();
-
-		uint32_t max_push_constants_size = device_shared->get_physical_device_properties().limits.maxPushConstantsSize;
-
 		for (const auto& push_constant : module->get_push_constants())
 		{
-			if (push_constant.size > max_push_constants_size)
-			{
-				throw std::runtime_error("Push constant named " + push_constant.name + " exceeds the maximum size allowed\
-										  for a single push constant");
-			}
-
 			// If this push constant already exists in the mapping, simply update its stage flags.
 			auto it = m_push_constants_mapping.find(push_constant.name);
 			if (it != m_push_constants_mapping.end() &&
@@ -72,7 +63,7 @@ namespace graphics
 		}
 	}
 
-	void Pipeline::add_descriptors_to_global_map(const ShaderModuleRef& module)
+	void Pipeline::add_descriptors_to_global_map(const std::shared_ptr<ShaderModule>& module)
 	{
 		for (const auto& descriptor : module->get_descriptors())
 		{
@@ -119,8 +110,6 @@ namespace graphics
 
 	void Pipeline::build_descriptor_set_layouts()
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		// Iterate through the map of descriptors, which maps descriptor set IDs (i.e. 0, 1, 2) to
 		// a list of descriptors (i.e. uniform buffers, samplers), and create a descriptor set layout
 		// for each set.
@@ -130,18 +119,18 @@ namespace graphics
 			descriptor_set_layout_create_info.bindingCount = static_cast<uint32_t>(mapping.second.size());
 			descriptor_set_layout_create_info.pBindings = mapping.second.data();
 
-			vk::DescriptorSetLayout descriptor_set_layout = device_shared->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
+			vk::DescriptorSetLayout descriptor_set_layout = m_device_ptr->get_handle().createDescriptorSetLayout(descriptor_set_layout_create_info);
 
 			m_descriptor_set_layouts_mapping.insert(std::make_pair(mapping.first, descriptor_set_layout));
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& stream, const PipelineRef& pipeline)
+	std::ostream& operator<<(std::ostream& stream, const Pipeline& pipeline)
 	{
-		stream << "Pipeline object: " << pipeline->m_pipeline_handle << std::endl;
+		stream << "Pipeline object: " << pipeline.m_pipeline_handle.get() << std::endl;
 
 		stream << "Push constants details:" << std::endl;
-		for (const auto& mapping : pipeline->m_push_constants_mapping)
+		for (const auto& mapping : pipeline.m_push_constants_mapping)
 		{
 			stream << "\tPush constant named: " << mapping.first << ":" << std::endl;
 			stream << "\t\tOffset: " << mapping.second.offset << std::endl;
@@ -150,7 +139,7 @@ namespace graphics
 		}
 
 		stream << "Descriptor set details:" << std::endl;
-		for (const auto& mapping : pipeline->m_descriptors_mapping)
+		for (const auto& mapping : pipeline.m_descriptors_mapping)
 		{
 			stream << "\tDescriptor set #" << mapping.first << ":" << std::endl;
 			for (const auto& descriptor_set_layout_binding : mapping.second)
@@ -246,13 +235,10 @@ namespace graphics
 		m_subpass_index = 0;
 	}
 
-	GraphicsPipeline::GraphicsPipeline(DeviceWeakRef device, const RenderPassRef& render_pass, const Options& options) :
-		
-		Pipeline(device),
-		m_render_pass(render_pass)
-	{		
-		DeviceRef device_shared = m_device.lock();
+	GraphicsPipeline::GraphicsPipeline(const Device& device, const RenderPass& render_pass, const Options& options) :
 
+		Pipeline(device)
+	{		
 		// Group the shader create info structs together.
 		std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos;
 		for (const auto& stage : options.m_shader_stages)
@@ -320,13 +306,13 @@ namespace graphics
 		pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
 		pipeline_layout_create_info.setLayoutCount = static_cast<uint32_t>(descriptor_set_layouts.size());;
 
-		m_pipeline_layout_handle = device_shared->get_handle().createPipelineLayout(pipeline_layout_create_info);
+		m_pipeline_layout_handle = m_device_ptr->get_handle().createPipelineLayoutUnique(pipeline_layout_create_info);
 
 		// Aggregate all of the structures above to create a graphics pipeline.
 		vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info;
 		graphics_pipeline_create_info.basePipelineHandle = vk::Pipeline{};
 		graphics_pipeline_create_info.basePipelineIndex = -1;
-		graphics_pipeline_create_info.layout = m_pipeline_layout_handle;
+		graphics_pipeline_create_info.layout = m_pipeline_layout_handle.get();
 		graphics_pipeline_create_info.pColorBlendState =		&options.m_color_blend_state_create_info;
 		graphics_pipeline_create_info.pDepthStencilState =		&options.m_depth_stencil_state_create_info;
 		graphics_pipeline_create_info.pDynamicState =			(dynamic_state_create_info.dynamicStateCount > 0) ? &dynamic_state_create_info : nullptr;
@@ -337,19 +323,17 @@ namespace graphics
 		graphics_pipeline_create_info.pTessellationState =		&options.m_tessellation_state_create_info;
 		graphics_pipeline_create_info.pVertexInputState =		&vertex_input_state_create_info;
 		graphics_pipeline_create_info.pViewportState =			&viewport_state_create_info;
-		graphics_pipeline_create_info.renderPass =				m_render_pass->get_handle();
+		graphics_pipeline_create_info.renderPass =				render_pass.get_handle();
 		graphics_pipeline_create_info.stageCount =				static_cast<uint32_t>(shader_stage_create_infos.size());
 		graphics_pipeline_create_info.subpass =					options.m_subpass_index;
 
-		m_pipeline_handle = device_shared->get_handle().createGraphicsPipeline({}, graphics_pipeline_create_info);
+		m_pipeline_handle = m_device_ptr->get_handle().createGraphicsPipelineUnique({}, graphics_pipeline_create_info);
 	}
 	
-	ComputePipeline::ComputePipeline(DeviceWeakRef device, const ShaderModuleRef& compute_shader_module) :
-		
+	ComputePipeline::ComputePipeline(const Device& device, const std::shared_ptr<ShaderModule>& compute_shader_module) :
+
 		Pipeline(device)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		// Update the containers used by this pipeline to track push constant / descriptor usage.
 		add_push_constants_to_global_map(compute_shader_module);
 		add_descriptors_to_global_map(compute_shader_module);
@@ -377,14 +361,16 @@ namespace graphics
 		pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
 		pipeline_layout_create_info.setLayoutCount = static_cast<uint32_t>(descriptor_set_layouts.size());;
 
-		m_pipeline_layout_handle = device_shared->get_handle().createPipelineLayout(pipeline_layout_create_info);
+		m_pipeline_layout_handle = m_device_ptr->get_handle().createPipelineLayoutUnique(pipeline_layout_create_info);
 
 		// Aggregate all of the structures above to create a compute pipeline.
 		vk::ComputePipelineCreateInfo compute_pipeline_create_info;
 		compute_pipeline_create_info.basePipelineHandle = vk::Pipeline{};
 		compute_pipeline_create_info.basePipelineIndex = -1;
-		compute_pipeline_create_info.layout = m_pipeline_layout_handle;
+		compute_pipeline_create_info.layout = m_pipeline_layout_handle.get();
 		compute_pipeline_create_info.stage = build_shader_stage_create_info(compute_shader_module);
+
+		m_pipeline_handle = m_device_ptr->get_handle().createComputePipelineUnique({}, compute_pipeline_create_info);
 	}
 
 } // namespace graphics

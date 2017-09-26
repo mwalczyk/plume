@@ -29,17 +29,6 @@
 namespace graphics
 {
 
-	Instance::Options::Options()
-	{
-		m_application_info.apiVersion = VK_API_VERSION_1_0;
-		m_application_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		m_application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		m_application_info.pApplicationName = "Plume Application";
-		m_application_info.pEngineName = "Plume Engine";
-
-		m_debug_report_flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-	}
-
 	//! Proxy function for creating a debug callback object
 	vk::Result create_debug_report_callback(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* create_info, const VkAllocationCallbacks* allocator, VkDebugReportCallbackEXT* call_back)
 	{
@@ -64,6 +53,17 @@ namespace graphics
 		{
 			func(static_cast<VkInstance>(instance), callback, allocator);
 		}
+	}
+
+	Instance::Options::Options()
+	{
+		m_application_info.apiVersion = VK_API_VERSION_1_0;
+		m_application_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+		m_application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		m_application_info.pApplicationName = "Plume Application";
+		m_application_info.pEngineName = "Plume Engine";
+
+		m_debug_report_flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
 	}
 
 	Instance::Instance(const Options& options) :
@@ -105,8 +105,8 @@ namespace graphics
 		instance_create_info.ppEnabledExtensionNames = m_required_extensions.data();
 		instance_create_info.ppEnabledLayerNames = m_required_layers.data();
 
-		m_instance_handle = vk::createInstance(instance_create_info);
-
+		m_instance_handle = vk::createInstanceUnique(instance_create_info);
+		
 		// Only set up the debug callback object if the VK_EXT_debug_report extension is present 
 		// (note that this needs to happen after initialization).
 #if defined(_DEBUG)
@@ -114,14 +114,12 @@ namespace graphics
 #endif
 
 		// Store the handles to each of the present physical devices (note that this needs to happen after initialization).
-		m_physical_devices = m_instance_handle.enumeratePhysicalDevices();
+		m_physical_devices = m_instance_handle->enumeratePhysicalDevices();
 	}
 
 	Instance::~Instance()
 	{
-		destroy_debug_report_callback(m_instance_handle, m_debug_report_callback, nullptr);
-		
-		m_instance_handle.destroy();
+		destroy_debug_report_callback(m_instance_handle.get(), m_debug_report_callback, nullptr);
 	}
 
 	vk::PhysicalDevice Instance::pick_physical_device(const std::function<bool(vk::PhysicalDevice)>& func)
@@ -159,8 +157,8 @@ namespace graphics
 		debug_report_callback_create_info.pfnCallback = debug_callback;
 		debug_report_callback_create_info.pUserData = nullptr;
 		debug_report_callback_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-		
-		create_debug_report_callback(m_instance_handle, &debug_report_callback_create_info, nullptr, &m_debug_report_callback);
+
+		create_debug_report_callback(m_instance_handle.get(), &debug_report_callback_create_info, nullptr, &m_debug_report_callback);
 	}
 
 } // namespace graphics

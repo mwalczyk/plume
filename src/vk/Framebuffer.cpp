@@ -29,29 +29,26 @@
 namespace graphics
 {
 
-	Framebuffer::Framebuffer(DeviceWeakRef device, 
-							 const RenderPassRef& render_pass, 
+	Framebuffer::Framebuffer(const Device& device, 
+							 const RenderPass& render_pass, 
 							 const std::map<std::string, vk::ImageView>& name_to_image_view_map, 
 							 uint32_t width, 
 							 uint32_t height,
 							 uint32_t layers) :
 		
-		m_device(device),
-		m_render_pass(render_pass),
+		m_device_ptr(&device),
 		m_name_to_image_view_map(name_to_image_view_map),
 		m_width(width),
 		m_height(height),
 		m_layers(layers)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		// TODO: the ImageView wrapper doesn't work because the swapchain creates its own images and image views that 
 		// can't be properly wrapped into the ImageRef and ImageViewRef classes. Maybe the Framebuffer class 
 		// should accept the a Swapchain as an additional argument?
 
 		// Make sure that the name passed to the framebuffer corresponds to an attachment in the render 
 		// pass instance's builder object.
-		const auto& render_pass_attachment_names = m_render_pass->get_render_pass_builder()->get_attachment_names();
+		const auto& render_pass_attachment_names = render_pass.get_render_pass_builder()->get_attachment_names();
 		for (const auto& name : get_attachment_names())
 		{
 			if (std::find(render_pass_attachment_names.begin(),
@@ -59,7 +56,7 @@ namespace graphics
 						  name) == render_pass_attachment_names.end())
 			{
 				throw std::runtime_error("One or more of the attachment names used to construct this FrameBuffer\
-							is invalid because it does not correspond to a render pass attachment name.");
+										  is invalid because it does not correspond to a render pass attachment name.");
 			}
 		}
 
@@ -73,17 +70,10 @@ namespace graphics
 		framebuffer_create_info.height = m_height;
 		framebuffer_create_info.layers = m_layers;
 		framebuffer_create_info.pAttachments = image_views.data();
-		framebuffer_create_info.renderPass = m_render_pass->get_handle();
+		framebuffer_create_info.renderPass = render_pass.get_handle();
 		framebuffer_create_info.width = m_width;
 
-		m_framebuffer_handle = device_shared->get_handle().createFramebuffer(framebuffer_create_info);
-	}
-
-	Framebuffer::~Framebuffer()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyFramebuffer(m_framebuffer_handle);
+		m_framebuffer_handle = m_device_ptr->get_handle().createFramebufferUnique(framebuffer_create_info);
 	}
 
 	std::vector<vk::ImageView> Framebuffer::get_image_views() const

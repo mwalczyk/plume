@@ -34,14 +34,11 @@
 namespace graphics
 {
 
-	class ShaderModule;
-	using ShaderModuleRef = std::shared_ptr<ShaderModule>;
-
 	//! Shader modules contain shader code and one or more entry points. The shader code defining a shader
 	//! module must be in the SPIR-V format. Data is passed into and out of shaders using variables with 
 	//! input or output storage class, respectively. User-defined inputs and outputs are connected between
 	//! stages by matching their 'location' decorations.
-	class ShaderModule : public Noncopyable
+	class ShaderModule
 	{
 
 	public:
@@ -90,17 +87,13 @@ namespace graphics
 			vk::DescriptorSetLayoutBinding layout_binding;
 		};
 
-		//! Factory method for returning a new ShaderModuleRef.
-		static ShaderModuleRef create(DeviceWeakRef device, const fsys::FileResource& resouce)
+		//! Factory method for constructing a new shared ShaderModule.
+		static std::shared_ptr<ShaderModule> create(const Device& device, const fsys::FileResource& resouce)
 		{
-			return std::make_shared<ShaderModule>(device, resouce);
+			return std::shared_ptr<ShaderModule>(new ShaderModule(device, resouce));
 		}
 
-		ShaderModule(DeviceWeakRef device, const fsys::FileResource& resouce);
-
-		~ShaderModule();
-
-		vk::ShaderModule get_handle() const { return m_shader_module_handle; }
+		vk::ShaderModule get_handle() const { return m_shader_module_handle.get(); }
 
 		//! Retrieve the binary SPIR-V shader code that is held by this shader.
 		const std::vector<uint32_t>& get_shader_code() const { return m_shader_code; }
@@ -119,13 +112,16 @@ namespace graphics
 
 	private:
 
+		ShaderModule(const Device& device, const fsys::FileResource& resouce);
+
 		void perform_reflection();
 
 		//! Used during reflection to convert a shader resource into a descriptor struct.
 		void resource_to_descriptor(const spirv_cross::CompilerGLSL& compiler, const spirv_cross::Resource& resource, vk::DescriptorType descriptor_type);
 
-		DeviceWeakRef m_device;
-		vk::ShaderModule m_shader_module_handle;
+		const Device* m_device_ptr;
+		vk::UniqueShaderModule m_shader_module_handle;
+
 		std::vector<uint32_t> m_shader_code;
 		std::vector<std::string> m_entry_points;
 		std::vector<StageInput> m_stage_inputs;

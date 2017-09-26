@@ -29,22 +29,20 @@
 namespace graphics
 {
 
-	void Image::initialize_device_memory_with_flags(vk::MemoryPropertyFlags memory_property_flags)
+	void Image::initialize_device_memory_with_flags(const Device& device, vk::MemoryPropertyFlags memory_property_flags)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		// Retrieve the memory requirements for this image.
-		auto memory_requirements = device_shared->get_handle().getImageMemoryRequirements(m_image_handle);
+		auto memory_requirements = m_device_ptr->get_handle().getImageMemoryRequirements(m_image_handle.get());
 		auto required_memory_properties = memory_property_flags;
 
 		// Allocate device memory.
-		m_device_memory = DeviceMemory::create(device_shared, memory_requirements, required_memory_properties);
+		m_device_memory = std::make_unique<DeviceMemory>(device, memory_requirements, required_memory_properties);
 
 		// Associate the device memory with this image.
-		device_shared->get_handle().bindImageMemory(m_image_handle, m_device_memory->get_handle(), 0);
+		m_device_ptr->get_handle().bindImageMemory(m_image_handle.get(), m_device_memory->get_handle(), 0);
 	}
 
-	Image::Image(DeviceWeakRef device,
+	Image::Image(const Device& device,
 				 vk::ImageType image_type,
 				 vk::ImageUsageFlags image_usage_flags,
 				 vk::Format format,
@@ -54,7 +52,7 @@ namespace graphics
 				 vk::ImageTiling image_tiling,
 				 uint32_t sample_count) :
 
-		m_device(device),
+		m_device_ptr(&device),
 		m_image_type(image_type),
 		m_image_usage_flags(image_usage_flags),
 		m_format(format),
@@ -66,8 +64,6 @@ namespace graphics
 		m_current_layout(vk::ImageLayout::eUndefined),
 		m_is_host_accessible(false)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		check_image_parameters();
 
 		// TODO: images should be able to be shared across multiple queue families. This should also be verified
@@ -88,19 +84,12 @@ namespace graphics
 		image_create_info.tiling = m_image_tiling;
 		image_create_info.usage = m_image_usage_flags;
 
-		m_image_handle = device_shared->get_handle().createImage(image_create_info);
+		m_image_handle = m_device_ptr->get_handle().createImageUnique(image_create_info);
 
-		initialize_device_memory_with_flags(vk::MemoryPropertyFlagBits::eDeviceLocal);
+		initialize_device_memory_with_flags(device, vk::MemoryPropertyFlagBits::eDeviceLocal);
 	}
 
-	Image::~Image()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyImage(m_image_handle);
-	}
-
-	bool Image::is_image_view_type_compatible(vk::ImageViewType image_view_type)
+	bool Image::is_image_view_type_compatible(vk::ImageViewType image_view_type) const
 	{
 		// See the spec: https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#resources-image-views-compatibility
 
@@ -198,48 +187,38 @@ namespace graphics
 		}
 	}
 
-	ImageView::ImageView(DeviceWeakRef device, 
-						 ImageRef image, 
+	ImageView::ImageView(const Device& device, 
+						 const Image& image, 
 						 vk::ImageViewType image_view_type,
 						 const vk::ImageSubresourceRange& subresource_range, 
 						 const vk::ComponentMapping& component_mapping) :
 
-		m_device(device),
-		m_image(image),
+		m_device_ptr(&device),
 		m_subresource_range(subresource_range),
 		m_image_view_type(image_view_type)
 	{
-		DeviceRef device_shared = m_device.lock();
-
-		if (!image->is_image_view_type_compatible(m_image_view_type))
+		if (!image.is_image_view_type_compatible(m_image_view_type))
 		{
 			throw std::runtime_error("The requested image view type is not compatible with the parent image type");
 		}
 
 		vk::ImageViewCreateInfo image_view_create_info;
-		image_view_create_info.format = image->m_format;
-		image_view_create_info.image = image->m_image_handle;
+		image_view_create_info.format = image.m_format;
+		image_view_create_info.image = image.get_handle();
 		image_view_create_info.subresourceRange = m_subresource_range;
 		image_view_create_info.components = component_mapping;
 		image_view_create_info.viewType = m_image_view_type;	
 
 		// TODO: during the image view creation process, we make several assumptions. In particular,
 		// we assume that the image view will have the same format as the parent image.
-		if (image->m_format != image_view_create_info.format &&
-			!(image->m_image_create_flags & vk::ImageCreateFlagBits::eMutableFormat))
+		if (image.m_format != image_view_create_info.format &&
+			!(image.m_image_create_flags & vk::ImageCreateFlagBits::eMutableFormat))
 		{
 			throw std::runtime_error("Attempting to create an image view with a different format from the parent image, but the\
 									  parent image was not created with the vk::ImageCreateFlagBits::eMutableFormat bit set");
 		}
 
-		m_image_view_handle = device_shared->get_handle().createImageView(image_view_create_info);
-	}
-
-	ImageView::~ImageView()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyImageView(m_image_view_handle);
+		m_image_view_handle = m_device_ptr->get_handle().createImageViewUnique(image_view_create_info);
 	}
 
 } // namespace graphics

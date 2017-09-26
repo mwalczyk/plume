@@ -29,14 +29,12 @@
 namespace graphics
 {
 
-	Buffer::Buffer(DeviceWeakRef device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<QueueType> queues) :
+	Buffer::Buffer(const Device& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<QueueType> queues) :
 		
-		m_device(device),
+		m_device_ptr(&device),
 		m_buffer_usage_flags(buffer_usage_flags),
 		m_requested_size(size)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		vk::SharingMode sharing_mode = vk::SharingMode::eExclusive;
 		if (queues.size() > 1)
 		{
@@ -46,7 +44,7 @@ namespace graphics
 
 		// Gather all of the queue family indices based on the requested queue types.
 		std::vector<uint32_t> queue_family_indices(queues.size());
-		std::transform(queues.begin(), queues.end(), queue_family_indices.begin(), [&](QueueType type) { return device_shared->get_queue_family_index(type); });
+		std::transform(queues.begin(), queues.end(), queue_family_indices.begin(), [&](QueueType type) { return m_device_ptr->get_queue_family_index(type); });
 
 		vk::BufferCreateInfo buffer_create_info;
 		buffer_create_info.pQueueFamilyIndices = queue_family_indices.data();	// Ignored if the sharing mode is exclusive.
@@ -55,14 +53,14 @@ namespace graphics
 		buffer_create_info.size = m_requested_size;
 		buffer_create_info.usage = m_buffer_usage_flags;
 
-		m_buffer_handle = device_shared->get_handle().createBuffer(buffer_create_info);
+		m_buffer_handle = m_device_ptr->get_handle().createBufferUnique(buffer_create_info);
 
 		// Store the memory requirements for this buffer object.
-		m_memory_requirements = device_shared->get_handle().getBufferMemoryRequirements(m_buffer_handle);
+		m_memory_requirements = m_device_ptr->get_handle().getBufferMemoryRequirements(m_buffer_handle.get());
 
 		// Allocate device memory.
 		// TODO: these flags should be parameters. Currently, all buffer objects are marked as CPU-accessible.
-		m_device_memory = DeviceMemory::create(device_shared, m_memory_requirements, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		m_device_memory = std::make_unique<DeviceMemory>(device, m_memory_requirements, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
 		// Fill the buffer with the data that was passed into the constructor.
 		if (data)
@@ -73,14 +71,7 @@ namespace graphics
 		}
 
 		// Associate the device memory with this buffer object.
-		device_shared->get_handle().bindBufferMemory(m_buffer_handle, m_device_memory->get_handle(), 0);
-	}
-
-	Buffer::~Buffer()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroyBuffer(m_buffer_handle);
+		m_device_ptr->get_handle().bindBufferMemory(m_buffer_handle.get(), m_device_memory->get_handle(), 0);
 	}
 
 } // namespace graphics

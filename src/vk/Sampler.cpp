@@ -17,12 +17,10 @@ namespace graphics
 		m_compare_op = vk::CompareOp::eAlways;
 	}
 
-	Sampler::Sampler(DeviceWeakRef device, const Options& options) :
+	Sampler::Sampler(const Device& device, const Options& options) :
 		
-		m_device(device)
+		m_device_ptr(&device)
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		vk::SamplerCreateInfo sampler_create_info;
 		sampler_create_info.addressModeU = options.m_address_mode_u;
 		sampler_create_info.addressModeV = options.m_address_mode_v;
@@ -40,14 +38,7 @@ namespace graphics
 		sampler_create_info.mipmapMode = options.m_mipmap_mode;
 		sampler_create_info.unnormalizedCoordinates = options.m_unnormalized_coordinates;
 
-		m_sampler_handle = device_shared->get_handle().createSampler(sampler_create_info);
-	}
-
-	Sampler::~Sampler()
-	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().destroySampler(m_sampler_handle);
+		m_sampler_handle = m_device_ptr->get_handle().createSamplerUnique(sampler_create_info);
 	}
 
 } // namespace graphics

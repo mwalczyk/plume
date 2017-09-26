@@ -36,9 +36,8 @@ namespace graphics
 		m_mode = WindowMode::WINDOW_MODE_BORDERS;
 	}
 
-	Window::Window(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options) :
+	Window::Window(const Instance& instance, uint32_t width, uint32_t height, const Options& options) :
 
-		m_instance(instance),
 		m_width(width),
 		m_height(height),
 		m_title(options.m_title),
@@ -74,21 +73,17 @@ namespace graphics
 		glfwSetWindowUserPointer(m_window_handle, this);
 		
 		initialize_callbacks();
+		
+		// Create the surface.
+		// TODO: why do we have to do this?
+		VkSurfaceKHR surface_proxy = VK_NULL_HANDLE;
+		glfwCreateWindowSurface(instance.get_handle(), m_window_handle, nullptr, &surface_proxy);
+		m_surface_handle.reset(surface_proxy);
 	}
 
 	Window::~Window()
 	{
 		glfwDestroyWindow(m_window_handle);
-	}
-
-	SurfaceRef Window::create_surface()
-	{
-		auto surface = Surface::create(m_instance);
-
-		// This class is a friend of the Surface class, so we can directly access the VkSurfaceKHR handle.
-		glfwCreateWindowSurface(m_instance->get_handle(), m_window_handle, nullptr, reinterpret_cast<VkSurfaceKHR*>(&surface->m_surface_handle));
-
-		return surface;
 	}
 
 	std::vector<const char*> Window::get_required_instance_extensions() const

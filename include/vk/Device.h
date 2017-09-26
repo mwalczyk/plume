@@ -43,20 +43,11 @@ namespace graphics
 		PRESENTATION
 	};
 
-	class Device;
-	using DeviceRef = std::shared_ptr<Device>;
-	using DeviceWeakRef = std::weak_ptr<Device>;
-
 	class CommandBuffer;
-	using CommandBufferRef = std::shared_ptr<CommandBuffer>;
-
 	class Semaphore;
-	using SemaphoreRef = std::shared_ptr<Semaphore>;
-
 	class Swapchain;
-	using SwapchainRef = std::shared_ptr<Swapchain>;
 
-	class Device : public Noncopyable
+	class Device 
 	{
 	public:
 
@@ -67,26 +58,16 @@ namespace graphics
 			std::vector<vk::PresentModeKHR> m_present_modes;
 		};
 
-		//! Factory method for returning a new DeviceRef.
-		static DeviceRef create(vk::PhysicalDevice physical_device,
-								const SurfaceRef& surface,
-								vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
-								bool use_swapchain = true,
-								const std::vector<const char*>& required_device_extensions = {})
-		{
-			return std::make_shared<Device>(physical_device, surface, required_queue_flags, use_swapchain, required_device_extensions);
-		}
-
 		//! Construct a logical device around a physical device (GPU).
 		Device(vk::PhysicalDevice physical_device,
-			   const SurfaceRef& surface,
+			   const vk::UniqueSurfaceKHR& surface,
 			   vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
 			   bool use_swapchain = true, 
 			   const std::vector<const char*>& required_device_extensions = {});
 
 		~Device();
 
-		vk::Device get_handle() const { return m_device_handle; };
+		vk::Device get_handle() const { return m_device_handle.get(); };
 
 		vk::PhysicalDevice get_physical_device_handle() const { return m_gpu_details.m_handle; }
 		
@@ -114,30 +95,32 @@ namespace graphics
 			return m_gpu_details.get_supported_depth_format(); 
 		}
 		
-		uint32_t get_queue_family_index(QueueType type) { return m_queue_families_mapping[type].index; }
+		uint32_t get_queue_family_index(QueueType type) const { return m_queue_families_mapping.at(type).index; }
 		
 		vk::Queue get_queue_handle(QueueType type) { return m_queue_families_mapping[type].handle; }
 
-		void one_time_submit(QueueType type, const CommandBufferRef& command_buffer);
+		uint32_t acquire_next_swapchain_image(const Swapchain& swapchain, const Semaphore& semaphore, uint32_t timeout = std::numeric_limits<uint64_t>::max());
+
+		void one_time_submit(QueueType type, const CommandBuffer& command_buffer);
 
 		void submit_with_semaphores(QueueType type, 
-								    const CommandBufferRef& command_buffer,
-									const std::vector<SemaphoreRef>& wait,
-									const std::vector<SemaphoreRef>& signal,
-									const std::vector<vk::PipelineStageFlags>& pipeline_stage_flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput });
+								    const CommandBuffer& command_buffer,
+									const Semaphore& wait,
+									const Semaphore& signal,
+								    vk::PipelineStageFlags pipeline_stage_flags = vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
-		void present(const SwapchainRef& swapchain, uint32_t image_index, const std::vector<SemaphoreRef>& wait);
+		void present(const Swapchain& swapchain, uint32_t image_index, const Semaphore& wait);
 		
 		//! Wait for all commands submitted on a particular queue to finish.
 		void wait_idle_queue(QueueType type) { get_queue_handle(type).waitIdle(); }
 
 		//! Wait for all commands submitted to all queues to finish.
-		void wait_idle() { m_device_handle.waitIdle(); }
+		void wait_idle() { m_device_handle.get().waitIdle(); }
 
 		//! Returns a structure that contains information related to the chosen physical device's swapchain support.
-		SwapchainSupportDetails get_swapchain_support_details(const SurfaceRef& surface) const;
+		SwapchainSupportDetails get_swapchain_support_details(const vk::UniqueSurfaceKHR& surface) const;
 
-		friend std::ostream& operator<<(std::ostream& stream, const DeviceRef& device);
+		friend std::ostream& operator<<(std::ostream& stream, const Device& device);
 
 	private:
 
@@ -204,8 +187,8 @@ namespace graphics
 
 		uint32_t find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const;
 
-		SurfaceRef m_surface;
-		vk::Device m_device_handle;
+		vk::UniqueDevice m_device_handle;
+		
 		GPUDetails m_gpu_details;
 		std::vector<const char*> m_required_device_extensions;
 	};

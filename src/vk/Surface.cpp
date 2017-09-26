@@ -29,15 +29,4 @@
 namespace graphics
 {
 
-	Surface::Surface(const InstanceRef& instance) :
-
-		m_instance(instance)
-	{
-	}
-
-	Surface::~Surface()
-	{
-		m_instance->get_handle().destroySurfaceKHR(m_surface_handle);
-	}
-
 } // namespace graphics

@@ -29,17 +29,15 @@
 namespace graphics
 {
 
-	DeviceMemory::DeviceMemory(DeviceWeakRef device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties) :
+	DeviceMemory::DeviceMemory(const Device& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties) :
 		
-		m_device(device),
+		m_device_ptr(&device),
 		m_allocation_size(memory_requirements.size),
 		m_memory_property_flags(required_memory_properties),
 		m_selected_memory_index(-1),
 		m_in_use(false)
 	{
-		DeviceRef device_shared = m_device.lock();
-
-		auto& physical_device_memory_properties = device_shared->get_physical_device_memory_properties();
+		auto& physical_device_memory_properties = m_device_ptr->get_physical_device_memory_properties();
 
 		// Based on the memory requirements, find the index of the memory heap that should be used to allocate memory.
 		for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount; ++i)
@@ -57,18 +55,15 @@ namespace graphics
 
 		vk::MemoryAllocateInfo memory_allocate_info{ memory_requirements.size, m_selected_memory_index };
 		
-		m_device_memory_handle = device_shared->get_handle().allocateMemory(memory_allocate_info);
+		m_device_memory_handle = m_device_ptr->get_handle().allocateMemoryUnique(memory_allocate_info);
 	}
 
 	DeviceMemory::~DeviceMemory()
 	{
-		DeviceRef device_shared = m_device.lock();
-
 		if (m_in_use)
 		{
 			unmap();
 		}
-		device_shared->get_handle().freeMemory(m_device_memory_handle);
 	}
 
 	void* DeviceMemory::map(vk::DeviceSize offset, vk::DeviceSize size)
@@ -84,22 +79,19 @@ namespace graphics
 			throw std::runtime_error("Attempting to map the same device memory object more than once");
 		}
 
-		DeviceRef device_shared = m_device.lock();
-
 		if (offset > m_allocation_size && size <= m_allocation_size)
 		{
 			return nullptr;
 		}
-		void* mapped_ptr = device_shared->get_handle().mapMemory(m_device_memory_handle, offset, size);
+
+		void* mapped_ptr = m_device_ptr->get_handle().mapMemory(m_device_memory_handle.get(), offset, size);
 		m_in_use = true;
 		return mapped_ptr;
 	}
 
 	void DeviceMemory::unmap()
 	{
-		DeviceRef device_shared = m_device.lock();
-
-		device_shared->get_handle().unmapMemory(m_device_memory_handle);
+		m_device_ptr->get_handle().unmapMemory(m_device_memory_handle.get());
 		m_in_use = false;
 	}
 

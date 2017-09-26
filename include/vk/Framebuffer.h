@@ -32,9 +32,6 @@
 namespace graphics
 {
 
-	class Framebuffer;
-	using FramebufferRef = std::shared_ptr<Framebuffer>;
-
 	//! While render passes describe the structure of subpasses and attachments (independent of any specific
 	//! image views for the attachments), framebuffers are a collection of specific image views that will
 	//! be used in conjunction with a particular render pass. In other words, framebuffers are created with 
@@ -47,32 +44,18 @@ namespace graphics
 	//!
 	//! A framebuffer is compatible with a render pass if it was created using the same render pass or a 
 	//! compatible render pass.
-	class Framebuffer : public Noncopyable
+	class Framebuffer
 	{
 	public:
 
-		//! Factory method for returning a new FramebufferRef. Note that any attachment to this framebuffer must
-		//! have dimensions at least as large as the framebuffer itself.
-		static FramebufferRef create(DeviceWeakRef device, 
-									 const RenderPassRef& render_pass, 
-									 const std::map<std::string, vk::ImageView>& name_to_image_view_map, 
-									 uint32_t width, 
-									 uint32_t height, 
-									 uint32_t layers = 1)
-		{
-			return std::make_shared<Framebuffer>(device, render_pass, name_to_image_view_map, width, height, layers);
-		}
-
-		Framebuffer(DeviceWeakRef device, 
-					const RenderPassRef& render_pass, 
+		Framebuffer(const Device& device, 
+					const RenderPass& render_pass, 
 					const std::map<std::string, vk::ImageView>& name_to_image_view_map, 
 					uint32_t width, 
 					uint32_t height, 
 					uint32_t layers = 1);
-		
-		~Framebuffer();
 
-		vk::Framebuffer get_handle() const { return m_framebuffer_handle; }
+		vk::Framebuffer get_handle() const { return m_framebuffer_handle.get(); }
 		
 		uint32_t get_width() const { return m_width; }
 
@@ -90,7 +73,7 @@ namespace graphics
 		const std::map<std::string, vk::ImageView>& get_name_to_image_view_map() const { return m_name_to_image_view_map; }
 
 		// TODO: this should validate that the render pass and framebuffer are comptabile
-		bool is_compatible(const RenderPassRef& render_pass);
+		bool is_compatible(const RenderPass& render_pass);
 
 	private:
 
@@ -98,9 +81,9 @@ namespace graphics
 		// images with the same dimensions as the framebuffer
 		bool check_image_view_dimensions();
 
-		DeviceWeakRef m_device;
-		RenderPassRef m_render_pass;
-		vk::Framebuffer m_framebuffer_handle;
+		const Device* m_device_ptr;
+		vk::UniqueFramebuffer m_framebuffer_handle;
+
 		std::map<std::string, vk::ImageView> m_name_to_image_view_map;
 		uint32_t m_width;
 		uint32_t m_height;

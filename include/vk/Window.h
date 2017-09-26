@@ -39,10 +39,7 @@
 namespace graphics
 {
 
-	class Window;
-	using WindowRef = std::shared_ptr<Window>;
-
-	class Window : public Noncopyable
+	class Window
 	{
 	public:
 
@@ -80,17 +77,16 @@ namespace graphics
 			friend class Window;
 		};
 
-		//! Factory method for returning a new WindowRef
-		static WindowRef create(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options = Options())
-		{
-			return std::make_shared<Window>(instance, width, height, options);
-		}
-
-		Window(const InstanceRef& instance, uint32_t width, uint32_t height, const Options& options = Options());
+		Window(const Instance& instance, uint32_t width, uint32_t height, const Options& options = Options());
 	
 		~Window();
 
-		SurfaceRef create_surface();
+		//! Vulkan is a platform agnostic API and therefore does not directly interface with the window system.
+		//! The WSI (window system integration) extensions establish the connection between Vulkan and the 
+		//! underlying window system to present rendered images to the screen. Note that the surface and window 
+		//! creation process is not strictly necessary to build a functional Vulkan system, as Vulkan allows 
+		//! headless rendering.
+		const vk::UniqueSurfaceKHR& get_surface() const { return m_surface_handle; }
 		
 		//! Get a pointer to the underlying GLFW window.
 		GLFWwindow* get_window_handle() const { return m_window_handle; }
@@ -169,7 +165,7 @@ namespace graphics
 
 		void on_scroll(double x_offset, double y_offset);
 
-		InstanceRef m_instance;
+		vk::UniqueSurfaceKHR m_surface_handle;
 		GLFWwindow* m_window_handle;
 		uint32_t m_width;
 		uint32_t m_height;
