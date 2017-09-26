@@ -218,7 +218,6 @@
     <ClCompile Include="..\src\vk\Sampler.cpp" />
     <ClCompile Include="..\src\vk\Semaphore.cpp" />
     <ClCompile Include="..\src\vk\ShaderModule.cpp" />
-    <ClCompile Include="..\src\vk\Surface.cpp" />
     <ClCompile Include="..\src\vk\Swapchain.cpp" />
     <ClCompile Include="..\src\vk\Window.cpp" />
   </ItemGroup>
@@ -245,14 +244,12 @@
     <ClInclude Include="..\include\vk\Framebuffer.h" />
     <ClInclude Include="..\include\vk\Image.h" />
     <ClInclude Include="..\include\vk\Instance.h" />
-    <ClInclude Include="..\include\vk\Noncopyable.h" />
     <ClInclude Include="..\include\vk\Pipeline.h" />
     <ClInclude Include="..\include\vk\Platform.h" />
     <ClInclude Include="..\include\vk\RenderPass.h" />
     <ClInclude Include="..\include\vk\Sampler.h" />
     <ClInclude Include="..\include\vk\Semaphore.h" />
     <ClInclude Include="..\include\vk\ShaderModule.h" />
-    <ClInclude Include="..\include\vk\Surface.h" />
     <ClInclude Include="..\include\vk\Swapchain.h" />
     <ClInclude Include="..\include\vk\Utils.h" />
     <ClInclude Include="..\include\vk\Vk.h" />

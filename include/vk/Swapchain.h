@@ -30,46 +30,51 @@
 #include "Image.h"
 #include "Semaphore.h"
 
-namespace graphics
+namespace plume
 {
 
-	class Swapchain
+	namespace graphics
 	{
-	public:
 
-		Swapchain(const Device& device, const vk::UniqueSurfaceKHR& surface, uint32_t width, uint32_t height);
+		class Swapchain
+		{
+		public:
 
-		vk::SwapchainKHR get_handle() const { return m_swapchain_handle.get(); };
-		
-		const std::vector<vk::Image>& get_image_handles() const { return m_image_handles; }
-		
-		const std::vector<vk::ImageView>& get_image_view_handles() const { return m_image_view_handles; }
-		
-		size_t get_image_count() const { return m_image_handles.size(); }
-		
-		vk::Extent2D get_image_extent() const { return m_swapchain_image_extent; }
-		
-		vk::Format get_image_format() const { return m_swapchain_image_format; }
-		
-	private:
+			Swapchain(const Device& device, const vk::UniqueSurfaceKHR& surface, uint32_t width, uint32_t height);
 
-		vk::SurfaceFormatKHR select_swapchain_surface_format(const std::vector<vk::SurfaceFormatKHR>& surface_formats) const;
-		
-		vk::PresentModeKHR select_swapchain_present_mode(const std::vector<vk::PresentModeKHR>& present_modes) const;
-		
-		vk::Extent2D select_swapchain_extent(const vk::SurfaceCapabilitiesKHR& surface_capabilities) const;
-		
-		void create_image_views();
+			vk::SwapchainKHR get_handle() const { return m_swapchain_handle.get(); };
 
-		const Device* m_device_ptr;
-		vk::UniqueSwapchainKHR m_swapchain_handle;
+			const std::vector<vk::Image>& get_image_handles() const { return m_image_handles; }
 
-		std::vector<vk::Image> m_image_handles;
-		std::vector<vk::ImageView> m_image_view_handles;
-		vk::Format m_swapchain_image_format;
-		vk::Extent2D m_swapchain_image_extent;
-		uint32_t m_width;
-		uint32_t m_height;
-	};
+			const std::vector<vk::ImageView>& get_image_view_handles() const { return m_image_view_handles; }
 
-} // namespace graphics
+			size_t get_image_count() const { return m_image_handles.size(); }
+
+			vk::Extent2D get_image_extent() const { return m_swapchain_image_extent; }
+
+			vk::Format get_image_format() const { return m_swapchain_image_format; }
+
+		private:
+
+			vk::SurfaceFormatKHR select_swapchain_surface_format(const std::vector<vk::SurfaceFormatKHR>& surface_formats) const;
+
+			vk::PresentModeKHR select_swapchain_present_mode(const std::vector<vk::PresentModeKHR>& present_modes) const;
+
+			vk::Extent2D select_swapchain_extent(const vk::SurfaceCapabilitiesKHR& surface_capabilities) const;
+
+			void create_image_views();
+
+			const Device* m_device_ptr;
+			vk::UniqueSwapchainKHR m_swapchain_handle;
+
+			std::vector<vk::Image> m_image_handles;
+			std::vector<vk::ImageView> m_image_view_handles;
+			vk::Format m_swapchain_image_format;
+			vk::Extent2D m_swapchain_image_extent;
+			uint32_t m_width;
+			uint32_t m_height;
+		};
+
+	} // namespace graphics
+
+} // namespace plume

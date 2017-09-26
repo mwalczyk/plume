@@ -26,18 +26,23 @@
 
 #include "CommandPool.h"
 
-namespace graphics
+namespace plume
 {
-	
-	CommandPool::CommandPool(const Device& device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags) :
-		
-		m_device_ptr(&device)
+
+	namespace graphics
 	{
-		vk::CommandPoolCreateInfo command_pool_create_info;
-		command_pool_create_info.flags = command_pool_create_flags;
-		command_pool_create_info.queueFamilyIndex = m_device_ptr->get_queue_family_index(queue_type);
 
-		m_command_pool_handle = m_device_ptr->get_handle().createCommandPoolUnique(command_pool_create_info);
-	}
+		CommandPool::CommandPool(const Device& device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags) :
 
-} // namespace graphics
+			m_device_ptr(&device)
+		{
+			vk::CommandPoolCreateInfo command_pool_create_info;
+			command_pool_create_info.flags = command_pool_create_flags;
+			command_pool_create_info.queueFamilyIndex = m_device_ptr->get_queue_family_index(queue_type);
+
+			m_command_pool_handle = m_device_ptr->get_handle().createCommandPoolUnique(command_pool_create_info);
+		}
+
+	} // namespace graphics
+
+} // namespace plume

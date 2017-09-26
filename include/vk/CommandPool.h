@@ -28,44 +28,49 @@
 
 #include "Device.h"
 
-namespace graphics
+namespace plume
 {
 
-	//! Command pools are opaque objects that command buffer memory is allocated from, and which allow the 
-	//! implementation to reduce the cost of resource creation across multiple command buffers. Command pools
-	//! should not be used concurrently by multiple threads. This includes any recording commands issued to 
-	//! command buffers from the pool, as well as operations that allocate, free, and/or reset command 
-	//! buffers or the pool itself.
-	class CommandPool
+	namespace graphics
 	{
-	public:
 
-		//! The vk::CommandPoolCreateFlags parameter determines how and when individual command buffers allocated  
-		//! from this pool can be re-recorded. Possible flags are:
-		//!
-		//! vk::CommandPoolCreateFlagBits::eTransient: command buffers allocated from this pool will be 
-		//!		short lived (reset or freed in a relatively short timeframe).
-		//!
-		//! vk::CommandPoolCreateFlagBits::eResetCommandBuffer: controls whether command buffers allocated
-		//!		from this pool can be individually reset. Note that if this flag is not set, then all 
-		//!		command buffers must be reset together.
-		//!
-		//! Both flags will be set by default.
-		CommandPool(const Device& device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
+		//! Command pools are opaque objects that command buffer memory is allocated from, and which allow the 
+		//! implementation to reduce the cost of resource creation across multiple command buffers. Command pools
+		//! should not be used concurrently by multiple threads. This includes any recording commands issued to 
+		//! command buffers from the pool, as well as operations that allocate, free, and/or reset command 
+		//! buffers or the pool itself.
+		class CommandPool
+		{
+		public:
 
-		vk::CommandPool get_handle() const { return m_command_pool_handle.get(); };
+			//! The vk::CommandPoolCreateFlags parameter determines how and when individual command buffers allocated  
+			//! from this pool can be re-recorded. Possible flags are:
+			//!
+			//! vk::CommandPoolCreateFlagBits::eTransient: command buffers allocated from this pool will be 
+			//!		short lived (reset or freed in a relatively short timeframe).
+			//!
+			//! vk::CommandPoolCreateFlagBits::eResetCommandBuffer: controls whether command buffers allocated
+			//!		from this pool can be individually reset. Note that if this flag is not set, then all 
+			//!		command buffers must be reset together.
+			//!
+			//! Both flags will be set by default.
+			CommandPool(const Device& device, QueueType queue_type, vk::CommandPoolCreateFlags command_pool_create_flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
 
-		// TODO: this should notify all command buffers that have been allocated from this pool, which means
-		// that the command pool class needs to maintain a list of all command buffer objects.
-		void reset_pool() 
-		{ 
-			m_device_ptr->get_handle().resetCommandPool(m_command_pool_handle.get(), vk::CommandPoolResetFlagBits::eReleaseResources);
-		}
+			vk::CommandPool get_handle() const { return m_command_pool_handle.get(); };
 
-	private:
+			// TODO: this should notify all command buffers that have been allocated from this pool, which means
+			// that the command pool class needs to maintain a list of all command buffer objects.
+			void reset_pool()
+			{
+				m_device_ptr->get_handle().resetCommandPool(m_command_pool_handle.get(), vk::CommandPoolResetFlagBits::eReleaseResources);
+			}
 
-		const Device* m_device_ptr;
-		vk::UniqueCommandPool m_command_pool_handle;
-	};
+		private:
 
-} // namespace graphics
+			const Device* m_device_ptr;
+			vk::UniqueCommandPool m_command_pool_handle;
+		};
+
+	} // namespace graphics
+
+} // namespace plume

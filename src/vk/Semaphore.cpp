@@ -26,14 +26,19 @@
 
 #include "Semaphore.h"
 
-namespace graphics
+namespace plume
 {
 
-	Semaphore::Semaphore(const Device& device) :
-		
-		m_device_ptr(&device)
+	namespace graphics
 	{
-		m_semaphore_handle = m_device_ptr->get_handle().createSemaphoreUnique({});
-	}
 
-} // namespace graphics
+		Semaphore::Semaphore(const Device& device) :
+
+			m_device_ptr(&device)
+		{
+			m_semaphore_handle = m_device_ptr->get_handle().createSemaphoreUnique({});
+		}
+
+	} // namespace graphics
+
+} // namespace plume

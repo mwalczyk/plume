@@ -32,7 +32,7 @@
 #include "Platform.h"
 #include "Log.h"
 
-namespace graphics
+namespace plume
 {
 
 	namespace utils
@@ -61,33 +61,33 @@ namespace graphics
 		//! Translates a sample count (integer) into the correspond vk::SampleCountFlagBits. 
 		//! A `count` of 4 would return vk::SampleCountFlagBits::e4, for example.
 		vk::SampleCountFlagBits sample_count_to_flags(uint32_t count);
-		
+
 		namespace flags
 		{
 
-			inline vk::BufferUsageFlags buffer_usage_all() 
+			inline vk::BufferUsageFlags buffer_usage_all()
 			{
 				return vk::BufferUsageFlagBits::eIndexBuffer |
-					   vk::BufferUsageFlagBits::eIndirectBuffer |
-					   vk::BufferUsageFlagBits::eStorageBuffer |
-					   vk::BufferUsageFlagBits::eStorageTexelBuffer |
-					   vk::BufferUsageFlagBits::eTransferDst |
-					   vk::BufferUsageFlagBits::eTransferSrc |
-				 	   vk::BufferUsageFlagBits::eUniformBuffer |
-					   vk::BufferUsageFlagBits::eUniformTexelBuffer |
-					   vk::BufferUsageFlagBits::eVertexBuffer;
+					vk::BufferUsageFlagBits::eIndirectBuffer |
+					vk::BufferUsageFlagBits::eStorageBuffer |
+					vk::BufferUsageFlagBits::eStorageTexelBuffer |
+					vk::BufferUsageFlagBits::eTransferDst |
+					vk::BufferUsageFlagBits::eTransferSrc |
+					vk::BufferUsageFlagBits::eUniformBuffer |
+					vk::BufferUsageFlagBits::eUniformTexelBuffer |
+					vk::BufferUsageFlagBits::eVertexBuffer;
 			}
 
 			inline vk::ImageUsageFlags image_usage_all()
 			{
 				return vk::ImageUsageFlagBits::eColorAttachment |
-					   vk::ImageUsageFlagBits::eDepthStencilAttachment |
-					   vk::ImageUsageFlagBits::eInputAttachment |
-					   vk::ImageUsageFlagBits::eSampled |
-					   vk::ImageUsageFlagBits::eStorage |
-					   vk::ImageUsageFlagBits::eTransferDst |
-					   vk::ImageUsageFlagBits::eTransferSrc |
-					   vk::ImageUsageFlagBits::eTransientAttachment;	
+					vk::ImageUsageFlagBits::eDepthStencilAttachment |
+					vk::ImageUsageFlagBits::eInputAttachment |
+					vk::ImageUsageFlagBits::eSampled |
+					vk::ImageUsageFlagBits::eStorage |
+					vk::ImageUsageFlagBits::eTransferDst |
+					vk::ImageUsageFlagBits::eTransferSrc |
+					vk::ImageUsageFlagBits::eTransientAttachment;
 			}
 
 		} // namespace flags
@@ -95,25 +95,25 @@ namespace graphics
 		namespace clear_color
 		{
 
-			inline vk::ClearColorValue red(float alpha = 1.0f)				{ return std::array<float, 4>{ 1.0f, 0.0f, 0.0f, alpha }; }
-			inline vk::ClearColorValue green(float alpha = 1.0f)			{ return std::array<float, 4>{ 0.0f, 1.0f, 0.0f, alpha }; }
-			inline vk::ClearColorValue blue(float alpha = 1.0f)				{ return std::array<float, 4>{ 0.0f, 0.0f, 1.0f, alpha }; }
-			inline vk::ClearColorValue white(float alpha = 1.0f)			{ return std::array<float, 4>{ 1.0f, 1.0f, 1.0f, alpha }; }
-			inline vk::ClearColorValue black(float alpha = 1.0f)			{ return std::array<float, 4>{ 0.0f, 0.0f, 0.0f, alpha }; }
-			inline vk::ClearColorValue gray(float v, float alpha = 1.0f)	{ return std::array<float, 4>{ v, v, v, alpha }; }
-		
+			inline vk::ClearColorValue red(float alpha = 1.0f) { return std::array<float, 4>{ 1.0f, 0.0f, 0.0f, alpha }; }
+			inline vk::ClearColorValue green(float alpha = 1.0f) { return std::array<float, 4>{ 0.0f, 1.0f, 0.0f, alpha }; }
+			inline vk::ClearColorValue blue(float alpha = 1.0f) { return std::array<float, 4>{ 0.0f, 0.0f, 1.0f, alpha }; }
+			inline vk::ClearColorValue white(float alpha = 1.0f) { return std::array<float, 4>{ 1.0f, 1.0f, 1.0f, alpha }; }
+			inline vk::ClearColorValue black(float alpha = 1.0f) { return std::array<float, 4>{ 0.0f, 0.0f, 0.0f, alpha }; }
+			inline vk::ClearColorValue gray(float v, float alpha = 1.0f) { return std::array<float, 4>{ v, v, v, alpha }; }
+
 		} // namespace clear_color
 
 		namespace clear_depth
 		{
 
-			inline vk::ClearDepthStencilValue depth_zero()				{ return { 0.0f, 0 }; }
-			inline vk::ClearDepthStencilValue depth_one()				{ return { 1.0f, 0 }; }
-			inline vk::ClearDepthStencilValue depth_zero_stencil_one()	{ return { 0.0f, 1 }; }
-			inline vk::ClearDepthStencilValue depth_one_stencil_one()	{ return { 1.0f, 1 }; }
+			inline vk::ClearDepthStencilValue depth_zero() { return{ 0.0f, 0 }; }
+			inline vk::ClearDepthStencilValue depth_one() { return{ 1.0f, 0 }; }
+			inline vk::ClearDepthStencilValue depth_zero_stencil_one() { return{ 0.0f, 1 }; }
+			inline vk::ClearDepthStencilValue depth_one_stencil_one() { return{ 1.0f, 1 }; }
 
 		} // namespace clear_depth
 
 	} // namespace utils
 
-} // namespace graphics
+} // namespace plume

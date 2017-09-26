@@ -1,6 +1,6 @@
 #include "Utils.h"
 
-namespace graphics
+namespace plume
 {
 
 	namespace utils
@@ -27,17 +27,17 @@ namespace graphics
 		bool is_depth_format(vk::Format format)
 		{
 			return (format == vk::Format::eD16Unorm ||
-				    format == vk::Format::eD16UnormS8Uint ||
-					format == vk::Format::eD24UnormS8Uint ||
-					format == vk::Format::eD32Sfloat ||
-					format == vk::Format::eD32SfloatS8Uint);
+				format == vk::Format::eD16UnormS8Uint ||
+				format == vk::Format::eD24UnormS8Uint ||
+				format == vk::Format::eD32Sfloat ||
+				format == vk::Format::eD32SfloatS8Uint);
 		}
 
 		bool is_stencil_format(vk::Format format)
 		{
 			return (format == vk::Format::eD16UnormS8Uint ||
-				    format == vk::Format::eD24UnormS8Uint ||
-				    format == vk::Format::eD32SfloatS8Uint);
+				format == vk::Format::eD24UnormS8Uint ||
+				format == vk::Format::eD32SfloatS8Uint);
 		}
 
 		vk::ImageAspectFlags format_to_aspect_mask(vk::Format format)
@@ -68,7 +68,7 @@ namespace graphics
 				return vk::SampleCountFlagBits::e1;
 			case 2:
 				return vk::SampleCountFlagBits::e2;
-			case 4: 
+			case 4:
 				return vk::SampleCountFlagBits::e4;
 			case 8:
 				return vk::SampleCountFlagBits::e8;
@@ -86,4 +86,4 @@ namespace graphics
 
 	} // namespace utils
 
-} // namespace graphics
+} // namespace plume

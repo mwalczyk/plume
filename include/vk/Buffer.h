@@ -29,93 +29,96 @@
 #include "DeviceMemory.h"
 #include "Log.h"
 
-namespace graphics
+namespace plume
 {
 
-	//! Buffers represent linear arrays of data. They are created with a usage bitmask which describes the
-	//! allowed usages of the buffer (i.e. vk::BufferUsageFlagBits::eUniformBuffer). Any combination of bits
-	//! can be specified. Buffers are created with a sharing mode that controls how they can be accessed 
-	//! from queues. Note that if a buffer is created with the vk::SharingMode::eExclusive sharing mode, 
-	//! ownership can be transferred to another queue.
-	class Buffer
+	namespace graphics
 	{
-	public:
 
-		template<class T>
-		Buffer(const Device& device,
-			   vk::BufferUsageFlags buffer_usage_flags,
-			   const std::vector<T>& data,
-			   const std::vector<QueueType> queues = { QueueType::GRAPHICS }) :
-
-			Buffer(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues) {}
-		
-
-		Buffer(const Device& device,
-			   vk::BufferUsageFlags buffer_usage_flags,		
-			   size_t size, 
-			   const void* data, 
-			   const std::vector<QueueType> queues = { QueueType::GRAPHICS });
-
-		const std::unique_ptr<DeviceMemory>& get_device_memory() const { return m_device_memory; }
-
-		vk::Buffer get_handle() const { return m_buffer_handle.get(); }
-
-		//! Returns the usage flags that were used to create this buffer (i.e. vertex buffer, index buffer, uniform buffer, etc.).
-		vk::BufferUsageFlags get_buffer_usage_flags() const { return m_buffer_usage_flags; }
-
-		//! Returns the memory requirements of this buffer resource, as reported by the driver. Used
-		//! to allocate the device memory associated with this buffer.
-		const vk::MemoryRequirements& get_memory_requirements() const { return m_memory_requirements; }
-
-		//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
-		//! allocation size, which can be queried from the buffer's device memory reference.
-		size_t get_requested_size() const { return m_requested_size; }
-
-		//! Uploads data to the buffer's device memory region. Note that if the device memory associated with this buffer is not marked
-		//! as vk::MemoryPropertyFlagBits::eHostCoherent, then you must use a flush command after writing to the memory.
-		template<class T>
-		void upload_immediately(const T* data, vk::DeviceSize offset = 0)
+		//! Buffers represent linear arrays of data. They are created with a usage bitmask which describes the
+		//! allowed usages of the buffer (i.e. vk::BufferUsageFlagBits::eUniformBuffer). Any combination of bits
+		//! can be specified. Buffers are created with a sharing mode that controls how they can be accessed 
+		//! from queues. Note that if a buffer is created with the vk::SharingMode::eExclusive sharing mode, 
+		//! ownership can be transferred to another queue.
+		class Buffer
 		{
-			void* mapped_ptr = m_device_memory->map();
-			memcpy(mapped_ptr, data + offset, sizeof(T));
-			m_device_memory->unmap();
+		public:
 
-			// TODO: if the device memory associated with this buffer is not host coherent, we need to flush.
-			if (false)
+			template<class T>
+			Buffer(const Device& device,
+				vk::BufferUsageFlags buffer_usage_flags,
+				const std::vector<T>& data,
+				const std::vector<QueueType> queues = { QueueType::GRAPHICS }) :
+
+				Buffer(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues) {}
+
+
+			Buffer(const Device& device,
+				vk::BufferUsageFlags buffer_usage_flags,
+				size_t size,
+				const void* data,
+				const std::vector<QueueType> queues = { QueueType::GRAPHICS });
+
+			vk::Buffer get_handle() const { return m_buffer_handle.get(); }
+
+			//! Returns the usage flags that were used to create this buffer (i.e. vertex buffer, index buffer, uniform buffer, etc.).
+			vk::BufferUsageFlags get_buffer_usage_flags() const { return m_buffer_usage_flags; }
+
+			//! Returns the memory requirements of this buffer resource, as reported by the driver. Used
+			//! to allocate the device memory associated with this buffer.
+			const vk::MemoryRequirements& get_memory_requirements() const { return m_memory_requirements; }
+
+			//! Returns the size of the data that was used to construct this buffer. Note that this is not the same as the total device memory  
+			//! allocation size, which can be queried from the buffer's device memory reference.
+			size_t get_requested_size() const { return m_requested_size; }
+
+			//! Uploads data to the buffer's device memory region. Note that if the device memory associated with this buffer is not marked
+			//! as vk::MemoryPropertyFlagBits::eHostCoherent, then you must use a flush command after writing to the memory.
+			template<class T>
+			void upload_immediately(const T* data, vk::DeviceSize offset = 0)
 			{
-				vk::MappedMemoryRange mapped_memory_range;
-				mapped_memory_range.memory = m_device_memory->get_handle();
-				mapped_memory_range.offset = offset;
-				mapped_memory_range.size = sizeof(T);
+				void* mapped_ptr = m_device_memory->map();
+				memcpy(mapped_ptr, data + offset, sizeof(T));
+				m_device_memory->unmap();
 
-				m_device_ptr->get_handle().flushMappedMemoryRanges(mapped_memory_range);
-			}
-		}
+				// TODO: if the device memory associated with this buffer is not host coherent, we need to flush.
+				if (false)
+				{
+					vk::MappedMemoryRange mapped_memory_range;
+					mapped_memory_range.memory = m_device_memory->get_handle();
+					mapped_memory_range.offset = offset;
+					mapped_memory_range.size = sizeof(T);
 
-		//! Returns a vk::DescriptorBufferInfo for this buffer object. By default, `offset` is set to zero, and `range` is set to
-		//! the special value VK_WHOLE_SIZE, meaning that the descriptor will access the entire extent of this buffer's memory.
-		vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const
-		{
-			// See: https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkDescriptorBufferInfo.html
-			if (range != VK_WHOLE_SIZE &&
-				range < 0 ||
-				range <= m_device_memory->get_allocation_size() - offset)
-			{
-				throw std::runtime_error("Invalid value for `range` parameter of `build_descriptor_info()`");
+					m_device_ptr->get_handle().flushMappedMemoryRanges(mapped_memory_range);
+				}
 			}
 
-			return{ m_buffer_handle.get(), offset, range };
-		}
+			//! Returns a vk::DescriptorBufferInfo for this buffer object. By default, `offset` is set to zero, and `range` is set to
+			//! the special value VK_WHOLE_SIZE, meaning that the descriptor will access the entire extent of this buffer's memory.
+			vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const
+			{
+				// See: https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkDescriptorBufferInfo.html
+				if (range != VK_WHOLE_SIZE &&
+					range < 0 ||
+					range <= m_device_memory->get_allocation_size() - offset)
+				{
+					throw std::runtime_error("Invalid value for `range` parameter of `build_descriptor_info()`");
+				}
 
-	private:
+				return{ m_buffer_handle.get(), offset, range };
+			}
 
-		const Device* m_device_ptr;
-		vk::UniqueBuffer m_buffer_handle;
-		std::unique_ptr<DeviceMemory> m_device_memory;
+		private:
 
-		vk::BufferUsageFlags m_buffer_usage_flags;
-		vk::MemoryRequirements m_memory_requirements;
-		size_t m_requested_size;
-	};
+			const Device* m_device_ptr;
+			vk::UniqueBuffer m_buffer_handle;
+			std::unique_ptr<DeviceMemory> m_device_memory;
 
-} // namespace graphics
+			vk::BufferUsageFlags m_buffer_usage_flags;
+			vk::MemoryRequirements m_memory_requirements;
+			size_t m_requested_size;
+		};
+
+	} // namespace graphics
+
+} // namespace plume

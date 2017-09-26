@@ -30,61 +30,66 @@
 #include <fstream>
 #include <string>
 
-namespace fsys
+namespace plume
 {
 
-	struct FileResource
+	namespace fsys
 	{
-		std::vector<uint8_t> contents;
-	};
 
-	struct ImageResource
-	{
-		uint32_t width;
-		uint32_t height;
-		uint32_t channels;
-		std::vector<uint8_t> contents;
-	};
-
-	struct ImageResourceHDR
-	{
-		uint32_t width;
-		uint32_t height;
-		uint32_t channels;
-		std::vector<float> contents;
-	};
-
-	class ResourceManager
-	{
-	public:
-
-		static std::string default_path;
-
-		static ResourceManager& resource_manager()
+		struct FileResource
 		{
-			static ResourceManager manager;
-			return manager;
-		}
+			std::vector<uint8_t> contents;
+		};
 
-		//! Sets the base path that will be used for loading assets. This is "../assets/" by default.
-		static void set_default_path(const std::string& path) { default_path = path; }
+		struct ImageResource
+		{
+			uint32_t width;
+			uint32_t height;
+			uint32_t channels;
+			std::vector<uint8_t> contents;
+		};
 
-		//! Loads a binary file at path `ResourceManager::default_path` + `file_name`.
-		static FileResource load_file(const std::string& file_name);
+		struct ImageResourceHDR
+		{
+			uint32_t width;
+			uint32_t height;
+			uint32_t channels;
+			std::vector<float> contents;
+		};
 
-		//! Loads an image file at path `ResourceManager::default_path` + `file_name`.
-		static ImageResource load_image(const std::string& file_name, bool force_channels = true);
+		class ResourceManager
+		{
+		public:
 
-		//! Loads an HDR (floating-point) image file at path `ResourceManager::default_path` + `file_name`.
-		static ImageResourceHDR load_image_hdr(const std::string& file_name, bool force_channels = true);
+			static std::string default_path;
 
-		ResourceManager(const ResourceManager& other) = delete;
+			static ResourceManager& resource_manager()
+			{
+				static ResourceManager manager;
+				return manager;
+			}
 
-		ResourceManager& operator=(const ResourceManager& other) = delete;
+			//! Sets the base path that will be used for loading assets. This is "../assets/" by default.
+			static void set_default_path(const std::string& path) { default_path = path; }
 
-	private:
+			//! Loads a binary file at path `ResourceManager::default_path` + `file_name`.
+			static FileResource load_file(const std::string& file_name);
 
-		ResourceManager() = default;
-	};
+			//! Loads an image file at path `ResourceManager::default_path` + `file_name`.
+			static ImageResource load_image(const std::string& file_name, bool force_channels = true);
 
-} // namespace fsys
+			//! Loads an HDR (floating-point) image file at path `ResourceManager::default_path` + `file_name`.
+			static ImageResourceHDR load_image_hdr(const std::string& file_name, bool force_channels = true);
+
+			ResourceManager(const ResourceManager& other) = delete;
+
+			ResourceManager& operator=(const ResourceManager& other) = delete;
+
+		private:
+
+			ResourceManager() = default;
+		};
+
+	} // namespace fsys
+
+} // namespace plume

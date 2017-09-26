@@ -26,74 +26,79 @@
 
 #include "Framebuffer.h"
 
-namespace graphics
+namespace plume
 {
 
-	Framebuffer::Framebuffer(const Device& device, 
-							 const RenderPass& render_pass, 
-							 const std::map<std::string, vk::ImageView>& name_to_image_view_map, 
-							 uint32_t width, 
-							 uint32_t height,
-							 uint32_t layers) :
-		
-		m_device_ptr(&device),
-		m_name_to_image_view_map(name_to_image_view_map),
-		m_width(width),
-		m_height(height),
-		m_layers(layers)
+	namespace graphics
 	{
-		// TODO: the ImageView wrapper doesn't work because the swapchain creates its own images and image views that 
-		// can't be properly wrapped into the ImageRef and ImageViewRef classes. Maybe the Framebuffer class 
-		// should accept the a Swapchain as an additional argument?
 
-		// Make sure that the name passed to the framebuffer corresponds to an attachment in the render 
-		// pass instance's builder object.
-		const auto& render_pass_attachment_names = render_pass.get_render_pass_builder()->get_attachment_names();
-		for (const auto& name : get_attachment_names())
+		Framebuffer::Framebuffer(const Device& device,
+			const RenderPass& render_pass,
+			const std::map<std::string, vk::ImageView>& name_to_image_view_map,
+			uint32_t width,
+			uint32_t height,
+			uint32_t layers) :
+
+			m_device_ptr(&device),
+			m_name_to_image_view_map(name_to_image_view_map),
+			m_width(width),
+			m_height(height),
+			m_layers(layers)
 		{
-			if (std::find(render_pass_attachment_names.begin(),
-						  render_pass_attachment_names.end(),
-						  name) == render_pass_attachment_names.end())
+			// TODO: the ImageView wrapper doesn't work because the swapchain creates its own images and image views that 
+			// can't be properly wrapped into the ImageRef and ImageViewRef classes. Maybe the Framebuffer class 
+			// should accept the a Swapchain as an additional argument?
+
+			// Make sure that the name passed to the framebuffer corresponds to an attachment in the render 
+			// pass instance's builder object.
+			const auto& render_pass_attachment_names = render_pass.get_render_pass_builder()->get_attachment_names();
+			for (const auto& name : get_attachment_names())
 			{
-				throw std::runtime_error("One or more of the attachment names used to construct this FrameBuffer\
+				if (std::find(render_pass_attachment_names.begin(),
+					render_pass_attachment_names.end(),
+					name) == render_pass_attachment_names.end())
+				{
+					throw std::runtime_error("One or more of the attachment names used to construct this FrameBuffer\
 										  is invalid because it does not correspond to a render pass attachment name.");
+				}
 			}
+
+			// Note that because a map preserves the order of its keys, we don't need any extra logic here. We want to
+			// make sure that the order of the image views below is the same as the corresponding attachment descriptions
+			// in the render pass instance. 
+			auto image_views = get_image_views();
+
+			vk::FramebufferCreateInfo framebuffer_create_info;
+			framebuffer_create_info.attachmentCount = static_cast<uint32_t>(image_views.size());
+			framebuffer_create_info.height = m_height;
+			framebuffer_create_info.layers = m_layers;
+			framebuffer_create_info.pAttachments = image_views.data();
+			framebuffer_create_info.renderPass = render_pass.get_handle();
+			framebuffer_create_info.width = m_width;
+
+			m_framebuffer_handle = m_device_ptr->get_handle().createFramebufferUnique(framebuffer_create_info);
 		}
 
-		// Note that because a map preserves the order of its keys, we don't need any extra logic here. We want to
-		// make sure that the order of the image views below is the same as the corresponding attachment descriptions
-		// in the render pass instance. 
-		auto image_views = get_image_views();
-
-		vk::FramebufferCreateInfo framebuffer_create_info;
-		framebuffer_create_info.attachmentCount = static_cast<uint32_t>(image_views.size());
-		framebuffer_create_info.height = m_height;
-		framebuffer_create_info.layers = m_layers;
-		framebuffer_create_info.pAttachments = image_views.data();
-		framebuffer_create_info.renderPass = render_pass.get_handle();
-		framebuffer_create_info.width = m_width;
-
-		m_framebuffer_handle = m_device_ptr->get_handle().createFramebufferUnique(framebuffer_create_info);
-	}
-
-	std::vector<vk::ImageView> Framebuffer::get_image_views() const
-	{
-		std::vector<vk::ImageView> image_views;
-		for (const auto& mapping : m_name_to_image_view_map)
+		std::vector<vk::ImageView> Framebuffer::get_image_views() const
 		{
-			image_views.push_back(mapping.second);
+			std::vector<vk::ImageView> image_views;
+			for (const auto& mapping : m_name_to_image_view_map)
+			{
+				image_views.push_back(mapping.second);
+			}
+			return image_views;
 		}
-		return image_views;
-	}
 
-	std::vector<std::string> Framebuffer::get_attachment_names() const
-	{
-		std::vector<std::string> attachment_names;
-		for (const auto& mapping : m_name_to_image_view_map)
+		std::vector<std::string> Framebuffer::get_attachment_names() const
 		{
-			attachment_names.push_back(mapping.first);
+			std::vector<std::string> attachment_names;
+			for (const auto& mapping : m_name_to_image_view_map)
+			{
+				attachment_names.push_back(mapping.first);
+			}
+			return attachment_names;
 		}
-		return attachment_names;
-	}
 
-} // namespace graphics
+	} // namespace graphics
+
+} // namespace plume

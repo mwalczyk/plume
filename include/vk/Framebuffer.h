@@ -29,65 +29,70 @@
 #include "Device.h"
 #include "RenderPass.h"
 
-namespace graphics
+namespace plume
 {
 
-	//! While render passes describe the structure of subpasses and attachments (independent of any specific
-	//! image views for the attachments), framebuffers are a collection of specific image views that will
-	//! be used in conjunction with a particular render pass. In other words, framebuffers are created with 
-	//! respect to a render pass that the framebuffer is compatible with.
-	//!
-	//! Two attachment references are compatible if they have matching formats and sample counts. Two arrays
-	//! of attachment references are compatible if all corresponding pairs of attachments are compatible. If
-	//! the arrays are different lengths, attachment references not present in the small array are treated as
-	//! unused (VK_ATTACHMENT_UNUSED).
-	//!
-	//! A framebuffer is compatible with a render pass if it was created using the same render pass or a 
-	//! compatible render pass.
-	class Framebuffer
+	namespace graphics
 	{
-	public:
 
-		Framebuffer(const Device& device, 
-					const RenderPass& render_pass, 
-					const std::map<std::string, vk::ImageView>& name_to_image_view_map, 
-					uint32_t width, 
-					uint32_t height, 
-					uint32_t layers = 1);
+		//! While render passes describe the structure of subpasses and attachments (independent of any specific
+		//! image views for the attachments), framebuffers are a collection of specific image views that will
+		//! be used in conjunction with a particular render pass. In other words, framebuffers are created with 
+		//! respect to a render pass that the framebuffer is compatible with.
+		//!
+		//! Two attachment references are compatible if they have matching formats and sample counts. Two arrays
+		//! of attachment references are compatible if all corresponding pairs of attachments are compatible. If
+		//! the arrays are different lengths, attachment references not present in the small array are treated as
+		//! unused (VK_ATTACHMENT_UNUSED).
+		//!
+		//! A framebuffer is compatible with a render pass if it was created using the same render pass or a 
+		//! compatible render pass.
+		class Framebuffer
+		{
+		public:
 
-		vk::Framebuffer get_handle() const { return m_framebuffer_handle.get(); }
-		
-		uint32_t get_width() const { return m_width; }
+			Framebuffer(const Device& device,
+				const RenderPass& render_pass,
+				const std::map<std::string, vk::ImageView>& name_to_image_view_map,
+				uint32_t width,
+				uint32_t height,
+				uint32_t layers = 1);
 
-		uint32_t get_height() const { return m_height; }
+			vk::Framebuffer get_handle() const { return m_framebuffer_handle.get(); }
 
-		uint32_t get_layers() const { return m_layers; }
+			uint32_t get_width() const { return m_width; }
 
-		//! Retrieve the list of image views associated with this framebuffer.
-		std::vector<vk::ImageView> get_image_views() const;
+			uint32_t get_height() const { return m_height; }
 
-		//! Retrieve the list of attachment names associated with this framebuffer.
-		std::vector<std::string> get_attachment_names() const;
+			uint32_t get_layers() const { return m_layers; }
 
-		//! Retrieve the map of attachment names to image views associated with this framebuffer.
-		const std::map<std::string, vk::ImageView>& get_name_to_image_view_map() const { return m_name_to_image_view_map; }
+			//! Retrieve the list of image views associated with this framebuffer.
+			std::vector<vk::ImageView> get_image_views() const;
 
-		// TODO: this should validate that the render pass and framebuffer are comptabile
-		bool is_compatible(const RenderPass& render_pass);
+			//! Retrieve the list of attachment names associated with this framebuffer.
+			std::vector<std::string> get_attachment_names() const;
 
-	private:
+			//! Retrieve the map of attachment names to image views associated with this framebuffer.
+			const std::map<std::string, vk::ImageView>& get_name_to_image_view_map() const { return m_name_to_image_view_map; }
 
-		// TODO: this should ensure that all of the image views passed into the constructor correspond to 
-		// images with the same dimensions as the framebuffer
-		bool check_image_view_dimensions();
+			// TODO: this should validate that the render pass and framebuffer are comptabile
+			bool is_compatible(const RenderPass& render_pass);
 
-		const Device* m_device_ptr;
-		vk::UniqueFramebuffer m_framebuffer_handle;
+		private:
 
-		std::map<std::string, vk::ImageView> m_name_to_image_view_map;
-		uint32_t m_width;
-		uint32_t m_height;
-		uint32_t m_layers;
-	};
+			// TODO: this should ensure that all of the image views passed into the constructor correspond to 
+			// images with the same dimensions as the framebuffer
+			bool check_image_view_dimensions();
 
-} // namespace graphics
+			const Device* m_device_ptr;
+			vk::UniqueFramebuffer m_framebuffer_handle;
+
+			std::map<std::string, vk::ImageView> m_name_to_image_view_map;
+			uint32_t m_width;
+			uint32_t m_height;
+			uint32_t m_layers;
+		};
+
+	} // namespace graphics
+
+} // namespace plume

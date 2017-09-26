@@ -26,52 +26,57 @@
 
 #include "Buffer.h"
 
-namespace graphics
+namespace plume
 {
 
-	Buffer::Buffer(const Device& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<QueueType> queues) :
-		
-		m_device_ptr(&device),
-		m_buffer_usage_flags(buffer_usage_flags),
-		m_requested_size(size)
+	namespace graphics
 	{
-		vk::SharingMode sharing_mode = vk::SharingMode::eExclusive;
-		if (queues.size() > 1)
+
+		Buffer::Buffer(const Device& device, vk::BufferUsageFlags buffer_usage_flags, size_t size, const void* data, const std::vector<QueueType> queues) :
+
+			m_device_ptr(&device),
+			m_buffer_usage_flags(buffer_usage_flags),
+			m_requested_size(size)
 		{
-			PL_LOG_DEBUG("This buffer is used by multiple queue families: setting its share mode to vk::SharingMode::eConcurrent\n");
-			sharing_mode = vk::SharingMode::eConcurrent;
+			vk::SharingMode sharing_mode = vk::SharingMode::eExclusive;
+			if (queues.size() > 1)
+			{
+				PL_LOG_DEBUG("This buffer is used by multiple queue families: setting its share mode to vk::SharingMode::eConcurrent\n");
+				sharing_mode = vk::SharingMode::eConcurrent;
+			}
+
+			// Gather all of the queue family indices based on the requested queue types.
+			std::vector<uint32_t> queue_family_indices(queues.size());
+			std::transform(queues.begin(), queues.end(), queue_family_indices.begin(), [&](QueueType type) { return m_device_ptr->get_queue_family_index(type); });
+
+			vk::BufferCreateInfo buffer_create_info;
+			buffer_create_info.pQueueFamilyIndices = queue_family_indices.data();	// Ignored if the sharing mode is exclusive.
+			buffer_create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_family_indices.size());
+			buffer_create_info.sharingMode = sharing_mode;
+			buffer_create_info.size = m_requested_size;
+			buffer_create_info.usage = m_buffer_usage_flags;
+
+			m_buffer_handle = m_device_ptr->get_handle().createBufferUnique(buffer_create_info);
+
+			// Store the memory requirements for this buffer object.
+			m_memory_requirements = m_device_ptr->get_handle().getBufferMemoryRequirements(m_buffer_handle.get());
+
+			// Allocate device memory.
+			// TODO: these flags should be parameters. Currently, all buffer objects are marked as CPU-accessible.
+			m_device_memory = std::make_unique<DeviceMemory>(device, m_memory_requirements, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+			// Fill the buffer with the data that was passed into the constructor.
+			if (data)
+			{
+				void* mapped_ptr = m_device_memory->map(0, m_device_memory->get_allocation_size());
+				memcpy(mapped_ptr, data, static_cast<size_t>(m_requested_size));
+				m_device_memory->unmap();
+			}
+
+			// Associate the device memory with this buffer object.
+			m_device_ptr->get_handle().bindBufferMemory(m_buffer_handle.get(), m_device_memory->get_handle(), 0);
 		}
 
-		// Gather all of the queue family indices based on the requested queue types.
-		std::vector<uint32_t> queue_family_indices(queues.size());
-		std::transform(queues.begin(), queues.end(), queue_family_indices.begin(), [&](QueueType type) { return m_device_ptr->get_queue_family_index(type); });
+	} // namespace graphics
 
-		vk::BufferCreateInfo buffer_create_info;
-		buffer_create_info.pQueueFamilyIndices = queue_family_indices.data();	// Ignored if the sharing mode is exclusive.
-		buffer_create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_family_indices.size());
-		buffer_create_info.sharingMode = sharing_mode;
-		buffer_create_info.size = m_requested_size;
-		buffer_create_info.usage = m_buffer_usage_flags;
-
-		m_buffer_handle = m_device_ptr->get_handle().createBufferUnique(buffer_create_info);
-
-		// Store the memory requirements for this buffer object.
-		m_memory_requirements = m_device_ptr->get_handle().getBufferMemoryRequirements(m_buffer_handle.get());
-
-		// Allocate device memory.
-		// TODO: these flags should be parameters. Currently, all buffer objects are marked as CPU-accessible.
-		m_device_memory = std::make_unique<DeviceMemory>(device, m_memory_requirements, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-		// Fill the buffer with the data that was passed into the constructor.
-		if (data)
-		{
-			void* mapped_ptr = m_device_memory->map(0, m_device_memory->get_allocation_size());
-			memcpy(mapped_ptr, data, static_cast<size_t>(m_requested_size));
-			m_device_memory->unmap();
-		}
-
-		// Associate the device memory with this buffer object.
-		m_device_ptr->get_handle().bindBufferMemory(m_buffer_handle.get(), m_device_memory->get_handle(), 0);
-	}
-
-} // namespace graphics
+} // namespace plume
