@@ -34,7 +34,11 @@ namespace plume
 
 	namespace graphics
 	{
-		Device::Device(vk::PhysicalDevice physical_device, const vk::UniqueSurfaceKHR& surface, vk::QueueFlags required_queue_flags, bool use_swapchain, const std::vector<const char*>& required_device_extensions) :
+		Device::Device(vk::PhysicalDevice physical_device, 
+					   const vk::UniqueSurfaceKHR& surface, 
+					   vk::QueueFlags required_queue_flags, 
+					   bool use_swapchain, 
+					   const std::vector<const char*>& required_device_extensions) :
 
 			m_required_device_extensions(required_device_extensions)
 		{
@@ -250,10 +254,10 @@ namespace plume
 		}
 
 		void Device::submit_with_semaphores(QueueType type,
-			const CommandBuffer& command_buffer,
-			const Semaphore& wait,
-			const Semaphore& signal,
-			vk::PipelineStageFlags pipeline_stage_flags)
+											const CommandBuffer& command_buffer,
+											const Semaphore& wait,
+											const Semaphore& signal,
+											vk::PipelineStageFlags pipeline_stage_flags)
 		{
 			vk::CommandBuffer command_buffer_handle = command_buffer.get_handle();
 
@@ -270,17 +274,20 @@ namespace plume
 			get_queue_handle(type).submit(submit_info, {});
 		}
 
+		void one_time_submit(QueueType type, std::function<void(const CommandBuffer&)> func)
+		{
+			// TODO: create a standard command pool that is maintained by this device.
+		}
+
 		void Device::one_time_submit(QueueType type, const CommandBuffer& command_buffer)
 		{
-			// If the command buffer was (erroneously) left in a recorded state,
-			// end recording.
 			if (command_buffer.is_inside_render_pass())
 			{
-				PL_LOG_DEBUG("The command buffer passed to `one_time_submit()` is still inside a render pass: calling `end_render_pass()`\n");
+				throw std::runtime_error("The command buffer passed to `one_time_submit()` is still inside a render pass: call `end_render_pass()`\n");
 			}
 			if (command_buffer.is_recording())
 			{
-				PL_LOG_DEBUG("The command buffer passed to `one_time_submit()` is still in a recording state: calling `end()`\n");
+				throw std::runtime_error("The command buffer passed to `one_time_submit()` is still in a recording state: call `end()`");
 			}
 
 			vk::CommandBuffer command_buffer_handle = command_buffer.get_handle();

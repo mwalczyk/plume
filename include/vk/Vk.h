@@ -42,3 +42,5 @@
 #include "Swapchain.h"
 #include "Utils.h"
 #include "Window.h"
+
+namespace pl = plume;

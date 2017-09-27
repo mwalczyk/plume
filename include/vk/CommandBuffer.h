@@ -186,13 +186,13 @@ namespace plume
 
 			//! Clear a color image with the specified clear value.
 			void clear_color_image(const Image& image,
-				vk::ClearColorValue clear_value = utils::clear_color::black(),
-				vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource());
+								   vk::ClearColorValue clear_value = utils::clear_color::black(),
+								   vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource());
 
 			//! Clear a depth/stencil image with the specified clear value.
 			void clear_depth_image(const Image& image,
-				vk::ClearDepthStencilValue clear_value = utils::clear_depth::depth_one(),
-				vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
+								   vk::ClearDepthStencilValue clear_value = utils::clear_depth::depth_one(),
+								   vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
 
 
 			//! Use an image memory barrier to transition an image from one layout to another. This function can also be 
@@ -200,11 +200,11 @@ namespace plume
 			//! the same, then the image barrier's `srcQueueFamilyIndex` and `dstQueueFamilyIndex` will be set to the special
 			//! value VK_QUEUE_FAMILY_IGNORED, meaning that there will be no transfer of ownership.
 			void transition_image_layout(const Image& image,
-				vk::ImageLayout from,
-				vk::ImageLayout to,
-				vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(),
-				QueueType src_queue = QueueType::GRAPHICS,
-				QueueType dst_queue = QueueType::GRAPHICS);
+										 vk::ImageLayout from,
+										 vk::ImageLayout to,
+										 vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(),
+										 QueueType src_queue = QueueType::GRAPHICS,
+										 QueueType dst_queue = QueueType::GRAPHICS);
 
 			/*
 			 * Common synchronization use cases, expressed as pipeline barriers.
@@ -259,20 +259,20 @@ namespace plume
 			//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
 			//! that the image will be read in the vertex shader stage of the second draw call.
 			void barrier_compute_write_storage_image_graphics_read(const Image& image,
-				vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
-				const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+																   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
+																   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 			//! Creates a pipeline barrier representing a draw command that writes to a color attachment followed 
 			//! by a compute shader dispatch that reads from that image. This avoids a RAW (read-after-write) 
 			//! hazard.
 			void barrier_graphics_write_color_attachment_compute_read(const Image& image,
-				const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+																	  const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 			//! Creates a pipeline barrier representing a draw command that writes to a depth attachment followed 
 			//! by a compute shader dispatch that reads from that image. This avoids a RAW (read-after-write) 
 			//! hazard.
 			void barrier_graphics_write_depth_attachment_compute_read(const Image& image,
-				const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+																	  const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 			//! Creates a pipeline barrier representing a draw command that writes to a depth attachment
 			//! followed by another draw command that samples that image in one or more of its subsequent
@@ -285,8 +285,8 @@ namespace plume
 			//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
 			//! that the image will be read in the vertex shader stage of the second draw call.
 			void barrier_graphics_write_depth_attachment_graphics_read(const Image& image,
-				vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
-				const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+																	   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
+																	   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 			//! Creates a pipeline barrier representing a draw command that writes to a color attachment
 			//! followed by another draw command that samples that image in one or more of its subsequent
@@ -298,8 +298,8 @@ namespace plume
 			//! vk::PipelineStageFlagBits. For example, vk::PipelineStageFlagBits::eVertexShader would imply
 			//! that the image will be read in the vertex shader stage of the second draw call.
 			void barrier_graphics_write_color_attachment_graphics_read(const Image& image,
-				vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
-				const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
+																	   vk::PipelineStageFlags read_stage_flags = vk::PipelineStageFlagBits::eFragmentShader,
+																	   const vk::ImageSubresourceRange& image_subresource_range = Image::build_single_layer_subresource());
 
 			//! Stop recording into the command buffer. Puts the command buffer into an executable state.
 			void end();

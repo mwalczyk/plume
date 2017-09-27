@@ -101,6 +101,8 @@ namespace plume
 
 			uint32_t acquire_next_swapchain_image(const Swapchain& swapchain, const Semaphore& semaphore, uint32_t timeout = std::numeric_limits<uint64_t>::max());
 
+			void one_time_submit(QueueType type, std::function<void(const CommandBuffer&)> func);
+
 			void one_time_submit(QueueType type, const CommandBuffer& command_buffer);
 
 			void submit_with_semaphores(QueueType type,
