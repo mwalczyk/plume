@@ -302,13 +302,11 @@ namespace plume
 
 		void Device::present(const Swapchain& swapchain, uint32_t image_index, const Semaphore& wait)
 		{
-			std::vector<vk::SwapchainKHR> swapchain_handles = { swapchain.get_handle() };
-
 			vk::PresentInfoKHR present_info = {};
 			present_info.waitSemaphoreCount = 1;
 			present_info.pWaitSemaphores = &wait.get_handle();
-			present_info.swapchainCount = static_cast<uint32_t>(swapchain_handles.size());
-			present_info.pSwapchains = swapchain_handles.data();
+			present_info.swapchainCount = 1;
+			present_info.pSwapchains = &swapchain.get_handle();
 			present_info.pImageIndices = &image_index;
 			present_info.pResults = nullptr;
 

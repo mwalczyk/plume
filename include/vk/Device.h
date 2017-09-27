@@ -71,45 +71,55 @@ namespace plume
 
 			vk::PhysicalDevice get_physical_device_handle() const { return m_gpu_details.m_handle; }
 
-			vk::PhysicalDeviceProperties get_physical_device_properties() const { return m_gpu_details.m_properties; }
+			//! Returns a struct specifying physical device properties like vendor ID and device name.
+			const vk::PhysicalDeviceProperties& get_physical_device_properties() const { return m_gpu_details.m_properties; }
 
-			vk::PhysicalDeviceLimits get_physical_device_limits() const { return m_gpu_details.m_properties.limits; }
+			//! Returns a struct reporting implementation-dependent physical device limits like the maximum number of 
+			//! descriptors that can be bound at the same time.
+			const vk::PhysicalDeviceLimits& get_physical_device_limits() const { return m_gpu_details.m_properties.limits; }
 
-			vk::PhysicalDeviceFeatures get_physical_device_features() const { return m_gpu_details.m_features; }
+			//! Returns a struct describing fine-grained features that can be supported by an implementation like 
+			//! geometry shaders.
+			const vk::PhysicalDeviceFeatures& get_physical_device_features() const { return m_gpu_details.m_features; }
 
-			vk::PhysicalDeviceMemoryProperties get_physical_device_memory_properties() const { return m_gpu_details.m_memory_properties; }
+			//! Returns a struct specifying physical device memory properties like the number of available memory heaps.
+			const vk::PhysicalDeviceMemoryProperties& get_physical_device_memory_properties() const { return m_gpu_details.m_memory_properties; }
 
+			//! Returns a vector of structs providing information about each available queue family.
 			const std::vector<vk::QueueFamilyProperties>& get_physical_device_queue_family_properties() const { return m_gpu_details.m_queue_family_properties; }
 
+			//! Returns a vector of structs specifying information about each available device-specific extension.
 			const std::vector<vk::ExtensionProperties>& get_physical_device_extension_properties() const { return m_gpu_details.m_extension_properties; }
 
 			//! Format features are properties of the physical device.
-			vk::FormatProperties get_physical_device_format_properties(vk::Format format) const
-			{
-				return m_gpu_details.m_handle.getFormatProperties(format);
-			}
+			vk::FormatProperties get_physical_device_format_properties(vk::Format format) const { return m_gpu_details.m_handle.getFormatProperties(format); }
 
 			//! Depth formats are not necessarily supported by the system. Retrieve the highest precision format available.
-			vk::Format get_supported_depth_format() const
-			{
-				return m_gpu_details.get_supported_depth_format();
-			}
+			vk::Format get_supported_depth_format() const { return m_gpu_details.get_supported_depth_format(); }
 
+			//! Returns the numeric index of the queue family that the queue `type` belongs to.
 			uint32_t get_queue_family_index(QueueType type) const { return m_queue_families_mapping.at(type).index; }
 
+			//! Returns the handle to the queue object associated with queue `type`.
 			vk::Queue get_queue_handle(QueueType type) { return m_queue_families_mapping[type].handle; }
 
-			uint32_t acquire_next_swapchain_image(const Swapchain& swapchain, const Semaphore& semaphore, uint32_t timeout = std::numeric_limits<uint64_t>::max());
+			//! Retrieves the numeric index of the next available swapchain image.
+			uint32_t acquire_next_swapchain_image(const Swapchain& swapchain, 
+												  const Semaphore& semaphore, 
+												  uint32_t timeout = std::numeric_limits<uint64_t>::max());
 
 			void one_time_submit(QueueType type, std::function<void(const CommandBuffer&)> func);
 
+			//! Submit a command buffer and wait idle on the specified queue. Note that, as the name suggests, this function
+			//! should not be used for command buffer submissions that occur with high frequency (i.e. every frame).
 			void one_time_submit(QueueType type, const CommandBuffer& command_buffer);
 
+			//! Submit a command buffer on the specified queue with a wait semaphore and signal semaphore.
 			void submit_with_semaphores(QueueType type,
-				const CommandBuffer& command_buffer,
-				const Semaphore& wait,
-				const Semaphore& signal,
-				vk::PipelineStageFlags pipeline_stage_flags = vk::PipelineStageFlagBits::eColorAttachmentOutput);
+										const CommandBuffer& command_buffer,
+										const Semaphore& wait,
+										const Semaphore& signal,
+										vk::PipelineStageFlags pipeline_stage_flags = vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
 			void present(const Swapchain& swapchain, uint32_t image_index, const Semaphore& wait);
 
@@ -178,6 +188,15 @@ namespace plume
 				vk::Queue handle = {};
 			};
 
+			//! A helper function that attempts to find the numeric index of a unique queue family that satisfies the
+			//! specified flags.
+			uint32_t find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const;
+
+			vk::UniqueDevice m_device_handle;
+
+			GPUDetails m_gpu_details;
+			std::vector<const char*> m_required_device_extensions;
+
 			std::map<QueueType, QueueInternals> m_queue_families_mapping =
 			{
 				{ QueueType::GRAPHICS, {} },
@@ -186,13 +205,6 @@ namespace plume
 				{ QueueType::SPARSE_BINDING, {} },
 				{ QueueType::PRESENTATION, {} }
 			};
-
-			uint32_t find_queue_family_index(vk::QueueFlagBits queue_flag_bits) const;
-
-			vk::UniqueDevice m_device_handle;
-
-			GPUDetails m_gpu_details;
-			std::vector<const char*> m_required_device_extensions;
 		};
 
 	} // namespace graphics

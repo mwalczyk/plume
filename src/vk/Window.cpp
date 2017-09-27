@@ -69,6 +69,7 @@ namespace plume
 				glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 			}
 
+			// TODO: `glfwGetPrimaryMonitor()` crashes everything. Maybe try a windowed fullscreen mode?
 			m_window_handle = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
 
 			// Set the GLFW window user pointer to 'this' so that a member function can be used for mouse callbacks. 
