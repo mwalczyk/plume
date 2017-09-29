@@ -72,22 +72,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\misc;$(SolutionDir)include\vk;$(SolutionDir)deps\glfw\include\GLFW;$(SolutionDir)deps\glm\glm;$(SolutionDir)deps\spirv-cross;$(SolutionDir)deps\spirv-cross\include\spirv_cross;$(SolutionDir)deps\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\vk\wrappers;$(SolutionDir)include\vk\misc;$(SolutionDir)deps\glfw\include\GLFW;$(SolutionDir)deps\glm\glm;$(SolutionDir)deps\spirv-cross;$(SolutionDir)deps\spirv-cross\include\spirv_cross;$(SolutionDir)deps\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\misc;$(SolutionDir)include\vk;$(SolutionDir)deps\glfw\include\GLFW;$(SolutionDir)deps\glm\glm;$(SolutionDir)deps\spirv-cross;$(SolutionDir)deps\spirv-cross\include\spirv_cross;$(SolutionDir)deps\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\vk\wrappers;$(SolutionDir)include\vk\misc;$(SolutionDir)deps\glfw\include\GLFW;$(SolutionDir)deps\glm\glm;$(SolutionDir)deps\spirv-cross;$(SolutionDir)deps\spirv-cross\include\spirv_cross;$(SolutionDir)deps\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\misc;$(SolutionDir)include\vk;$(SolutionDir)deps\glfw\include\GLFW;$(SolutionDir)deps\glm\glm;$(SolutionDir)deps\spirv-cross;$(SolutionDir)deps\spirv-cross\include\spirv_cross;$(SolutionDir)deps\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\vk\wrappers;$(SolutionDir)include\vk\misc;$(SolutionDir)deps\glfw\include\GLFW;$(SolutionDir)deps\glm\glm;$(SolutionDir)deps\spirv-cross;$(SolutionDir)deps\spirv-cross\include\spirv_cross;$(SolutionDir)deps\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\misc;$(SolutionDir)include\vk;$(SolutionDir)deps\glfw\include\GLFW;$(SolutionDir)deps\glm\glm;$(SolutionDir)deps\spirv-cross;$(SolutionDir)deps\spirv-cross\include\spirv_cross;$(SolutionDir)deps\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include;$(SolutionDir)include;$(SolutionDir)include\vk\wrappers;$(SolutionDir)include\vk\misc;$(SolutionDir)deps\glfw\include\GLFW;$(SolutionDir)deps\glm\glm;$(SolutionDir)deps\spirv-cross;$(SolutionDir)deps\spirv-cross\include\spirv_cross;$(SolutionDir)deps\stb;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -201,25 +201,25 @@
     <ClCompile Include="..\deps\spirv-cross\spirv_hlsl.cpp" />
     <ClCompile Include="..\deps\spirv-cross\spirv_msl.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\misc\Geometry.cpp" />
-    <ClCompile Include="..\src\misc\ResourceManager.cpp" />
-    <ClCompile Include="..\src\misc\Utils.cpp" />
-    <ClCompile Include="..\src\vk\Buffer.cpp" />
-    <ClCompile Include="..\src\vk\CommandBuffer.cpp" />
-    <ClCompile Include="..\src\vk\CommandPool.cpp" />
-    <ClCompile Include="..\src\vk\DescriptorPool.cpp" />
-    <ClCompile Include="..\src\vk\Device.cpp" />
-    <ClCompile Include="..\src\vk\DeviceMemory.cpp" />
-    <ClCompile Include="..\src\vk\Framebuffer.cpp" />
-    <ClCompile Include="..\src\vk\Image.cpp" />
-    <ClCompile Include="..\src\vk\Instance.cpp" />
-    <ClCompile Include="..\src\vk\Pipeline.cpp" />
-    <ClCompile Include="..\src\vk\RenderPass.cpp" />
-    <ClCompile Include="..\src\vk\Sampler.cpp" />
-    <ClCompile Include="..\src\vk\Semaphore.cpp" />
-    <ClCompile Include="..\src\vk\ShaderModule.cpp" />
-    <ClCompile Include="..\src\vk\Swapchain.cpp" />
-    <ClCompile Include="..\src\vk\Window.cpp" />
+    <ClCompile Include="..\src\vk\misc\Geometry.cpp" />
+    <ClCompile Include="..\src\vk\misc\ResourceManager.cpp" />
+    <ClCompile Include="..\src\vk\misc\Utils.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Buffer.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\CommandBuffer.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\CommandPool.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\DescriptorPool.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Device.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\DeviceMemory.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Framebuffer.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Image.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Instance.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Pipeline.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\RenderPass.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Sampler.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Semaphore.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\ShaderModule.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Swapchain.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\deps\spirv-cross\GLSL.std.450.h" />
@@ -231,29 +231,29 @@
     <ClInclude Include="..\deps\spirv-cross\spirv_glsl.hpp" />
     <ClInclude Include="..\deps\spirv-cross\spirv_hlsl.hpp" />
     <ClInclude Include="..\deps\spirv-cross\spirv_msl.hpp" />
-    <ClInclude Include="..\include\misc\Application.h" />
-    <ClInclude Include="..\include\misc\Geometry.h" />
-    <ClInclude Include="..\include\misc\Log.h" />
-    <ClInclude Include="..\include\misc\ResourceManager.h" />
-    <ClInclude Include="..\include\vk\Buffer.h" />
-    <ClInclude Include="..\include\vk\CommandBuffer.h" />
-    <ClInclude Include="..\include\vk\CommandPool.h" />
-    <ClInclude Include="..\include\vk\DescriptorPool.h" />
-    <ClInclude Include="..\include\vk\Device.h" />
-    <ClInclude Include="..\include\vk\DeviceMemory.h" />
-    <ClInclude Include="..\include\vk\Framebuffer.h" />
-    <ClInclude Include="..\include\vk\Image.h" />
-    <ClInclude Include="..\include\vk\Instance.h" />
-    <ClInclude Include="..\include\vk\Pipeline.h" />
-    <ClInclude Include="..\include\vk\Platform.h" />
-    <ClInclude Include="..\include\vk\RenderPass.h" />
-    <ClInclude Include="..\include\vk\Sampler.h" />
-    <ClInclude Include="..\include\vk\Semaphore.h" />
-    <ClInclude Include="..\include\vk\ShaderModule.h" />
-    <ClInclude Include="..\include\vk\Swapchain.h" />
-    <ClInclude Include="..\include\vk\Utils.h" />
-    <ClInclude Include="..\include\vk\Vk.h" />
-    <ClInclude Include="..\include\vk\Window.h" />
+    <ClInclude Include="..\include\vk\misc\Application.h" />
+    <ClInclude Include="..\include\vk\misc\Geometry.h" />
+    <ClInclude Include="..\include\vk\misc\Log.h" />
+    <ClInclude Include="..\include\vk\misc\ResourceManager.h" />
+    <ClInclude Include="..\include\vk\misc\Utils.h" />
+    <ClInclude Include="..\include\vk\wrappers\Buffer.h" />
+    <ClInclude Include="..\include\vk\wrappers\CommandBuffer.h" />
+    <ClInclude Include="..\include\vk\wrappers\CommandPool.h" />
+    <ClInclude Include="..\include\vk\wrappers\DescriptorPool.h" />
+    <ClInclude Include="..\include\vk\wrappers\Device.h" />
+    <ClInclude Include="..\include\vk\wrappers\DeviceMemory.h" />
+    <ClInclude Include="..\include\vk\wrappers\Framebuffer.h" />
+    <ClInclude Include="..\include\vk\wrappers\Image.h" />
+    <ClInclude Include="..\include\vk\wrappers\Instance.h" />
+    <ClInclude Include="..\include\vk\wrappers\Pipeline.h" />
+    <ClInclude Include="..\include\vk\wrappers\Platform.h" />
+    <ClInclude Include="..\include\vk\wrappers\RenderPass.h" />
+    <ClInclude Include="..\include\vk\wrappers\Sampler.h" />
+    <ClInclude Include="..\include\vk\wrappers\Semaphore.h" />
+    <ClInclude Include="..\include\vk\wrappers\ShaderModule.h" />
+    <ClInclude Include="..\include\vk\wrappers\Swapchain.h" />
+    <ClInclude Include="..\include\vk\wrappers\Vk.h" />
+    <ClInclude Include="..\include\vk\wrappers\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\assets\shaders\shader.frag" />

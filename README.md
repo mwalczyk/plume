@@ -12,8 +12,7 @@ Plume uses several submodules:
 - [spirv-cross](https://github.com/KhronosGroup/SPIRV-Cross) for shader reflection
 - [stb](https://github.com/nothings/stb) for image loading
 
-After cloning the main repository, make sure to initialize submodules by executing the following command from the top-level
-directory:
+After cloning the main repository, make sure to initialize submodules by executing the following command from the top-level directory:
 
 `git submodule update --init --recursive`
 
@@ -38,7 +37,7 @@ open source projects:
 
 See the [Plume C++ style guide](https://github.com/mwalczyk/plume_cpp_style) for more information.
 
-## Roadmap:
+## Roadmap
 
 Many parts of Vulkan have not been implemented in Plume. As such, this project should be considered
 experimental and breaking changes will happen often.

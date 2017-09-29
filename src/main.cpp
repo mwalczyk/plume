@@ -26,15 +26,11 @@ int main()
 	 * Instance, window, surface, device, and swapchain
 	 *
 	 ***********************************************************************************/
-	pl::graphics::Instance instance{};
-	auto physical_devices = instance.get_physical_devices();
-
+	pl::graphics::Instance instance;
 	pl::graphics::Window window{ instance, width, height };
+	pl::graphics::Device device{ instance.get_physical_devices()[0], window.get_surface_handle() };
+	pl::graphics::Swapchain swapchain{ device, window.get_surface_handle(), width, height };
 
-	pl::graphics::Device device{ physical_devices[0], window.get_surface() };
-	auto queue_family_properties = device.get_physical_device_queue_family_properties();
-
-	pl::graphics::Swapchain swapchain{ device, window.get_surface(), width, height };
 	auto swapchain_image_views = swapchain.get_image_view_handles();
 
 	/***********************************************************************************
@@ -45,18 +41,18 @@ int main()
 	const vk::Format swapchain_format = swapchain.get_image_format();
 	const vk::Extent3D fs_extent = { width, height, 1 };
 
-	std::shared_ptr<pl::graphics::RenderPassBuilder> render_pass_builder = pl::graphics::RenderPassBuilder::create();
-	render_pass_builder->add_color_transient_attachment("color_inter", swapchain_format, msaa);	// multisampling
-	render_pass_builder->add_color_present_attachment("color_final", swapchain_format);			// no multisampling
-	render_pass_builder->add_depth_stencil_attachment("depth", device.get_supported_depth_format(), msaa);
+	std::shared_ptr<pl::graphics::RenderPassBuilder> rpb = pl::graphics::RenderPassBuilder::create();
+	rpb->add_color_transient_attachment("color_inter", swapchain_format, msaa);	// multisampling
+	rpb->add_color_present_attachment("color_final", swapchain_format);			// no multisampling
+	rpb->add_depth_stencil_attachment("depth", device.get_supported_depth_format(), msaa);
 
-	render_pass_builder->begin_subpass_record();
-	render_pass_builder->append_attachment_to_subpass("color_inter", pl::graphics::AttachmentCategory::CATEGORY_COLOR);
-	render_pass_builder->append_attachment_to_subpass("color_final", pl::graphics::AttachmentCategory::CATEGORY_RESOLVE);
-	render_pass_builder->append_attachment_to_subpass("depth", pl::graphics::AttachmentCategory::CATEGORY_DEPTH_STENCIL);
-	render_pass_builder->end_subpass_record();
+	rpb->begin_subpass_record();
+	rpb->append_attachment_to_subpass("color_inter", pl::graphics::AttachmentCategory::CATEGORY_COLOR);
+	rpb->append_attachment_to_subpass("color_final", pl::graphics::AttachmentCategory::CATEGORY_RESOLVE);
+	rpb->append_attachment_to_subpass("depth", pl::graphics::AttachmentCategory::CATEGORY_DEPTH_STENCIL);
+	rpb->end_subpass_record();
 
-	pl::graphics::RenderPass render_pass{ device, render_pass_builder };
+	pl::graphics::RenderPass render_pass{ device, rpb };
 
 	/***********************************************************************************
 	 *
@@ -85,15 +81,15 @@ int main()
 	auto f_shader = pl::graphics::ShaderModule::create(device, f_resource);
 
 	auto pipeline_options = pl::graphics::GraphicsPipeline::Options()
-											.vertex_input_binding_descriptions(binds)
-											.vertex_input_attribute_descriptions(attrs)
-											.viewports({ window.get_fullscreen_viewport() })
-											.scissors({ window.get_fullscreen_scissor_rect2d() })
-											.attach_shader_stages({ v_shader, f_shader })
-											.primitive_topology(geometry.get_topology())
-											.cull_mode(vk::CullModeFlagBits::eNone)
-											.enable_depth_test()
-											.samples(msaa);
+							.vertex_input_binding_descriptions(binds)
+							.vertex_input_attribute_descriptions(attrs)
+							.viewports({ window.get_fullscreen_viewport() })
+							.scissors({ window.get_fullscreen_scissor_rect2d() })
+							.attach_shader_stages({ v_shader, f_shader })
+							.primitive_topology(geometry.get_topology())
+							.cull_mode(vk::CullModeFlagBits::eNone)
+							.enable_depth_test()
+							.samples(msaa);
 	pl::graphics::GraphicsPipeline pipeline{ device, render_pass, pipeline_options };
 
 	/***********************************************************************************
@@ -133,14 +129,14 @@ int main()
 	 *
 	 ***********************************************************************************/
 	pl::graphics::CommandPool command_pool{ device, pl::graphics::QueueType::GRAPHICS };
-	pl::graphics::CommandBuffer temp_command_buffer{ device, command_pool };
+	pl::graphics::CommandBuffer temp_cb{ device, command_pool };
 
-	temp_command_buffer.begin();
-	temp_command_buffer.transition_image_layout(image_depth, image_depth.get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
-	temp_command_buffer.transition_image_layout(image_sdf_map, image_sdf_map.get_current_layout(), vk::ImageLayout::eGeneral);
-	temp_command_buffer.clear_color_image(image_sdf_map, pl::utils::clear_color::red());
-	temp_command_buffer.end();
-	device.one_time_submit(pl::graphics::QueueType::GRAPHICS, temp_command_buffer);
+	temp_cb.begin();
+	temp_cb.transition_image_layout(image_depth, image_depth.get_current_layout(), vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	temp_cb.transition_image_layout(image_sdf_map, image_sdf_map.get_current_layout(), vk::ImageLayout::eGeneral);
+	temp_cb.clear_color_image(image_sdf_map, pl::utils::clear_color::red());
+	temp_cb.end();
+	device.one_time_submit(pl::graphics::QueueType::GRAPHICS, temp_cb);
 
 	/***********************************************************************************
 	 *
@@ -152,9 +148,9 @@ int main()
 	{
 		std::map<std::string, vk::ImageView> name_to_image_view_map =
 		{
-			{ "color_inter", image_ms_view.get_handle() },	// attachment 0: color (multisample / transient)
-			{ "color_final", swapchain_image_views[i] },	// attachment 1: color (resolve / present)
-			{ "depth", image_depth_view.get_handle() }		// attachment 2: depth-stencil
+			{ "color_inter", image_ms_view.get_handle() },	// attachment 0: color (multisampled)
+			{ "color_final", swapchain_image_views[i] },	// attachment 1: color (resolve)
+			{ "depth", image_depth_view.get_handle() }		// attachment 2: depth
 		};
 
 		framebuffers.emplace_back(pl::graphics::Framebuffer{ device, render_pass, name_to_image_view_map, width, height });
@@ -165,27 +161,26 @@ int main()
 	 * Descriptor pools, descriptor set layouts, and descriptor sets
 	 *
 	 ***********************************************************************************/
-	pl::graphics::DescriptorPool descriptor_pool{ 
-		device,
-		{ { vk::DescriptorType::eUniformBuffer, 1 }, { vk::DescriptorType::eCombinedImageSampler, 1 } }
-	};
+	std::vector<vk::DescriptorPoolSize> pool_sizes = { { vk::DescriptorType::eUniformBuffer, 1 }, 
+													   { vk::DescriptorType::eCombinedImageSampler, 1 } };
+	pl::graphics::DescriptorPool descriptor_pool{ device, pool_sizes };
 
 	const uint32_t set_id = 0;
 	const uint32_t binding_id_ubo = 0;
 	const uint32_t binding_id_cis = 1;
-	std::shared_ptr<pl::graphics::DescriptorSetLayoutBuilder> layout_builder = pl::graphics::DescriptorSetLayoutBuilder::create(device);
-	layout_builder->begin_descriptor_set_record(set_id);				// BEG set 0
-	layout_builder->add_ubo(binding_id_ubo);							// --- binding 0
-	layout_builder->add_cis(binding_id_cis);							// --- binding 1
-	layout_builder->end_descriptor_set_record();						// END set 0
+	std::shared_ptr<pl::graphics::DescriptorSetLayoutBuilder> dslb = pl::graphics::DescriptorSetLayoutBuilder::create(device);
+	dslb->begin_descriptor_set_record(set_id);				// BEG set 0
+	dslb->add_ubo(binding_id_ubo);							// --- binding 0
+	dslb->add_cis(binding_id_cis);							// --- binding 1
+	dslb->end_descriptor_set_record();						// END set 0
 
-	vk::DescriptorSet descriptor_set = descriptor_pool.allocate_descriptor_sets(layout_builder, { set_id })[0];
+	vk::DescriptorSet descriptor_set = descriptor_pool.allocate_descriptor_sets(dslb, { set_id })[0];
 
 	auto d_buffer_info = ubo.build_descriptor_info();				
 	auto d_sampler_info = image_sdf_map_view.build_descriptor_info(sampler);
-	vk::WriteDescriptorSet w_desc_buffer =	{ descriptor_set, binding_id_ubo, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };
-	vk::WriteDescriptorSet w_desc_sampler =	{ descriptor_set, binding_id_cis, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
-	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { w_desc_buffer, w_desc_sampler };
+	vk::WriteDescriptorSet wds_buff = { descriptor_set, binding_id_ubo, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };
+	vk::WriteDescriptorSet wds_samp = { descriptor_set, binding_id_cis, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
+	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { wds_buff, wds_samp };
 
 	device.get_handle().updateDescriptorSets(w_descriptor_sets, {});
 
@@ -209,13 +204,12 @@ int main()
 		// 1. multisample color attachment
 		// 2. resolve color attachment
 		// 3. depth/stencil attachment
-		std::vector<vk::ClearValue> clear_vals = { { pl::utils::clear_color::black() }, 
-												   { pl::utils::clear_color::black() }, 
-												   { pl::utils::clear_depth::depth_one() } };
+		std::vector<vk::ClearValue> clear_vals = { pl::utils::clear_color::black(),			// color (multisampled)
+												   pl::utils::clear_color::black(),			// color (resolve)
+												   pl::utils::clear_depth::depth_one() };	// depth
 		
 		// Set up a new command buffer and record draw calls.
 		pl::graphics::CommandBuffer command_buffer{ device, command_pool };
-		auto command_buffer_handle = command_buffer.get_handle();
 		{
 			pl::graphics::ScopedRecord record(command_buffer);
 			command_buffer.begin_render_pass(render_pass, framebuffers[image_index], clear_vals);
@@ -223,7 +217,7 @@ int main()
 			command_buffer.bind_vertex_buffer(vbo);
 			command_buffer.bind_index_buffer(ibo);
 			command_buffer.update_push_constant_ranges(pipeline, "time", pl::utils::app::get_elapsed_seconds());
-			command_buffer.update_push_constant_ranges(pipeline, "mouse", window.get_mouse_position());
+			command_buffer.update_push_constant_ranges(pipeline, "mouse", window.get_mouse_position(true, true));
 			command_buffer.bind_descriptor_sets(pipeline, set_id, { descriptor_set });
 			command_buffer.draw_indexed(static_cast<uint32_t>(geometry.num_indices()));
 			command_buffer.end_render_pass();

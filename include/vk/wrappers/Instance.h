@@ -61,7 +61,7 @@ namespace plume
 				Options& required_layers(const std::vector<const char*>& required_layers) { m_required_layers = required_layers; return *this; }
 
 				//! Add a single name to the list of instance layers that should be enabled.
-				Options& append_required_ayer(const char* layer) { m_required_layers.push_back(layer); return *this; }
+				Options& append_required_layer(const char* layer) { m_required_layers.push_back(layer); return *this; }
 
 				//! Specify the names of all instance extensions that should be enabled.
 				Options& required_extensions(const std::vector<const char*>& required_extensions) { m_required_extensions = required_extensions; return *this; }
@@ -94,18 +94,26 @@ namespace plume
 
 			vk::Instance get_handle() const { return m_instance_handle.get(); }
 
+			//! Returns a vector of structs specifying the extension properties of the instance, such as the name and
+			//! version of a particular extension.
 			const std::vector<vk::ExtensionProperties>& get_instance_extension_properties() const { return m_instance_extension_properties; }
 
+			//! Returns a vector of structs specifying the layer properties of the instance, such as the implementation 
+			//! version of a particular layer.
 			const std::vector<vk::LayerProperties>& get_instance_layer_properties() const { return m_instance_layer_properties; }
 
+			//! Returns a vector of handles to all available physical devices.
 			const std::vector<vk::PhysicalDevice>& get_physical_devices() const { return m_physical_devices; }
 
+			//! Returns a handle to the first physical device that meets the criteria specified by `func`.
 			vk::PhysicalDevice pick_physical_device(const std::function<bool(vk::PhysicalDevice)>& func);
 
 		private:
 
+			//! Ensures that each requested layer is supported by this instance.
 			bool check_instance_layer_support();
 
+			//! A helper function for creating the debug report callback object used by the instance.
 			void setup_debug_report_callback(VkDebugReportFlagsEXT debug_report_flags);
 
 			vk::UniqueInstance m_instance_handle;

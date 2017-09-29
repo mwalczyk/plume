@@ -219,9 +219,6 @@ namespace plume
 			friend class DescriptorPool;
 		};
 
-		class DescriptorPool;
-		using DescriptorPoolRef = std::shared_ptr<DescriptorPool>;
-
 		//! Descriptor pools maintain a pool of descriptors, from which descriptor sets are allocated. They are 
 		//! constructed by specifying one or more descriptor pool size structs, each of which contains a descriptor
 		//! type (i.e. vk::DescriptorType::eUniformBuffer) and a descriptor count. The descriptor pool will 
@@ -276,7 +273,7 @@ namespace plume
 					if (builder->m_descriptor_sets_mapping.find(set_index) == builder->m_descriptor_sets_mapping.end())
 					{
 						throw std::runtime_error("One or more of the requested descriptor set indices was not found in the DescriptorSetLayoutBuilder's\
-											  map of recorded descriptor sets");
+											      map of recorded descriptor sets");
 					}
 				}
 
@@ -303,7 +300,7 @@ namespace plume
 						if (m_descriptor_type_to_count_available_mapping.at(type) < 0)
 						{
 							throw std::runtime_error("One or more of the requested descriptor set allocations uses more resources than available in\
-												  the DescriptorPool");
+													  the DescriptorPool");
 						}
 					}
 
@@ -321,6 +318,8 @@ namespace plume
 					static_cast<uint32_t>(requested_layouts.size()),	// number of sets to allocate
 					requested_layouts.data()							// descriptor set layout
 				};
+
+				// TODO: the descriptor set layouts created above need to either be destroyed or cached.
 
 				// Allocate the descriptor sets.
 				return m_device_ptr->get_handle().allocateDescriptorSets(descriptor_set_allocate_info);

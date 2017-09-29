@@ -32,7 +32,7 @@ namespace plume
 	namespace graphics
 	{
 
-		Swapchain::Swapchain(const Device& device, const vk::UniqueSurfaceKHR& surface, uint32_t width, uint32_t height) :
+		Swapchain::Swapchain(const Device& device, vk::SurfaceKHR surface, uint32_t width, uint32_t height) :
 
 			m_device_ptr(&device),
 			m_width(width),
@@ -69,7 +69,7 @@ namespace plume
 			swapchain_create_info.presentMode = present_mode;
 			swapchain_create_info.preTransform = support_details.m_capabilities.currentTransform;
 			swapchain_create_info.queueFamilyIndexCount = 0;									// Again, if the sharing mode is exlusive, we don't need to specify this.
-			swapchain_create_info.surface = surface.get();
+			swapchain_create_info.surface = surface;
 
 			m_swapchain_handle = m_device_ptr->get_handle().createSwapchainKHRUnique(swapchain_create_info);
 
@@ -81,6 +81,15 @@ namespace plume
 			m_swapchain_image_extent = extent;
 
 			create_image_views();
+		}
+
+		Swapchain::~Swapchain()
+		{
+			// Destroy all of the swapchain image views.
+			for (const auto& image_view : m_image_view_handles)
+			{
+				m_device_ptr->get_handle().destroyImageView(image_view);
+			}
 		}
 
 		vk::SurfaceFormatKHR Swapchain::select_swapchain_surface_format(const std::vector<vk::SurfaceFormatKHR>& surface_formats) const

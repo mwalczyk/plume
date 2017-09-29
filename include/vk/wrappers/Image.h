@@ -41,27 +41,27 @@ namespace plume
 		{
 		public:
 
-			//! Factory method for returning a new ImageRef whose device local memory store will be uninitialized. Note that
+			//! Construct an image whose device local memory store will be uninitialized. Note that
 			//! this image is not host accessible.
 			Image(const Device& device,
-				vk::ImageType image_type,
-				vk::ImageUsageFlags image_usage_flags,
-				vk::Format format,
-				vk::Extent3D dimensions,
-				uint32_t array_layers = 1,
-				uint32_t mip_levels = 1,
-				vk::ImageTiling image_tiling = vk::ImageTiling::eOptimal,
-				uint32_t sample_count = 1);
+				  vk::ImageType image_type,
+				  vk::ImageUsageFlags image_usage_flags,
+				  vk::Format format,
+				  vk::Extent3D dimensions,
+				  uint32_t array_layers = 1,
+				  uint32_t mip_levels = 1,
+				  vk::ImageTiling image_tiling = vk::ImageTiling::eOptimal,
+				  uint32_t sample_count = 1);
 
-			//! Factory method for returning a new ImageRef that will be pre-initialized with the user supplied data. The resulting 
+			//! Construct an image that will be pre-initialized with the user supplied data. The resulting 
 			//! image will be 2D with depth, array layers, and mipmap levels equal to 1.
 			template<typename T>
 			Image(const Device& device,
-				vk::ImageType image_type,
-				vk::ImageUsageFlags image_usage_flags,
-				vk::Format format,
-				vk::Extent3D dimensions,
-				const std::vector<T>& pixels) :
+				  vk::ImageType image_type,
+				  vk::ImageUsageFlags image_usage_flags,
+				  vk::Format format,
+				  vk::Extent3D dimensions,
+				  const std::vector<T>& pixels) :
 
 				m_device_ptr(&device),
 				m_image_type(image_type),
@@ -130,23 +130,23 @@ namespace plume
 				m_device_memory->unmap();
 			}
 
-			//! Factory method for returning a new ImageRef from an LDR image file. The resulting image will be 2D
+			//! Construct an image from the contents of an LDR image file. The resulting image will be 2D
 			//! with depth, array layers, and mipmap levels equal to 1.
 			Image(const Device& device,
-				vk::ImageType image_type,
-				vk::ImageUsageFlags image_usage_flags,
-				vk::Format format,
-				const fsys::ImageResource& resource) :
+				  vk::ImageType image_type,
+				  vk::ImageUsageFlags image_usage_flags,
+				  vk::Format format,
+				  const fsys::ImageResource& resource) :
 
 				Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, resource.contents) {}
 
-			//! Factory method for returning a new ImageRef from an HDR image file. The resulting image will be 2D
+			//! Construct an image from the contents of an HDR image file. The resulting image will be 2D
 			//! with depth, array layers, and mipmap levels equal to 1.
 			Image(const Device& device,
-				vk::ImageType image_type,
-				vk::ImageUsageFlags image_usage_flags,
-				vk::Format format,
-				const fsys::ImageResourceHDR& resource) :
+				  vk::ImageType image_type,
+				  vk::ImageUsageFlags image_usage_flags,
+				  vk::Format format,
+				  const fsys::ImageResourceHDR& resource) :
 
 				Image(device, image_type, image_usage_flags, format, { resource.width, resource.height, 1 }, resource.contents) {}
 
@@ -167,10 +167,10 @@ namespace plume
 			//! Helper function for creating an image subresource range that involves multiple layers and/or 
 			//! mipmap levels of an arbitrary image.
 			static vk::ImageSubresourceRange build_multiple_layer_subresource(uint32_t base_layer,
-				uint32_t layer_count,
-				uint32_t base_level = 0,
-				uint32_t level_count = 1,
-				vk::ImageAspectFlags image_aspect_flags = vk::ImageAspectFlagBits::eColor)
+																			  uint32_t layer_count,
+																			  uint32_t base_level = 0,
+																			  uint32_t level_count = 1,
+																			  vk::ImageAspectFlags image_aspect_flags = vk::ImageAspectFlagBits::eColor)
 			{
 				vk::ImageSubresourceRange image_subresource = {};
 				image_subresource.aspectMask = image_aspect_flags;
@@ -302,10 +302,10 @@ namespace plume
 			}
 
 			ImageView(const Device& device,
-				const Image& image,
-				vk::ImageViewType image_view_type = vk::ImageViewType::e2D,
-				const vk::ImageSubresourceRange& subresource_range = Image::build_single_layer_subresource(),
-				const vk::ComponentMapping& component_mapping = get_component_mapping_preset());
+				      const Image& image,
+					  vk::ImageViewType image_view_type = vk::ImageViewType::e2D,
+					  const vk::ImageSubresourceRange& subresource_range = Image::build_single_layer_subresource(),
+					  const vk::ComponentMapping& component_mapping = get_component_mapping_preset());
 
 			//! Builds a vk::DescriptorImageInfo struct corresponding to this image view and a corresponding sampler. The
 			//! `image_layout` parameter specifies the layout that the parent image will be in when this descriptor is accessed.

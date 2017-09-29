@@ -60,10 +60,10 @@ namespace plume
 
 			//! Construct a logical device around a physical device (GPU).
 			Device(vk::PhysicalDevice physical_device,
-				const vk::UniqueSurfaceKHR& surface,
-				vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
-				bool use_swapchain = true,
-				const std::vector<const char*>& required_device_extensions = {});
+				   vk::SurfaceKHR surface,
+				   vk::QueueFlags required_queue_flags = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer,
+				   bool use_swapchain = true,
+				   const std::vector<const char*>& required_device_extensions = {});
 
 			~Device();
 
@@ -130,7 +130,7 @@ namespace plume
 			void wait_idle() { m_device_handle.get().waitIdle(); }
 
 			//! Returns a structure that contains information related to the chosen physical device's swapchain support.
-			SwapchainSupportDetails get_swapchain_support_details(const vk::UniqueSurfaceKHR& surface) const;
+			SwapchainSupportDetails get_swapchain_support_details(vk::SurfaceKHR surface) const;
 
 			friend std::ostream& operator<<(std::ostream& stream, const Device& device);
 

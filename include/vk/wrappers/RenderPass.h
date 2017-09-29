@@ -35,6 +35,7 @@ namespace plume
 	namespace graphics
 	{
 
+		//! Each attachment used during a particular subpass will fall into one of the following categories.
 		enum class AttachmentCategory
 		{
 			CATEGORY_COLOR,
@@ -91,7 +92,8 @@ namespace plume
 				return subpass_dependency;
 			}
 
-			//! Factory method for constructing a new shared RenderPassBuilder.
+			//! Factory method for constructing a new shared RenderPassBuilder. Note that a single RenderPassBuilder
+			//! can be owned by multiple RenderPass instances, which is why shared pointer semantics are enforced.
 			static std::shared_ptr<RenderPassBuilder> RenderPassBuilder::create()
 			{
 				return std::shared_ptr<RenderPassBuilder>(new RenderPassBuilder());
@@ -102,14 +104,14 @@ namespace plume
 
 			//! Constructs an attachment description for a generic attachment.
 			void add_generic_attachment(const std::string& name,
-				vk::Format format = vk::Format::eB8G8R8A8Unorm,
-				uint32_t sample_count = 1,
-				vk::ImageLayout initial_layout = vk::ImageLayout::eUndefined,
-				vk::ImageLayout final_layout = vk::ImageLayout::eGeneral,
-				vk::AttachmentLoadOp load_op = vk::AttachmentLoadOp::eDontCare,
-				vk::AttachmentStoreOp store_op = vk::AttachmentStoreOp::eDontCare,
-				vk::AttachmentLoadOp stencil_load_op = vk::AttachmentLoadOp::eDontCare,
-				vk::AttachmentStoreOp stencil_store_op = vk::AttachmentStoreOp::eDontCare);
+										vk::Format format = vk::Format::eB8G8R8A8Unorm,
+										uint32_t sample_count = 1,
+										vk::ImageLayout initial_layout = vk::ImageLayout::eUndefined,
+										vk::ImageLayout final_layout = vk::ImageLayout::eGeneral,
+										vk::AttachmentLoadOp load_op = vk::AttachmentLoadOp::eDontCare,
+										vk::AttachmentStoreOp store_op = vk::AttachmentStoreOp::eDontCare,
+										vk::AttachmentLoadOp stencil_load_op = vk::AttachmentLoadOp::eDontCare,
+										vk::AttachmentStoreOp stencil_store_op = vk::AttachmentStoreOp::eDontCare);
 
 			//! Constructs an attachment description for a color attachment with the specified image 
 			//! format and sample count. The final layout of this attachment will be vk::ImageLayout::ePresentSrcKHR,
@@ -157,13 +159,11 @@ namespace plume
 			//! Returns a vector of all of the user-defined names for render pass attachments.
 			std::vector<std::string> get_attachment_names() const;
 
-		protected:
+		private:
 
 			RenderPassBuilder() :
 				m_is_recording(false)
 			{}
-
-		private:
 
 			struct SubpassRecord
 			{

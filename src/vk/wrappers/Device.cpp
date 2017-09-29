@@ -35,7 +35,7 @@ namespace plume
 	namespace graphics
 	{
 		Device::Device(vk::PhysicalDevice physical_device, 
-					   const vk::UniqueSurfaceKHR& surface, 
+					   vk::SurfaceKHR surface, 
 					   vk::QueueFlags required_queue_flags, 
 					   bool use_swapchain, 
 					   const std::vector<const char*>& required_device_extensions) :
@@ -131,7 +131,7 @@ namespace plume
 				// supports presentation with respect to the requested surface.
 				for (size_t i = 0; i < m_gpu_details.m_queue_family_properties.size(); ++i)
 				{
-					vk::Bool32 support = m_gpu_details.m_handle.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface.get());
+					vk::Bool32 support = m_gpu_details.m_handle.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface);
 					if (!support)
 					{
 						break;
@@ -226,18 +226,18 @@ namespace plume
 			throw std::runtime_error("Could not find a matching queue family");
 		}
 
-		Device::SwapchainSupportDetails Device::get_swapchain_support_details(const vk::UniqueSurfaceKHR& surface) const
+		Device::SwapchainSupportDetails Device::get_swapchain_support_details(vk::SurfaceKHR surface) const
 		{
 			SwapchainSupportDetails support_details;
 
 			// Return the basic surface capabilities, i.e. min/max number of images, min/max width and height, etc.
-			support_details.m_capabilities = m_gpu_details.m_handle.getSurfaceCapabilitiesKHR(surface.get());
+			support_details.m_capabilities = m_gpu_details.m_handle.getSurfaceCapabilitiesKHR(surface);
 
 			// Retrieve the available surface formats, i.e. pixel formats and color spaces.
-			support_details.m_formats = m_gpu_details.m_handle.getSurfaceFormatsKHR(surface.get());
+			support_details.m_formats = m_gpu_details.m_handle.getSurfaceFormatsKHR(surface);
 
 			// Retrieve the surface presentation modes, i.e. VK_PRESENT_MODE_MAILBOX_KHR.
-			support_details.m_present_modes = m_gpu_details.m_handle.getSurfacePresentModesKHR(surface.get());
+			support_details.m_present_modes = m_gpu_details.m_handle.getSurfacePresentModesKHR(surface);
 
 			if (support_details.m_formats.size() == 0 || support_details.m_present_modes.size() == 0)
 			{

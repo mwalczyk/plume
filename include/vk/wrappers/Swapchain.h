@@ -40,7 +40,9 @@ namespace plume
 		{
 		public:
 
-			Swapchain(const Device& device, const vk::UniqueSurfaceKHR& surface, uint32_t width, uint32_t height);
+			Swapchain(const Device& device, vk::SurfaceKHR surface, uint32_t width, uint32_t height);
+
+			~Swapchain();
 
 			vk::SwapchainKHR get_handle() const { return m_swapchain_handle.get(); };
 
@@ -48,20 +50,27 @@ namespace plume
 
 			const std::vector<vk::ImageView>& get_image_view_handles() const { return m_image_view_handles; }
 
+			//! Returns the number of images in the swapchain.
 			size_t get_image_count() const { return m_image_handles.size(); }
 
+			//! Returns the extent (width and height) of each image in the swapchain.
 			vk::Extent2D get_image_extent() const { return m_swapchain_image_extent; }
 
+			//! Returns the format of each image in the swapchain.
 			vk::Format get_image_format() const { return m_swapchain_image_format; }
 
 		private:
 
+			//! Given a vector of available surface formats, choose the optimal one.
 			vk::SurfaceFormatKHR select_swapchain_surface_format(const std::vector<vk::SurfaceFormatKHR>& surface_formats) const;
 
+			//! Given a vector of available presentation modes, choose the optimal one.
 			vk::PresentModeKHR select_swapchain_present_mode(const std::vector<vk::PresentModeKHR>& present_modes) const;
 
+			//! Given the capabilities of the provided surface, choose the final extent of each image in the swapchain.
 			vk::Extent2D select_swapchain_extent(const vk::SurfaceCapabilitiesKHR& surface_capabilities) const;
 
+			//! Build all of the image views for the images in the swapchain.
 			void create_image_views();
 
 			const Device* m_device_ptr;

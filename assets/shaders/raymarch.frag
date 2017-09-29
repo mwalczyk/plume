@@ -193,22 +193,20 @@ vec2 map(in vec3 p)
 	float t = constants.time;
 	float s = sin(t);
 	float c = cos(t);
-    float md = s;
-    vec2 m = (constants.mouse / 800.0) * 2.0 - 1.0;
+    vec2 m = constants.mouse * 2.0 - 1.0;
 
 	// Parameters
-	const float grid_density = 1.15;
+	const float grid_density = 0.9;
 	const float displacement = 0.25;
 	const float radius_decay = 0.5;
-	float attraction = 0.95;
+	const float attraction = 0.95;
 
 	// Displacers
-	const float noise_freq = 0.55;
-	vec3 displaced = p + sin(p.x * noise_freq + t) *
-					     cos(p.y * noise_freq + t) *
-					     sin(p.z * noise_freq + t) *
-					     displacement  * m.y * 8.0;
-    displaced += noise(vec2(length(p) * 0.25) + t);
+	float freq = 0.55 * m.x;
+	vec3 displaced = p + sin(p.x * freq + t) *
+					     cos(p.y * freq + t) *
+					     sin(p.z * freq + t) *
+					     displacement * m.y * 8.0;
 
 	vec3 cp = p * grid_density;
 	vec2 n = floor(cp.xz);
@@ -224,8 +222,9 @@ vec2 map(in vec3 p)
 			vec2 r = g - f + o;
 
  			float radius = pow(0.75, length(cp)) * radius_decay;
-			float k = sdf_sphere(vec3(r.x, cp.y, r.y), vec3(0.0, o.x * 1.0 , 0.0), radius);
+			//float k = sdf_sphere(vec3(r.x, cp.y, r.y), vec3(0.0, o.x, 0.0), radius);
 
+            float k = sdf_box(vec3(r.x, cp.y, r.y), vec3(0.15, o.x, 0.15));
 			if (k < d)
 			{
 				d = k;
@@ -233,17 +232,17 @@ vec2 map(in vec3 p)
 		}
 	}
 
-    float plane =   sdf_plane(displaced, 0.5);
-    float box =     sdf_box(displaced + vec3(0.0, 0.0, 0.0), vec3(6.0));
-    float sphere =  sdf_sphere(p, vec3(0.0), 5.0);
+    float plane =   sdf_plane(displaced, m.y);
+    float box =     sdf_box(displaced + vec3(0.0, 0.0, 0.0), vec3(2.0));
+    float sphere =  sdf_sphere(p, vec3(0.0), 3.0);
 
     float combi =   op_smin(plane, d, attraction);
-    float aabb =    max(box, combi);
-    aabb =          max(sphere, aabb);
+    float aabb =    max(sphere, combi);
+    //aabb =          max(sphere, aabb);
 
     float id = 0.0;
 
-	return vec2(id, aabb);
+	return vec2(id, combi);
 }
 
 vec3 calculate_normal(in vec3 p)
@@ -288,24 +287,43 @@ vec2 raymarch(in ray r)
 	return vec2(current_id, current_total_distance);
 }
 
+float ambient_occlusion(in vec3 p, in vec3 n)
+{
+	const float attenuation = 0.95;
+	float ao;
+    float accum = 0.0;
+    float scale = 1.0;
+    for(int step = 0; step < 5; step++)
+    {
+    	float hr = 0.01 + 0.02 * float(step * step);
+        vec3 aopos = n * hr + p + 0.001;
+
+        float dist = map(aopos).y;
+        ao = -(dist - hr);
+
+        accum += ao * scale;
+
+        scale *= attenuation;
+    }
+	ao = 1.0 - clamp(accum, 0.0, 1.0);
+
+	return ao;
+}
+
 void main()
 {
 	vec2 uv = vs_texcoord * 2.0 - 1.0;
-
     float t = constants.time;
-	vec2 m = constants.mouse;
-
 	float s = sin(t * 0.5);
 	float c = cos(t * 0.5);
-	float orbit = 11.0;
+	float orbit = 8.0;
 
-    float ipos = floor(t);
-	float fpos = fract(t);
-
-	fpos = pow(fpos, 2.0);
-	vec3 sphere_pos_prev = hammersley(int(ipos), 64);
-	vec3 sphere_pos_next = hammersley(int(ipos + 1.0), 64);
-	vec3 current_samp = mix(sphere_pos_prev, sphere_pos_next, fpos) * 15.0;
+    // float ipos = floor(t);
+	// float fpos = fract(t);
+	// fpos = pow(fpos, 2.0);
+	// vec3 sphere_pos_prev = hammersley(int(ipos), 64);
+	// vec3 sphere_pos_next = hammersley(int(ipos + 1.0), 64);
+	// vec3 current_samp = mix(sphere_pos_prev, sphere_pos_next, fpos) * 15.0;
 
 	vec3 camera_position = vec3(s * orbit, 15.0, c * orbit);
 	mat3 lookat = lookat(vec3(0.0), camera_position);
@@ -319,20 +337,19 @@ void main()
 	vec2 res = raymarch(r);
 	vec3 hit = ro + rd * res.y;
 
-	const vec3 background = vec3(0.0);
+	// Per-object settings
+    const vec3 background = vec3(0.0);
 	vec3 color = vec3(0.0);
-
-	// per-object settings
 	switch(int(res.x))
 	{
 		case 0:
 			float seed = res.y * 0.1325;
 			vec3 n = calculate_normal(hit);
-			vec3 l = normalize(camera_position);
+			vec3 l = normalize(vec3(1.0, 5.0, 0.0));
+			float d = max(0.0, dot(n, l));
+            float ao = ambient_occlusion(hit, n);
 
-			float d = max(0.45, dot(n, l));
-            color = vec3(d);
-            //color *= n * 0.5 + 0.5;
+            color = vec3(ao);
 
 			break;
 		case 1: break;
