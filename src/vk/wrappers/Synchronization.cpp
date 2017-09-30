@@ -24,9 +24,7 @@
 *
 */
 
-#pragma once
-
-#include "Device.h"
+#include "Synchronization.h"
 
 namespace plume
 {
@@ -34,24 +32,33 @@ namespace plume
 	namespace graphics
 	{
 
-		//! Semaphores are a synchronization primitive that can be used to insert a dependency between batches
-		//! submitted to queues. A semaphore can be in one of two states: signaled or unsignaled. Semaphores can be
-		//! used during the queue submission process to signal that a batch of work has completed (i.e. rendering
-		//! has finished). They can also be used to delay the start of a batch of work (i.e. presenting an image to 
-		//! the screen should not start until rendering has finished).
-		class Semaphore
+		Semaphore::Semaphore(const Device& device) :
+
+			m_device_ptr(&device)
 		{
-		public:
+			m_semaphore_handle = m_device_ptr->get_handle().createSemaphoreUnique({});
+		}
 
-			Semaphore(const Device& device);
+		Fence::Fence(const Device& device, bool create_in_signaled_state) :
+			
+			m_device_ptr(&device)
+		{
+			vk::FenceCreateInfo fence_create_info;
 
-			vk::Semaphore get_handle() const { return m_semaphore_handle.get(); };
+			if (create_in_signaled_state)
+			{
+				fence_create_info.flags = vk::FenceCreateFlagBits::eSignaled;
+			}
 
-		private:
+			m_fence_handle = m_device_ptr->get_handle().createFenceUnique(fence_create_info);
+		}
+		
+		Event::Event(const Device& device) :
 
-			const Device* m_device_ptr;
-			vk::UniqueSemaphore m_semaphore_handle;
-		};
+			m_device_ptr(&device)
+		{
+			m_event_handle = m_device_ptr->get_handle().createEventUnique({});
+		}
 
 	} // namespace graphics
 

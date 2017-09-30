@@ -41,7 +41,7 @@ namespace plume
 			Application() = default;
 			virtual ~Application() = default;
 
-			virtual void run()
+			virtual void run() final
 			{
 				setup();
 
@@ -99,6 +99,9 @@ using namespace pl::app;
 
 class ExampleApplication : public Application
 {
+public:
+
+private:
 	// TODO: fill out an example.
 };
 

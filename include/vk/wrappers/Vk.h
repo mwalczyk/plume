@@ -37,9 +37,9 @@
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "Sampler.h"
-#include "Semaphore.h"
 #include "ShaderModule.h"
 #include "Swapchain.h"
+#include "Synchronization.h"
 #include "Utils.h"
 #include "Window.h"
 
