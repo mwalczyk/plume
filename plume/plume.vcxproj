@@ -216,9 +216,9 @@
     <ClCompile Include="..\src\vk\wrappers\Pipeline.cpp" />
     <ClCompile Include="..\src\vk\wrappers\RenderPass.cpp" />
     <ClCompile Include="..\src\vk\wrappers\Sampler.cpp" />
-    <ClCompile Include="..\src\vk\wrappers\Semaphore.cpp" />
     <ClCompile Include="..\src\vk\wrappers\ShaderModule.cpp" />
     <ClCompile Include="..\src\vk\wrappers\Swapchain.cpp" />
+    <ClCompile Include="..\src\vk\wrappers\Synchronization.cpp" />
     <ClCompile Include="..\src\vk\wrappers\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -249,9 +249,9 @@
     <ClInclude Include="..\include\vk\wrappers\Platform.h" />
     <ClInclude Include="..\include\vk\wrappers\RenderPass.h" />
     <ClInclude Include="..\include\vk\wrappers\Sampler.h" />
-    <ClInclude Include="..\include\vk\wrappers\Semaphore.h" />
     <ClInclude Include="..\include\vk\wrappers\ShaderModule.h" />
     <ClInclude Include="..\include\vk\wrappers\Swapchain.h" />
+    <ClInclude Include="..\include\vk\wrappers\Synchronization.h" />
     <ClInclude Include="..\include\vk\wrappers\Vk.h" />
     <ClInclude Include="..\include\vk\wrappers\Window.h" />
   </ItemGroup>

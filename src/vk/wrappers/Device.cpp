@@ -26,7 +26,7 @@
 
 #include "Device.h"
 #include "CommandBuffer.h"
-#include "Semaphore.h"
+#include "Synchronization.h"
 #include "Swapchain.h"
 
 namespace plume

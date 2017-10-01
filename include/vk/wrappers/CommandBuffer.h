@@ -30,6 +30,7 @@
 #include "CommandPool.h"
 #include "Framebuffer.h"
 #include "Pipeline.h"
+#include "Synchronization.h"
 
 namespace plume
 {
@@ -205,6 +206,20 @@ namespace plume
 										 vk::ImageSubresourceRange image_subresource_range = Image::build_single_layer_subresource(),
 										 QueueType src_queue = QueueType::GRAPHICS,
 										 QueueType dst_queue = QueueType::GRAPHICS);
+
+			//! Sets the event to a signaled state from the device. Note that this is not the same as calling `set()` on the event 
+			//! itself, which sets the event from the host.
+			void set_event(const Event& event, vk::PipelineStageFlags stage_flags)
+			{
+				get_handle().setEvent(event.get_handle(), stage_flags);
+			}
+
+			//! Resets the event from the device. Note that this is not the same as calling `reset()` on the event itself, which
+			//! resets the event from the host.
+			void reset_event(const Event& event, vk::PipelineStageFlags stage_flags)
+			{
+				get_handle().resetEvent(event.get_handle(), stage_flags);
+			}
 
 			/*
 			 * Common synchronization use cases, expressed as pipeline barriers.

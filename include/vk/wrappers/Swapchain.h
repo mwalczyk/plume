@@ -28,7 +28,7 @@
 
 #include "Device.h"
 #include "Image.h"
-#include "Semaphore.h"
+#include "Synchronization.h"
 
 namespace plume
 {
