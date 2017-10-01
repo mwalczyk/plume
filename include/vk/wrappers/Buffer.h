@@ -44,20 +44,22 @@ namespace plume
 		{
 		public:
 
+			Buffer() = default; 
+
 			template<class T>
 			Buffer(const Device& device,
-				vk::BufferUsageFlags buffer_usage_flags,
-				const std::vector<T>& data,
-				const std::vector<QueueType> queues = { QueueType::GRAPHICS }) :
+				   vk::BufferUsageFlags buffer_usage_flags,
+				   const std::vector<T>& data,
+				   const std::vector<QueueType> queues = { QueueType::GRAPHICS }) :
 
 				Buffer(device, buffer_usage_flags, sizeof(T) * data.size(), data.data(), queues) {}
 
 
 			Buffer(const Device& device,
-				vk::BufferUsageFlags buffer_usage_flags,
-				size_t size,
-				const void* data,
-				const std::vector<QueueType> queues = { QueueType::GRAPHICS });
+				   vk::BufferUsageFlags buffer_usage_flags,
+				   size_t size,
+				   const void* data,
+				   const std::vector<QueueType> queues = { QueueType::GRAPHICS });
 
 			vk::Buffer get_handle() const { return m_buffer_handle.get(); }
 

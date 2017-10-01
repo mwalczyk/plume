@@ -88,6 +88,8 @@ namespace plume
 				uint32_t m_first_instance = 0;	// The instance ID of the first instance to draw.
 			};
 
+			CommandBuffer() = default; 
+
 			//! Allocates a single command buffer from the specified command pool. The vk::CommandBufferLevel 
 			//! can be either:
 			//!

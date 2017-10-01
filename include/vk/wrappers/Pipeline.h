@@ -46,15 +46,15 @@ namespace plume
 
 			//! Factory method for returning a shared PipelineLayout.
 			static std::shared_ptr<PipelineLayout> create(const Device& device,
-				const std::vector<vk::PushConstantRange>& push_constant_ranges,
-				const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
+														  const std::vector<vk::PushConstantRange>& push_constant_ranges,
+														  const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
 			{
 				return std::make_shared<PipelineLayout>(device, push_constant_ranges, descriptor_set_layouts);
 			}
 
 			PipelineLayout(const Device& device,
-				const std::vector<vk::PushConstantRange>& push_constant_ranges,
-				const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
+						   const std::vector<vk::PushConstantRange>& push_constant_ranges,
+						   const std::vector<vk::DescriptorSetLayout>& descriptor_set_layouts)
 			{
 				vk::PipelineLayoutCreateInfo pipeline_layout_create_info;
 				pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
@@ -88,6 +88,8 @@ namespace plume
 		class Pipeline
 		{
 		public:
+
+			Pipeline() = default; 
 
 			Pipeline(const Device& device) :
 				m_device_ptr(&device)
@@ -315,6 +317,8 @@ namespace plume
 				friend class GraphicsPipeline;
 			};
 
+			GraphicsPipeline() = default; 
+
 			GraphicsPipeline(const Device& device, const RenderPass& render_pass, const Options& options = Options());
 
 			vk::PipelineBindPoint get_pipeline_bind_point() const override { return vk::PipelineBindPoint::eGraphics; }
@@ -349,6 +353,8 @@ namespace plume
 		class ComputePipeline : public Pipeline
 		{
 		public:
+
+			ComputePipeline() = default; 
 
 			ComputePipeline(const Device& device, const std::shared_ptr<ShaderModule>& compute_shader_module);
 

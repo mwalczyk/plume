@@ -211,6 +211,8 @@ namespace plume
 		{
 		public:
 
+			RenderPass() = default; 
+
 			RenderPass(const Device& device, const std::shared_ptr<RenderPassBuilder>& builder);
 
 			vk::RenderPass get_handle() const { return m_render_pass_handle.get(); }

@@ -227,6 +227,8 @@ namespace plume
 		{
 		public:
 
+			DescriptorPool() = default; 
+
 			//! Factory method for returning a new DescriptorPoolRef. Takes a list of descriptor pool size structs, each of
 			//! which maps a descriptor type to a descriptor count. For example, a pool that is large enough to hold 3 uniform  
 			//! buffers, 4 combined image samplers, and 1 storage buffer could be created like:

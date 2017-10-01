@@ -43,6 +43,8 @@ namespace plume
 		{
 		public:
 
+			CommandPool() = default; 
+
 			//! The vk::CommandPoolCreateFlags parameter determines how and when individual command buffers allocated  
 			//! from this pool can be re-recorded. Possible flags are:
 			//!

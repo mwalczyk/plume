@@ -48,6 +48,8 @@ namespace plume
 		{
 		public:
 
+			DeviceMemory() = default; 
+
 			//! Construct a stack allocated, non-copyable container that manages a device memory allocation.
 			DeviceMemory(const Device& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties);
 

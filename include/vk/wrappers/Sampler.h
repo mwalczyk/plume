@@ -131,6 +131,8 @@ namespace plume
 				friend class Sampler;
 			};
 
+			Sampler() = default; 
+
 			Sampler(const Device& device, const Options& options = Options());
 
 			vk::Sampler get_handle() const { return m_sampler_handle.get(); }

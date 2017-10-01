@@ -41,6 +41,8 @@ namespace plume
 		{
 		public:
 
+			Image() = default; 
+
 			//! Construct an image whose device local memory store will be uninitialized. Note that
 			//! this image is not host accessible.
 			Image(const Device& device,

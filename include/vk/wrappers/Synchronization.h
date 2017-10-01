@@ -43,6 +43,8 @@ namespace plume
 		{
 		public:
 
+			Semaphore() = default; 
+
 			Semaphore(const Device& device);
 
 			vk::Semaphore get_handle() const { return m_semaphore_handle.get(); };
@@ -60,6 +62,8 @@ namespace plume
 		class Fence
 		{
 		public:
+
+			Fence() = default; 
 
 			Fence(const Device& device, bool create_in_signaled_state = false);
 
@@ -95,6 +99,8 @@ namespace plume
 		class Event
 		{
 		public:
+
+			Event() = default; 
 
 			Event(const Device& device);
 

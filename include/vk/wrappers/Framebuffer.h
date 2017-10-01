@@ -51,12 +51,14 @@ namespace plume
 		{
 		public:
 
+			Framebuffer() = default; 
+
 			Framebuffer(const Device& device,
-				const RenderPass& render_pass,
-				const std::map<std::string, vk::ImageView>& name_to_image_view_map,
-				uint32_t width,
-				uint32_t height,
-				uint32_t layers = 1);
+						const RenderPass& render_pass,
+						const std::map<std::string, vk::ImageView>& name_to_image_view_map,
+						uint32_t width,
+						uint32_t height,
+						uint32_t layers = 1);
 
 			vk::Framebuffer get_handle() const { return m_framebuffer_handle.get(); }
 

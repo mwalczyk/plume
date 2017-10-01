@@ -58,6 +58,8 @@ namespace plume
 				std::vector<vk::PresentModeKHR> m_present_modes;
 			};
 
+			Device() = default; 
+
 			//! Construct a logical device around a physical device (GPU).
 			Device(vk::PhysicalDevice physical_device,
 				   vk::SurfaceKHR surface,

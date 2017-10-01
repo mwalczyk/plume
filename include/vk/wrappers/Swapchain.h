@@ -40,6 +40,8 @@ namespace plume
 		{
 		public:
 
+			Swapchain() = default; 
+
 			Swapchain(const Device& device, vk::SurfaceKHR surface, uint32_t width, uint32_t height);
 
 			~Swapchain();

@@ -57,6 +57,8 @@ namespace plume
 				WINDOW_MODE_FULLSCREEN_BORDERLESS
 			};
 
+			Window() = default; 
+
 			Window(const Instance& instance, 
 				   uint32_t width, 
 				   uint32_t height, 
