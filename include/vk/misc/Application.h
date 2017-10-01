@@ -38,7 +38,11 @@ namespace plume
 		{
 		public:
 
-			Application() = default;
+			Application(uint32_t width, uint32_t height) :
+				m_width(width),
+				m_height(height)
+			{}
+
 			virtual ~Application() = default;
 
 			virtual void run() final
@@ -77,7 +81,7 @@ namespace plume
 		};
 
 		template<class T>
-		void run_app()
+		void run_app()//std::function<void(const Application::Settings& settings)>)
 		{
 			Application *app = static_cast<Application*>(new T);
 			app->run();
