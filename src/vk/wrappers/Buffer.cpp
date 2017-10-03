@@ -77,6 +77,18 @@ namespace plume
 			m_device_ptr->get_handle().bindBufferMemory(m_buffer_handle.get(), m_device_memory->get_handle(), 0);
 		}
 
+		vk::DescriptorBufferInfo Buffer::build_descriptor_info(vk::DeviceSize offset, vk::DeviceSize range) const
+		{
+			if (range != VK_WHOLE_SIZE &&
+				range < 0 ||
+				range <= m_device_memory->get_allocation_size() - offset)
+			{
+				throw std::runtime_error("Invalid value for `range` parameter of `build_descriptor_info()`");
+			}
+
+			return{ m_buffer_handle.get(), offset, range };
+		}
+
 	} // namespace graphics
 
 } // namespace plume

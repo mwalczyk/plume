@@ -58,7 +58,7 @@ namespace plume
 			Buffer(const Device& device,
 				   vk::BufferUsageFlags buffer_usage_flags,
 				   size_t size,
-				   const void* data,
+				   const void* data = nullptr,
 				   const std::vector<QueueType> queues = { QueueType::GRAPHICS });
 
 			vk::Buffer get_handle() const { return m_buffer_handle.get(); }
@@ -77,38 +77,33 @@ namespace plume
 			//! Uploads data to the buffer's device memory region. Note that if the device memory associated with this buffer is not marked
 			//! as vk::MemoryPropertyFlagBits::eHostCoherent, then you must use a flush command after writing to the memory.
 			template<class T>
-			void upload_immediately(const T* data, vk::DeviceSize offset = 0)
+			void upload_immediately(const T* data, size_t size, vk::DeviceSize offset = 0)
 			{
 				void* mapped_ptr = m_device_memory->map();
-				memcpy(mapped_ptr, data + offset, sizeof(T));
+				memcpy(mapped_ptr, data + offset, size);
 				m_device_memory->unmap();
 
-				// TODO: if the device memory associated with this buffer is not host coherent, we need to flush.
-				if (false)
+				// If the device memory associated with this buffer is not host coherent, we need to flush.
+				if (!m_device_memory->is_host_coherent())
 				{
 					vk::MappedMemoryRange mapped_memory_range;
 					mapped_memory_range.memory = m_device_memory->get_handle();
 					mapped_memory_range.offset = offset;
-					mapped_memory_range.size = sizeof(T);
+					mapped_memory_range.size = size;
 
 					m_device_ptr->get_handle().flushMappedMemoryRanges(mapped_memory_range);
 				}
 			}
 
+			template<class T>
+			void upload_immediately(const std::vector<T>& data, vk::DeviceSize offset = 0)
+			{
+				upload_immediately(data.data(), sizeof(T) * data.size(), offset);
+			}
+
 			//! Returns a vk::DescriptorBufferInfo for this buffer object. By default, `offset` is set to zero, and `range` is set to
 			//! the special value VK_WHOLE_SIZE, meaning that the descriptor will access the entire extent of this buffer's memory.
-			vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const
-			{
-				// See: https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkDescriptorBufferInfo.html
-				if (range != VK_WHOLE_SIZE &&
-					range < 0 ||
-					range <= m_device_memory->get_allocation_size() - offset)
-				{
-					throw std::runtime_error("Invalid value for `range` parameter of `build_descriptor_info()`");
-				}
-
-				return{ m_buffer_handle.get(), offset, range };
-			}
+			vk::DescriptorBufferInfo build_descriptor_info(vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE) const;
 
 		private:
 

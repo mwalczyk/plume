@@ -37,7 +37,7 @@ namespace plume
 
 		std::string ResourceManager::default_path = "../assets/";
 
-		FileResource ResourceManager::load_file(const std::string& file_name)
+		FileResource ResourceManager::load_binary_file(const std::string& file_name)
 		{
 			std::string path_to = default_path + file_name;
 
@@ -62,22 +62,24 @@ namespace plume
 			return resource;
 		}
 
-		ImageResource ResourceManager::load_image(const std::string& file_name, bool force_channels)
+		ImageResource ResourceManager::load_image(const std::string& file_name, bool force_alpha)
 		{
 			std::string path_to = default_path + file_name;
 
 			ImageResource resource;
 
 			// Read the image contents.
-			stbi_uc* pixels = stbi_load(path_to.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
+			stbi_uc* pixels = stbi_load(path_to.c_str(), 
+									    (int*)(&resource.width), 
+									    (int*)(&resource.height), 
+									    (int*)(&resource.channels), 
+									    force_alpha ? STBI_rgb_alpha : STBI_rgb);
+
 			if (!pixels)
 			{
 				throw std::runtime_error("Failed to load image: " + path_to);
 			}
-			if (force_channels)
-			{
-				resource.channels = 4;
-			}
+
 			resource.contents = std::vector<uint8_t>(pixels, pixels + resource.width * resource.height * resource.channels);
 
 			stbi_image_free(pixels);
@@ -85,22 +87,23 @@ namespace plume
 			return resource;
 		}
 
-		ImageResourceHDR ResourceManager::load_image_hdr(const std::string& file_name, bool force_channels)
+		ImageResourceHDR ResourceManager::load_image_hdr(const std::string& file_name, bool force_alpha)
 		{
 			std::string path_to = default_path + file_name;
 
 			ImageResourceHDR resource;
 
 			// Read the image contents.
-			float* pixels = stbi_loadf(path_to.c_str(), (int*)(&resource.width), (int*)(&resource.height), (int*)(&resource.channels), STBI_rgb_alpha);
+			float* pixels = stbi_loadf(path_to.c_str(), 
+									   (int*)(&resource.width), 
+									   (int*)(&resource.height), 
+									   (int*)(&resource.channels), 
+									   force_alpha ? STBI_rgb_alpha : STBI_rgb);
 			if (!pixels)
 			{
 				throw std::runtime_error("Failed to load image: " + path_to);
 			}
-			if (force_channels)
-			{
-				resource.channels = 4;
-			}
+
 			resource.contents = std::vector<float>(pixels, pixels + resource.width * resource.height * resource.channels);
 
 			stbi_image_free(pixels);

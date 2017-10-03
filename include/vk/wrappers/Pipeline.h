@@ -348,6 +348,12 @@ namespace plume
 
 			//! Returns `true` if the GraphicsPipeline contains a fragment shader stage and `false` otherwise.
 			bool has_fragment() const { return m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eFragment); }
+			
+			//! Returns `true` if the GraphicsPipeline was created with the specified `dynamic_state`.
+			bool has_dynamic_state(vk::DynamicState dynamic_state) const
+			{
+				return std::find(m_dynamic_states_active.begin(), m_dynamic_states_active.end(), dynamic_state) != m_dynamic_states_active.end();
+			}
 
 		private:
 
@@ -359,6 +365,8 @@ namespace plume
 				{ vk::ShaderStageFlagBits::eGeometry, false },
 				{ vk::ShaderStageFlagBits::eFragment, false }
 			};
+
+			std::vector<vk::DynamicState> m_dynamic_states_active;
 		};
 
 		class ComputePipeline : public Pipeline

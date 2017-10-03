@@ -57,8 +57,10 @@ namespace plume
 
 			vk::DeviceMemory get_handle() const { return m_device_memory_handle.get(); }
 
-			vk::DeviceSize get_allocation_size() const { return m_allocation_size; }
+			//! Returns the allocation size of the memory object.
+			vk::DeviceSize get_allocation_size() const { return m_memory_requirements.size; }
 
+			//! Returns the numeric index of the memory heap from which the memory object was allocated.
 			uint32_t get_selected_memory_index() const { return m_selected_memory_index; }
 
 			//! Retrieve a host virtual address pointer to a region of this memory allocation. Note that this
@@ -76,12 +78,29 @@ namespace plume
 			//! Unmaps the memory object.
 			void unmap();
 
+			//! Returns `true` if the memory object is currently in use (i.e. mapped).
+			bool is_in_use() const { return m_in_use; }
+
+			//! Returns `true` if the memory object was created with the vk::MemoryPropertyFlagBits::eHostVisible flag set.
+			bool is_host_visible() { return static_cast<bool>(m_memory_property_flags & vk::MemoryPropertyFlagBits::eHostVisible); }
+
+			//! Returns `true` if the memory object was created with the vk::MemoryPropertyFlagBits::eHostCoherent flag set.
+			//! If `true`, then the underlying memory object does not require an explicit flush after unmapping.
+			bool is_host_coherent() { return static_cast<bool>(m_memory_property_flags & vk::MemoryPropertyFlagBits::eHostCoherent); }
+
+			//! Returns `true` if the memory object was created with the vk::MemoryPropertyFlagBits::eDeviceLocal flag set.
+			//! If `true`, then the underlying memory object cannot be mapped.
+			bool is_device_local() { return static_cast<bool>(m_memory_property_flags & vk::MemoryPropertyFlagBits::eDeviceLocal); }
+
 		private:
+
+			//! Based on the memory requirements, find the index of the memory heap that should be used to allocate memory.
+			void find_memory_index();
 
 			const Device* m_device_ptr;
 			vk::UniqueDeviceMemory m_device_memory_handle;
 
-			vk::DeviceSize m_allocation_size;
+			vk::MemoryRequirements m_memory_requirements;
 			vk::MemoryPropertyFlags m_memory_property_flags;
 			uint32_t m_selected_memory_index;
 			bool m_in_use;

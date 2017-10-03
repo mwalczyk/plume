@@ -240,7 +240,8 @@ namespace plume
 
 		GraphicsPipeline::GraphicsPipeline(const Device& device, const RenderPass& render_pass, const Options& options) :
 
-			Pipeline(device)
+			Pipeline(device),
+			m_dynamic_states_active(options.m_dynamic_states)
 		{
 			// Group the shader create info structs together.
 			std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos;
@@ -267,7 +268,7 @@ namespace plume
 					m_shader_stage_active_mapping.at(vk::ShaderStageFlagBits::eTessellationEvaluation)))	// TODO: are tessellation evaluation shaders optional?
 			{
 				throw std::runtime_error("No tessellation control and/or tessellation evaluation shader were found, but the primitive topology\
-									  is set to vk::PrimitiveTopology::ePatchList");
+									      is set to vk::PrimitiveTopology::ePatchList");
 			}
 
 			vk::PipelineDynamicStateCreateInfo dynamic_state_create_info;
@@ -293,14 +294,14 @@ namespace plume
 			// Get all of the values in the push constant ranges map. 
 			std::vector<vk::PushConstantRange> push_constant_ranges;
 			std::transform(m_push_constants_mapping.begin(),
-				m_push_constants_mapping.end(),
-				std::back_inserter(push_constant_ranges), [](const auto& val) { return val.second; });
+						   m_push_constants_mapping.end(),
+						   std::back_inserter(push_constant_ranges), [](const auto& val) { return val.second; });
 
 			// Get all of the values in the descriptor set layouts map.
 			std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
 			std::transform(m_descriptor_set_layouts_mapping.begin(),
-				m_descriptor_set_layouts_mapping.end(),
-				std::back_inserter(descriptor_set_layouts), [](const auto& val) { return val.second; });
+						   m_descriptor_set_layouts_mapping.end(),
+						   std::back_inserter(descriptor_set_layouts), [](const auto& val) { return val.second; });
 
 			// Encapsulate any descriptor sets and push constant ranges into a pipeline layout.
 			vk::PipelineLayoutCreateInfo pipeline_layout_create_info;
@@ -348,14 +349,14 @@ namespace plume
 			// Get all of the values in the push constant ranges map. 
 			std::vector<vk::PushConstantRange> push_constant_ranges;
 			std::transform(m_push_constants_mapping.begin(),
-				m_push_constants_mapping.end(),
-				std::back_inserter(push_constant_ranges), [](const auto& val) { return val.second; });
+						   m_push_constants_mapping.end(),
+						   std::back_inserter(push_constant_ranges), [](const auto& val) { return val.second; });
 
 			// Get all of the values in the descriptor set layouts map.
 			std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
 			std::transform(m_descriptor_set_layouts_mapping.begin(),
-				m_descriptor_set_layouts_mapping.end(),
-				std::back_inserter(descriptor_set_layouts), [](const auto& val) { return val.second; });
+						   m_descriptor_set_layouts_mapping.end(),
+						   std::back_inserter(descriptor_set_layouts), [](const auto& val) { return val.second; });
 
 			// Encapsulate any descriptor sets and push constant ranges into a pipeline layout.
 			vk::PipelineLayoutCreateInfo pipeline_layout_create_info;

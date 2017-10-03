@@ -36,6 +36,7 @@ namespace plume
 
 			m_device_ptr(&device),
 			m_command_pool_ptr(&command_pool),
+			m_pipeline_ptr(nullptr),
 			m_command_buffer_level(command_buffer_level),
 			m_is_recording(false),
 			m_is_inside_render_pass(false)
@@ -93,14 +94,20 @@ namespace plume
 		{
 			check_recording_state();
 
+			// TODO: check if the currently bound pipeline object supports dynamic line width.
+
 			auto range = m_device_ptr->get_physical_device_properties().limits.lineWidthRange;
 			float remapped = std::min(range[1], std::max(range[0], width));
+
 			get_handle().setLineWidth(remapped);
 		}
 
 		void CommandBuffer::bind_pipeline(const Pipeline& pipeline)
 		{
 			check_recording_state();
+
+			// Remember the last pipeline object that was bound.
+			m_pipeline_ptr = &pipeline;
 
 			get_handle().bindPipeline(pipeline.get_pipeline_bind_point(), pipeline.get_handle());
 		}
@@ -112,7 +119,7 @@ namespace plume
 			if (!(buffer.get_buffer_usage_flags() & vk::BufferUsageFlagBits::eVertexBuffer))
 			{
 				throw std::runtime_error("One or more of the buffer objects passed to `bind_vertex_buffers()` was not created with the\
-									  vk::BufferUsageFlagBits::eVertexBuffer bit set");
+										  vk::BufferUsageFlagBits::eVertexBuffer bit set");
 			}
 
 			get_handle().bindVertexBuffers(binding, buffer.get_handle(), offset);
@@ -125,7 +132,7 @@ namespace plume
 			if (!(buffer.get_buffer_usage_flags() & vk::BufferUsageFlagBits::eIndexBuffer))
 			{
 				throw std::runtime_error("The buffer object passed to `bind_index_buffer()` was not created with the\
-									  vk::BufferUsageFlagBits::eIndexBuffer bit set");
+									      vk::BufferUsageFlagBits::eIndexBuffer bit set");
 			}
 
 			get_handle().bindIndexBuffer(buffer.get_handle(), offset, index_type);
@@ -136,12 +143,12 @@ namespace plume
 			check_recording_state();
 
 			get_handle().bindDescriptorSets(pipeline.get_pipeline_bind_point(),
-				pipeline.get_pipeline_layout_handle(),
-				first_set,
-				static_cast<uint32_t>(descriptor_sets.size()),
-				descriptor_sets.data(),
-				static_cast<uint32_t>(dynamic_offsets.size()),
-				dynamic_offsets.data());
+											pipeline.get_pipeline_layout_handle(),
+											first_set,
+											static_cast<uint32_t>(descriptor_sets.size()),
+											descriptor_sets.data(),
+											static_cast<uint32_t>(dynamic_offsets.size()),
+											dynamic_offsets.data());
 		}
 
 		void CommandBuffer::draw(const DrawParamsNonIndexed& draw_params)
@@ -150,9 +157,9 @@ namespace plume
 			check_render_pass_state();
 
 			get_handle().draw(draw_params.m_vertex_count,
-				draw_params.m_instance_count,
-				draw_params.m_first_vertex,
-				draw_params.m_first_instance);
+							  draw_params.m_instance_count,
+							  draw_params.m_first_vertex,
+							  draw_params.m_first_instance);
 		}
 
 		void CommandBuffer::draw_indexed(const DrawParamsIndexed& draw_params)
@@ -161,10 +168,10 @@ namespace plume
 			check_render_pass_state();
 
 			get_handle().drawIndexed(draw_params.m_index_count,
-				draw_params.m_instance_count,
-				draw_params.m_first_index,
-				draw_params.m_vertex_offset,
-				draw_params.m_first_instance);
+									 draw_params.m_instance_count,
+									 draw_params.m_first_index,
+									 draw_params.m_vertex_offset,
+									 draw_params.m_first_instance);
 		}
 
 		void CommandBuffer::end_render_pass()
@@ -229,7 +236,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eColorAttachment))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eColorAttachmentOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eColorAttachment");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eColorAttachment");
 				}
 
 				image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
@@ -238,7 +245,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eDepthStencilAttachment))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eDepthStencilAttachmentOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
 				}
 
 				image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
@@ -247,7 +254,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eDepthStencilAttachment))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eDepthStencilReadOnlyOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
 				}
 
 				image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead;
@@ -257,7 +264,7 @@ namespace plume
 					!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eInputAttachment))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eShaderReadOnlyOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eSampled or vk::ImageUsageFlagBits::eInputAttachment");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eSampled or vk::ImageUsageFlagBits::eInputAttachment");
 				}
 
 				image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -266,7 +273,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eTransferSrc))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eTransferSrcOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferSrc");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferSrc");
 				}
 
 				image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
@@ -275,7 +282,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eTransferDst))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `oldLayout` vk::ImageLayout::eTransferDstOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferDst");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferDst");
 				}
 
 				image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
@@ -299,7 +306,7 @@ namespace plume
 			{
 			case vk::ImageLayout::eUndefined:
 				throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eUndefined, which\
-									  can only be used as `oldLayout`");
+										  can only be used as `oldLayout`");
 				break;
 			case vk::ImageLayout::eGeneral:
 				image_memory_barrier.dstAccessMask = {};
@@ -308,7 +315,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eColorAttachment))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eColorAttachmentOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eColorAttachment");
+											  but this image was not created with usage flags vk::ImageUsageFlagBits::eColorAttachment");
 				}
 
 				image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
@@ -317,7 +324,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eDepthStencilAttachment))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eDepthStencilAttachmentOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
+											  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
 				}
 
 				image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
@@ -326,7 +333,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eDepthStencilAttachment))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eDepthStencilReadOnlyOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eDepthStencilAttachment");
 				}
 
 				image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead;
@@ -336,7 +343,7 @@ namespace plume
 					!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eInputAttachment))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eShaderReadOnlyOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eSampled or vk::ImageUsageFlagBits::eInputAttachment");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eSampled or vk::ImageUsageFlagBits::eInputAttachment");
 				}
 
 				image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -345,7 +352,7 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eTransferSrc))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eTransferSrcOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferSrc");
+										      but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferSrc");
 				}
 
 				image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
@@ -354,14 +361,14 @@ namespace plume
 				if (!(image.get_image_usage_flags() & vk::ImageUsageFlagBits::eTransferDst))
 				{
 					throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::eTransferDstOptimal,\
-										  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferDst");
+											  but this image was not created with usage flags vk::ImageUsageFlagBits::eTransferDst");
 				}
 
 				image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 				break;
 			case vk::ImageLayout::ePreinitialized:
 				throw std::runtime_error("Attempting to create an image memory barrier with `newLayout` vk::ImageLayout::ePreinitialized, which\
-									  can only be used as `oldLayout`");
+										  can only be used as `oldLayout`");
 				break;
 			case vk::ImageLayout::ePresentSrcKHR:		// TODO: this should only be valid for swapchain images.
 			case vk::ImageLayout::eSharedPresentKHR:	// TODO: ...
@@ -394,8 +401,8 @@ namespace plume
 			//
 			// TODO: the `srcStageMask` and `dstStageMask` parameters should probably not be top of pipe.
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
-				vk::PipelineStageFlagBits::eTopOfPipe,
-				{}, {}, {}, image_memory_barrier);
+										 vk::PipelineStageFlagBits::eTopOfPipe,
+										 {}, {}, {}, image_memory_barrier);
 		}
 
 		void CommandBuffer::barrier_compute_write_storage_buffer_compute_read_storage_buffer()
@@ -407,9 +414,9 @@ namespace plume
 			memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
-				vk::PipelineStageFlagBits::eComputeShader,		// Destination stage mask
-				{},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
+										 vk::PipelineStageFlagBits::eComputeShader,		// Destination stage mask
+										 {},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::barrier_compute_read_storage_buffer_compute_write_storage_buffer()
@@ -419,9 +426,9 @@ namespace plume
 			// WAR hazards don't need a memory barrier between them - a simple execution barrier is sufficient.
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
-				vk::PipelineStageFlagBits::eComputeShader,		// Destination stage mask
-				{},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				{}, {}, {});									// Memory barriers, buffer memory barriers, image memory barriers
+										 vk::PipelineStageFlagBits::eComputeShader,		// Destination stage mask
+										 {},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 {}, {}, {});									// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::barrier_compute_write_storage_buffer_graphics_read_as_index()
@@ -433,9 +440,9 @@ namespace plume
 			memory_barrier.dstAccessMask = vk::AccessFlagBits::eIndexRead;
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
-				vk::PipelineStageFlagBits::eVertexInput,		// Destination stage mask
-				{},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
+										 vk::PipelineStageFlagBits::eVertexInput,		// Destination stage mask
+										 {},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::barrier_compute_write_storage_buffer_graphics_read_as_draw_indirect()
@@ -447,9 +454,9 @@ namespace plume
 			memory_barrier.dstAccessMask = vk::AccessFlagBits::eIndirectCommandRead;
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
-				vk::PipelineStageFlagBits::eDrawIndirect,		// Destination stage mask
-				{},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
+										 vk::PipelineStageFlagBits::eDrawIndirect,		// Destination stage mask
+										 {},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 memory_barrier, {}, {});						// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::barrier_compute_write_storage_image_graphics_read(const Image& image,
@@ -469,9 +476,9 @@ namespace plume
 			image.m_current_layout = image_memory_barrier.newLayout;
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,		// Source stage mask
-				read_stage_flags,								// Destination stage mask (fragment shader, by default)
-				{},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				{}, {}, image_memory_barrier);					// Memory barriers, buffer memory barriers, image memory barriers
+										 read_stage_flags,								// Destination stage mask (fragment shader, by default)
+										 {},											// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 {}, {}, image_memory_barrier);					// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::barrier_graphics_write_color_attachment_compute_read(const Image& image, const vk::ImageSubresourceRange& image_subresource_range)
@@ -489,9 +496,9 @@ namespace plume
 			image.m_current_layout = image_memory_barrier.newLayout;
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,	// Source stage mask
-				vk::PipelineStageFlagBits::eComputeShader,			// Destination stage mask
-				{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				{}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
+										 vk::PipelineStageFlagBits::eComputeShader,			// Destination stage mask
+										 {},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 {}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::barrier_graphics_write_depth_attachment_compute_read(const Image& image, const vk::ImageSubresourceRange& image_subresource_range)
@@ -509,10 +516,10 @@ namespace plume
 			image.m_current_layout = image_memory_barrier.newLayout;
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eEarlyFragmentTests |
-				vk::PipelineStageFlagBits::eLateFragmentTests,		// Source stage mask
-				vk::PipelineStageFlagBits::eComputeShader,			// Destination stage mask
-				{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				{}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
+										 vk::PipelineStageFlagBits::eLateFragmentTests,		// Source stage mask
+										 vk::PipelineStageFlagBits::eComputeShader,			// Destination stage mask
+										 {},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 {}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::barrier_graphics_write_depth_attachment_graphics_read(const Image& image,
@@ -532,10 +539,10 @@ namespace plume
 			image.m_current_layout = image_memory_barrier.newLayout;
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eEarlyFragmentTests |
-				vk::PipelineStageFlagBits::eLateFragmentTests,		// Source stage mask
-				read_stage_flags,									// Destination stage mask (fragment shader, by default)
-				{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				{}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
+										 vk::PipelineStageFlagBits::eLateFragmentTests,		// Source stage mask
+										 read_stage_flags,									// Destination stage mask (fragment shader, by default)
+										 {},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 {}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::barrier_graphics_write_color_attachment_graphics_read(const Image& image,
@@ -555,9 +562,9 @@ namespace plume
 			image.m_current_layout = image_memory_barrier.newLayout;
 
 			get_handle().pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, // Source stage mask
-				read_stage_flags,									// Destination stage mask (fragment shader, by default)
-				{},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
-				{}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
+										 read_stage_flags,									// Destination stage mask (fragment shader, by default)
+										 {},												// Dependency flags (can only be vk::DependencyFlagBits::eByRegion)
+										 {}, {}, image_memory_barrier);						// Memory barriers, buffer memory barriers, image memory barriers
 		}
 
 		void CommandBuffer::end()

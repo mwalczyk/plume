@@ -70,13 +70,13 @@ int main()
 		glm::lookAt({ 0.0f, 0.0, 3.0f },{ 0.0f, 0.0, 0.0f }, glm::vec3(0.0f, 1.0f, 0.0f)),
 		glm::perspective(45.0f, window.get_aspect_ratio(), 0.1f, 1000.0f)
 	};
-	ubo.upload_immediately(&ubo_data);
+	ubo.upload_immediately(&ubo_data, sizeof(ubo_data));
 
 	auto binds = geometry.get_vertex_input_binding_descriptions();
 	auto attrs = geometry.get_vertex_input_attribute_descriptions();
 
-	auto v_resource = pl::fsys::ResourceManager::load_file(base_shader_path + "raymarch_vert.spv");
-	auto f_resource = pl::fsys::ResourceManager::load_file(base_shader_path + "raymarch_frag.spv");
+	auto v_resource = pl::fsys::ResourceManager::load_binary_file(base_shader_path + "raymarch_vert.spv");
+	auto f_resource = pl::fsys::ResourceManager::load_binary_file(base_shader_path + "raymarch_frag.spv");
 	auto v_shader = pl::graphics::ShaderModule::create(device, v_resource);
 	auto f_shader = pl::graphics::ShaderModule::create(device, f_resource);
 

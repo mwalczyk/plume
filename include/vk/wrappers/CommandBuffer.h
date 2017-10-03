@@ -169,10 +169,10 @@ namespace plume
 				auto pushConstantsMember = pipeline.get_push_constants_member(name);
 
 				get_handle().pushConstants(pipeline.get_pipeline_layout_handle(),
-					pushConstantsMember.stageFlags,
-					pushConstantsMember.offset,
-					pushConstantsMember.size,
-					&data);
+										   pushConstantsMember.stageFlags,
+										   pushConstantsMember.offset,
+										   pushConstantsMember.size,
+										   &data);
 			}
 
 			//! Binds the specified descriptor sets.
@@ -328,7 +328,7 @@ namespace plume
 			{
 				if (!m_is_recording)
 				{
-					throw std::runtime_error("Must call `begin()` before attempting to record any command into this CommandBuffer");
+					throw std::runtime_error("Must call `begin()` before attempting to record any command into this command buffer");
 				}
 			}
 
@@ -337,12 +337,13 @@ namespace plume
 			{
 				if (!m_is_inside_render_pass)
 				{
-					throw std::runtime_error("Must call `begin_render_pass()` before attempting to record any draw-related command into this CommandBuffer");
+					throw std::runtime_error("Must call `begin_render_pass()` before attempting to record any draw-related command into this command buffer");
 				}
 			}
 
 			const Device* m_device_ptr;
 			const CommandPool* m_command_pool_ptr;
+			const Pipeline* m_pipeline_ptr;
 			vk::UniqueCommandBuffer m_command_buffer_handle;
 
 			vk::CommandBufferLevel m_command_buffer_level;

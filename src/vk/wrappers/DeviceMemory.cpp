@@ -35,43 +35,44 @@ namespace plume
 		DeviceMemory::DeviceMemory(const Device& device, const vk::MemoryRequirements& memory_requirements, vk::MemoryPropertyFlags required_memory_properties) :
 
 			m_device_ptr(&device),
-			m_allocation_size(memory_requirements.size),
+			m_memory_requirements(memory_requirements),
 			m_memory_property_flags(required_memory_properties),
 			m_selected_memory_index(-1),
 			m_in_use(false)
 		{
-			auto& physical_device_memory_properties = m_device_ptr->get_physical_device_memory_properties();
+			find_memory_index();
 
-			// Based on the memory requirements, find the index of the memory heap that should be used to allocate memory.
-			for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount; ++i)
-			{
-				// The memoryTypeBits field is a bitmask and contains one bit set for every supported memory type for the resource.
-				// Bit i is set if and only if the memory type i in the physical device memory properties struct is supported for
-				// this resource. The implementation guarantees that at least one bit of this bitmask will be set.
-				if ((memory_requirements.memoryTypeBits & (1 << i)) &&
-					physical_device_memory_properties.memoryTypes[i].propertyFlags & m_memory_property_flags)
-				{
-					m_selected_memory_index = i;
-					break;
-				}
-			}
-
-			vk::MemoryAllocateInfo memory_allocate_info{ memory_requirements.size, m_selected_memory_index };
+			vk::MemoryAllocateInfo memory_allocate_info{ m_memory_requirements.size, m_selected_memory_index };
 
 			m_device_memory_handle = m_device_ptr->get_handle().allocateMemoryUnique(memory_allocate_info);
 		}
 
 		DeviceMemory::~DeviceMemory()
 		{
-			if (m_in_use)
+			unmap();
+		}
+
+		void DeviceMemory::find_memory_index()
+		{
+			auto& physical_device_memory_properties = m_device_ptr->get_physical_device_memory_properties();
+
+			for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount; ++i)
 			{
-				unmap();
+				// The memoryTypeBits field is a bitmask and contains one bit set for every supported memory type for the resource.
+				// Bit i is set if and only if the memory type i in the physical device memory properties struct is supported for
+				// this resource. The implementation guarantees that at least one bit of this bitmask will be set.
+				if ((m_memory_requirements.memoryTypeBits & (1 << i)) &&
+					physical_device_memory_properties.memoryTypes[i].propertyFlags & m_memory_property_flags)
+				{
+					m_selected_memory_index = i;
+					break;
+				}
 			}
 		}
 
 		void* DeviceMemory::map(vk::DeviceSize offset, vk::DeviceSize size)
 		{
-			if (!(m_memory_property_flags & vk::MemoryPropertyFlagBits::eHostVisible))
+			if (!is_host_visible())
 			{
 				throw std::runtime_error("Attempting to map a device memory object that is not host visible");
 			}
@@ -82,20 +83,25 @@ namespace plume
 				throw std::runtime_error("Attempting to map the same device memory object more than once");
 			}
 
-			if (offset > m_allocation_size && size <= m_allocation_size)
+			if (offset > m_memory_requirements.size && size <= m_memory_requirements.size)
 			{
 				return nullptr;
 			}
 
 			void* mapped_ptr = m_device_ptr->get_handle().mapMemory(m_device_memory_handle.get(), offset, size);
 			m_in_use = true;
+
 			return mapped_ptr;
 		}
 
 		void DeviceMemory::unmap()
 		{
-			m_device_ptr->get_handle().unmapMemory(m_device_memory_handle.get());
-			m_in_use = false;
+			// Don't unmap the memory object if it was never in use.
+			if (m_in_use)
+			{
+				m_device_ptr->get_handle().unmapMemory(m_device_memory_handle.get());
+				m_in_use = false;
+			}
 		}
 
 	} // namespace graphics

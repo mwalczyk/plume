@@ -73,13 +73,13 @@ namespace plume
 			static void set_default_path(const std::string& path) { default_path = path; }
 
 			//! Loads a binary file at path `ResourceManager::default_path` + `file_name`.
-			static FileResource load_file(const std::string& file_name);
+			static FileResource load_binary_file(const std::string& file_name);
 
 			//! Loads an image file at path `ResourceManager::default_path` + `file_name`.
-			static ImageResource load_image(const std::string& file_name, bool force_channels = true);
+			static ImageResource load_image(const std::string& file_name, bool force_alpha = true);
 
 			//! Loads an HDR (floating-point) image file at path `ResourceManager::default_path` + `file_name`.
-			static ImageResourceHDR load_image_hdr(const std::string& file_name, bool force_channels = true);
+			static ImageResourceHDR load_image_hdr(const std::string& file_name, bool force_alpha = true);
 
 			ResourceManager(const ResourceManager& other) = delete;
 
