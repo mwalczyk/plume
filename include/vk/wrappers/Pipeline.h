@@ -194,16 +194,16 @@ namespace plume
 				}
 
 				//! Enable depth testing.
-				Options& enable_depth_test() { m_depth_stencil_state_create_info.depthTestEnable = VK_TRUE; return *this; }
+				Options& depth_test_enabled(bool enabled = true) { m_depth_stencil_state_create_info.depthTestEnable = enabled; return *this; }
 
 				//! Enable stencil testing.
-				Options& enable_stencil_test() { m_depth_stencil_state_create_info.stencilTestEnable = VK_TRUE; return *this; }
+				Options& stencil_test_enable(bool enabled = true) { m_depth_stencil_state_create_info.stencilTestEnable = enabled; return *this; }
 
 				//! Enable both depth and stencil testing.
-				Options& enable_depth_stencil_tests()
+				Options& depth_stencil_tests_enabled(bool enabled = true)
 				{
-					m_depth_stencil_state_create_info.depthTestEnable = VK_TRUE;
-					m_depth_stencil_state_create_info.stencilTestEnable = VK_TRUE;
+					m_depth_stencil_state_create_info.depthTestEnable = enabled;
+					m_depth_stencil_state_create_info.stencilTestEnable = enabled;
 					return *this;
 				}
 
@@ -227,7 +227,7 @@ namespace plume
 				Options& dynamic_states(const std::vector<vk::DynamicState>& dynamic_states) { m_dynamic_states = dynamic_states; return *this; }
 
 				//! Enable or disable primitive restart.
-				Options& primitive_restart(vk::Bool32 primitive_restart) { m_input_assembly_state_create_info.primitiveRestartEnable = primitive_restart; return *this; }
+				Options& primitive_restart_enabled(bool enabled = true) { m_input_assembly_state_create_info.primitiveRestartEnable = enabled; return *this; }
 
 				//! Describe the type of geometry that will be drawn, i.e. triangles, lines, points, etc.
 				Options& primitive_topology(vk::PrimitiveTopology primitive_topology) { m_input_assembly_state_create_info.topology = primitive_topology; return *this; }
@@ -247,9 +247,20 @@ namespace plume
 				//! Configure frontface/backface culling.
 				Options& cull_mode(vk::CullModeFlags cull_mode_flags) { m_rasterization_state_create_info.cullMode = cull_mode_flags; return *this; }
 
-				//! Sets the winding mode to counter-clockwise. By default, it is assumed that the winding mode of all polygons 
-				//! is clockwise.
+				/*
+				 *
+				 * Some useful shortcuts - all of these call `cull_mode()` and simply fill out the first parameter.
+				 *
+				 */
+				Options& cull_back() { return cull_mode(vk::CullModeFlagBits::eBack); }
+				Options& cull_front() { return cull_mode(vk::CullModeFlagBits::eFront); }
+				Options& cull_front_and_back() { return cull_mode(vk::CullModeFlagBits::eFrontAndBack); }
+
+				//! Sets the winding mode to counter-clockwise. 
 				Options& front_face_ccw() { m_rasterization_state_create_info.frontFace = vk::FrontFace::eCounterClockwise; return *this; }
+
+				//! Sets the winding mode to clockwise.
+				Options& front_face_cw() { m_rasterization_state_create_info.frontFace = vk::FrontFace::eClockwise; return *this; }
 
 				//! Set the line width - only applies if the primitive topology is set to a vk::PrimitiveTopology::eLine* variant.
 				Options& line_width(float line_width) { m_rasterization_state_create_info.lineWidth = line_width; return *this; }
@@ -267,7 +278,7 @@ namespace plume
 				Options& points() { return polygon_mode(vk::PolygonMode::ePoint); }
 
 				//! Enable rasterizer discard, which forces the pipeline to ignore the entire fragment processing stage.
-				Options& enable_rasterizer_discard() { m_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE; return *this; }
+				Options& rasterizer_discard_enabled(bool enabled = true) { m_rasterization_state_create_info.rasterizerDiscardEnable = enabled; return *this; }
 
 				//! Vertex input binding descriptions tell the implementation how to fetch the vertex data from the GPU once it has 
 				//! been uploaded. It describes the rate at which data will be loaded from memory (per-vertex or per-instance). It also

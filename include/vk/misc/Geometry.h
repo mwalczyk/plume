@@ -80,15 +80,29 @@ namespace plume
 
 			virtual vk::PrimitiveTopology get_topology() const = 0;
 
+			//! Returns the number of vertices.
 			size_t get_vertex_count() const { return m_positions.size(); }
 
+			//! Constructs a container that holds all of this geometry's vertex attributes packed into a single vector.
+			//! This is most useful for uploading vertex data into a buffer object.
 			std::vector<float> get_packed_vertex_attributes();
+
+			//! Returns a vector containing all of this geometry's vertex positions.
 			const std::vector<glm::vec3>& get_positions() const { return m_positions; }
+
+			//! Returns a vector containing all of this geometry's colors.
 			const std::vector<glm::vec3>& get_colors() const { return m_colors; }
+
+			//! Returns a vector containing all of this geometry's normals.
 			const std::vector<glm::vec3>& get_normals() const { return m_normals; }
+
+			//! Returns a vector containing all of this geometry's texture coordinates.
 			const std::vector<glm::vec2>& get_texture_coordinates() const { return m_texture_coordinates; }
+
+			//! Returns a vector containing all of this geometry's indices.
 			const std::vector<uint32_t>& get_indices() const { return m_indices; }
 
+			//! Returns a pointer to the underlying data for the specified vertex `attribute`.
 			float* get_vertex_attribute_data_ptr(VertexAttribute attribute);
 
 			size_t num_positions() const { return m_positions.size(); }
@@ -122,11 +136,7 @@ namespace plume
 		{
 		public:
 
-			Rect() :
-				Rect(1.0f, 1.0f, { 0.0f, 0.0f, 0.0f })
-			{};
-
-			Rect(float width, float height, const glm::vec3& center);
+			Rect(float width = 1.0f, float height = 1.0f, const glm::vec3& center = { 0.0f, 0.0f, 0.0f });
 
 			//! Set the texture coordinates of each of the four corner points of the rectangle. The corners 
 			//! are ordered in a clockwise fashion, beginning with the upper-left.
@@ -142,11 +152,8 @@ namespace plume
 		class Grid : public Geometry
 		{
 		public:
-			Grid() :
-				Grid(1.0f, 1.0f)
-			{};
 
-			Grid(float width, float height, uint32_t u_subdivisions = 4, uint32_t v_subdivisions = 4, const glm::vec3& center = { 0.0f, 0.0f, 0.0f });
+			Grid(float width = 1.0f, float height = 1.0f, uint32_t u_subdivisions = 4, uint32_t v_subdivisions = 4, const glm::vec3& center = { 0.0f, 0.0f, 0.0f });
 
 			vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
 		};
@@ -155,22 +162,16 @@ namespace plume
 		{
 		public:
 
-			Circle() :
-				Circle(1.0f, { 0.0f, 0.0f, 0.0f })
-			{};
+			Circle(float radius = 1.0f, const glm::vec3& center = { 0.0f, 0.0f, 0.0f }, uint32_t subdivisions = 30);
 
-			Circle(float radius, const glm::vec3& center, uint32_t subdivisions = 30);
 			vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleFan; }
 		};
 
 		class Sphere : public Geometry
 		{
 		public:
-			Sphere() :
-				Sphere(1.0f, { 0.0f, 0.0f, 0.0f })
-			{};
 
-			Sphere(float radius, const glm::vec3& center, size_t u_divisions = 30, size_t v_divisions = 30);
+			Sphere(float radius = 1.0f, const glm::vec3& center = { 0.0f, 0.0f, 0.0f }, size_t u_divisions = 30, size_t v_divisions = 30);
 
 			vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleStrip; }
 		};
@@ -178,11 +179,8 @@ namespace plume
 		class IcoSphere : public Geometry
 		{
 		public:
-			IcoSphere() :
-				IcoSphere(1.0f, { 0.0f, 0.0f, 0.0f })
-			{};
 
-			IcoSphere(float radius, const glm::vec3& center);
+			IcoSphere(float radius = 1.0f, const glm::vec3& center = { 0.0f, 0.0f, 0.0f });
 
 			vk::PrimitiveTopology get_topology() const override { return vk::PrimitiveTopology::eTriangleList; }
 		};

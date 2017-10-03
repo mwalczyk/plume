@@ -87,8 +87,8 @@ int main()
 							.scissors({ window.get_fullscreen_scissor_rect2d() })
 							.attach_shader_stages({ v_shader, f_shader })
 							.primitive_topology(geometry.get_topology())
-							.cull_mode(vk::CullModeFlagBits::eNone)
-							.enable_depth_test()
+							.cull_back()
+							.depth_test_enabled()
 							.samples(msaa);
 	pl::graphics::GraphicsPipeline pipeline{ device, render_pass, pipeline_options };
 
@@ -176,10 +176,10 @@ int main()
 
 	vk::DescriptorSet descriptor_set = descriptor_pool.allocate_descriptor_sets(dslb, { set_id })[0];
 
-	auto d_buffer_info = ubo.build_descriptor_info();				
-	auto d_sampler_info = image_sdf_map_view.build_descriptor_info(sampler);
-	vk::WriteDescriptorSet wds_buff = { descriptor_set, binding_id_ubo, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &d_buffer_info };
-	vk::WriteDescriptorSet wds_samp = { descriptor_set, binding_id_cis, 0, 1, vk::DescriptorType::eCombinedImageSampler, &d_sampler_info, nullptr};
+	vk::DescriptorBufferInfo dbuff_info = ubo.build_descriptor_info();				
+	vk::DescriptorImageInfo dimag_info = image_sdf_map_view.build_descriptor_info(sampler);
+	vk::WriteDescriptorSet wds_buff = { descriptor_set, binding_id_ubo, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &dbuff_info };
+	vk::WriteDescriptorSet wds_samp = { descriptor_set, binding_id_cis, 0, 1, vk::DescriptorType::eCombinedImageSampler, &dimag_info, nullptr};
 	std::vector<vk::WriteDescriptorSet> w_descriptor_sets = { wds_buff, wds_samp };
 
 	device.get_handle().updateDescriptorSets(w_descriptor_sets, {});
