@@ -196,7 +196,7 @@ vec2 map(in vec3 p)
     vec2 m = constants.mouse * 2.0 - 1.0;
 
 	// Parameters
-	const float grid_density = 0.9;
+	const float grid_density = 0.98;
 	const float displacement = 0.25;
 	const float radius_decay = 0.5;
 	const float attraction = 0.95;
@@ -221,10 +221,11 @@ vec2 map(in vec3 p)
 			vec2 o = rot * hash2(n + g) * 0.5 + 0.5;
 			vec2 r = g - f + o;
 
- 			float radius = pow(0.75, length(cp)) * radius_decay;
+ 			float radius = pow(0.55, length(cp)) * radius_decay;
 			//float k = sdf_sphere(vec3(r.x, cp.y, r.y), vec3(0.0, o.x, 0.0), radius);
 
-            float k = sdf_box(vec3(r.x, cp.y, r.y), vec3(0.15, o.x, 0.15));
+            float dims = 0.5 * m.x;// pow(0.15, length(cp)) * radius_decay;
+            float k = sdf_box(vec3(r.x, cp.y, r.y), vec3(dims, o.x, dims));
 			if (k < d)
 			{
 				d = k;
@@ -233,8 +234,8 @@ vec2 map(in vec3 p)
 	}
 
     float plane =   sdf_plane(displaced, m.y);
-    float box =     sdf_box(displaced + vec3(0.0, 0.0, 0.0), vec3(2.0));
-    float sphere =  sdf_sphere(p, vec3(0.0), 3.0);
+    float box =     sdf_box(displaced + vec3(m.x * 4.0, 1.0, m.y * 4.0), vec3(2.0));
+    float sphere =  sdf_sphere(p, vec3(m.x * 4.0, 1.0, m.y * 4.0), 3.0);
 
     float combi =   op_smin(plane, d, attraction);
     float aabb =    max(sphere, combi);
@@ -314,8 +315,8 @@ void main()
 {
 	vec2 uv = vs_texcoord * 2.0 - 1.0;
     float t = constants.time;
-	float s = sin(t * 0.5);
-	float c = cos(t * 0.5);
+	float s = sin(t * 0.25);
+	float c = cos(t * 0.25);
 	float orbit = 8.0;
 
     // float ipos = floor(t);
