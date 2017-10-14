@@ -19,7 +19,7 @@ layout(std430, push_constant) uniform push_constants
 const float pi = 3.141592653589793;
 const uint MAX_STEPS = 128u;
 const float MAX_TRACE_DISTANCE = 32.0;
-const float MIN_HIT_DISTANCE = 0.01;
+const float MIN_HIT_DISTANCE = 0.001;
 
 /****************************************************
  *
@@ -66,6 +66,8 @@ vec3 palette(in float t,
     return a + b * cos(2.0 * pi * (c * t + d));
 }
 
+float hash(float n) { return fract(sin(n) * 1e4); }
+
 vec2 hash2(in vec2 p)
 {
     p = vec2(dot(p, vec2(12.9898, 78.233)),
@@ -100,6 +102,38 @@ float noise(in vec2 p)
                         dot(d, f - vec2(1.0,1.0)), u.x), u.y);
 
     return val * 0.5 + 0.5;
+}
+
+#define NUM_OCTAVES 7
+
+float noise(vec3 x) {
+	const vec3 step = vec3(110, 241, 171);
+
+	vec3 i = floor(x);
+	vec3 f = fract(x);
+
+	// For performance, compute the base input to a 1D hash from the integer part of the argument and the
+	// incremental change to the 1D based on the 3D -> 1D wrapping
+    float n = dot(i, step);
+
+	vec3 u = f * f * (3.0 - 2.0 * f);
+	return mix(mix(mix( hash(n + dot(step, vec3(0, 0, 0))), hash(n + dot(step, vec3(1, 0, 0))), u.x),
+                   mix( hash(n + dot(step, vec3(0, 1, 0))), hash(n + dot(step, vec3(1, 1, 0))), u.x), u.y),
+               mix(mix( hash(n + dot(step, vec3(0, 0, 1))), hash(n + dot(step, vec3(1, 0, 1))), u.x),
+                   mix( hash(n + dot(step, vec3(0, 1, 1))), hash(n + dot(step, vec3(1, 1, 1))), u.x), u.y), u.z);
+}
+
+float fbm(vec3 x)
+{
+	float v = 0.0;
+	float a = 0.5;
+	vec3 shift = vec3(100);
+	for (int i = 0; i < NUM_OCTAVES; ++i) {
+		v += a * noise(x);
+		x = x * 2.0 + shift;
+		a *= 0.5;
+	}
+	return v;
 }
 
 mat2 rotate_2d(float d)
@@ -202,44 +236,36 @@ vec2 map(in vec3 p)
 	const float attraction = 0.95;
 
 	// Displacers
-	float freq = 0.55 * m.x;
-	vec3 displaced = p + sin(p.x * freq + t) *
-					     cos(p.y * freq + t) *
-					     sin(p.z * freq + t) *
-					     displacement * m.y * 8.0;
+	float freq = 0.75;
+	float ampl = 2.0 * m.y;
+    vec3 displaced = p + (fbm(p * freq + t) * 2.0 - 1.0) * ampl;
+    displaced += (noise(p * 0.25 + t) * 2.0 - 1.0 )*2.0;
 
-	vec3 cp = p * grid_density;
-	vec2 n = floor(cp.xz);
-	vec2 f = fract(cp.xz);
-	float d = 10.0;
-	for (int j = -1; j <= 1; ++j)
-	{
-		for (int i = -1; i <= 1; ++i)
-		{
-			mat2 rot = rotate_2d(t);
-			vec2 g = vec2(float(i), float(j));
-			vec2 o = rot * hash2(n + g) * 0.5 + 0.5;
-			vec2 r = g - f + o;
+	// vec3 cp = p * grid_density;
+	// vec2 n = floor(cp.xz);
+	// vec2 f = fract(cp.xz);
+	// float d = 10.0;
+	// for (int j = -1; j <= 1; ++j)
+	// {
+	// 	for (int i = -1; i <= 1; ++i)
+	// 	{
+	// 		mat2 rot = rotate_2d(t);
+	// 		vec2 g = vec2(float(i), float(j));
+	// 		vec2 o = rot * hash2(n + g) * 0.5 + 0.5;
+	// 		vec2 r = g - f + o;
+    //
+    //         float dims = 0.5;
+    //         float k = sdf_sphere(vec3(r.x, cp.y, r.y), vec3(0.0, o.x, 0.0), dims);
+	// 		if (k < d)
+	// 		{
+	// 			d = k;
+	// 		}
+	// 	}
+	// }
 
- 			float radius = pow(0.55, length(cp)) * radius_decay;
-			//float k = sdf_sphere(vec3(r.x, cp.y, r.y), vec3(0.0, o.x, 0.0), radius);
-
-            float dims = 0.5 * m.x;// pow(0.15, length(cp)) * radius_decay;
-            float k = sdf_box(vec3(r.x, cp.y, r.y), vec3(dims, o.x, dims));
-			if (k < d)
-			{
-				d = k;
-			}
-		}
-	}
-
-    float plane =   sdf_plane(displaced, m.y);
-    float box =     sdf_box(displaced + vec3(m.x * 4.0, 1.0, m.y * 4.0), vec3(2.0));
-    float sphere =  sdf_sphere(p, vec3(m.x * 4.0, 1.0, m.y * 4.0), 3.0);
-
-    float combi =   op_smin(plane, d, attraction);
-    float aabb =    max(sphere, combi);
-    //aabb =          max(sphere, aabb);
+    float sphere =  sdf_sphere(displaced, vec3(0.0), 5.0);
+    float plane = sdf_plane(displaced, 0.0);
+    float combi = sphere;// op_smin(sphere, plane, 2.9);
 
     float id = 0.0;
 
@@ -290,7 +316,7 @@ vec2 raymarch(in ray r)
 
 float ambient_occlusion(in vec3 p, in vec3 n)
 {
-	const float attenuation = 0.95;
+	float attenuation = 0.75;//0.95;
 	float ao;
     float accum = 0.0;
     float scale = 1.0;
@@ -350,7 +376,7 @@ void main()
 			float d = max(0.0, dot(n, l));
             float ao = ambient_occlusion(hit, n);
 
-            color = vec3(ao);
+            color = mix(n.rbg, vec3(ao), 0.5);
 
 			break;
 		case 1: break;
