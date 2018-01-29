@@ -239,7 +239,7 @@ vec2 map(in vec3 p)
 	float freq = 0.75;
 	float ampl = 2.0 * m.y;
     vec3 displaced = p + (fbm(p * freq + t) * 2.0 - 1.0) * ampl;
-    displaced += (noise(p * 0.25 + t) * 2.0 - 1.0 )*2.0;
+    displaced += noise(p * 0.25 + t) * 2.0 - 1.0;
 
 	// vec3 cp = p * grid_density;
 	// vec2 n = floor(cp.xz);
@@ -265,7 +265,7 @@ vec2 map(in vec3 p)
 
     float sphere =  sdf_sphere(displaced, vec3(0.0), 5.0);
     float plane = sdf_plane(displaced, 0.0);
-    float combi = sphere;// op_smin(sphere, plane, 2.9);
+    float combi = sphere;// sdf_box(displaced, vec3(3.0));
 
     float id = 0.0;
 
@@ -376,7 +376,7 @@ void main()
 			float d = max(0.0, dot(n, l));
             float ao = ambient_occlusion(hit, n);
 
-            color = mix(n.rbg, vec3(ao), 0.5);
+            color = mix(n.rbg, vec3(1.0), 0.5);
 
 			break;
 		case 1: break;
