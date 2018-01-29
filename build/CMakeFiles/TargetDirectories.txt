@@ -1,0 +1,3 @@
+/home/mike/Documents/github-repositories/plume/build/CMakeFiles/edit_cache.dir
+/home/mike/Documents/github-repositories/plume/build/CMakeFiles/rebuild_cache.dir
+/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir
