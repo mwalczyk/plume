@@ -19,7 +19,7 @@ layout(std430, push_constant) uniform push_constants
 const float pi = 3.141592653589793;
 const uint MAX_STEPS = 128u;
 const float MAX_TRACE_DISTANCE = 32.0;
-const float MIN_HIT_DISTANCE = 0.001;
+const float MIN_HIT_DISTANCE = 0.0001;
 
 /****************************************************
  *
@@ -41,20 +41,12 @@ vec3 hammersley(in uint i, in uint num_samples)
 {
 	float u = float(i) / float(num_samples);
 	float v = float(bitfieldReverse(i)) * 2.3283064365386963e-10;
-
 	float phi = v * 2.0 * pi;
-    float cosTheta = 1.0 - u;
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-    return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-}
+    float cos_theta = 1.0 - u;
+    float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
-const vec3[] preset =
-{
-    vec3(0.2,0.2,0.7),
-    vec3(0.5,0.5,0.5),
-    vec3(1.0,0.7,0.4),
-    vec3(0.0,0.15,0.20)
-};
+    return vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+}
 
 vec3 palette(in float t,
 			 in vec3 a,
@@ -66,7 +58,10 @@ vec3 palette(in float t,
     return a + b * cos(2.0 * pi * (c * t + d));
 }
 
-float hash(float n) { return fract(sin(n) * 1e4); }
+float hash(float n)
+{
+    return fract(sin(n) * 1e4);
+}
 
 vec2 hash2(in vec2 p)
 {
@@ -106,9 +101,9 @@ float noise(in vec2 p)
 
 #define NUM_OCTAVES 7
 
-float noise(vec3 x) {
-	const vec3 step = vec3(110, 241, 171);
-
+float noise(in vec3 x)
+{
+	const vec3 step = vec3(110.0, 241.0, 171.0);
 	vec3 i = floor(x);
 	vec3 f = fract(x);
 
@@ -123,16 +118,18 @@ float noise(vec3 x) {
                    mix( hash(n + dot(step, vec3(0, 1, 1))), hash(n + dot(step, vec3(1, 1, 1))), u.x), u.y), u.z);
 }
 
-float fbm(vec3 x)
+float fbm(in vec3 x)
 {
 	float v = 0.0;
 	float a = 0.5;
-	vec3 shift = vec3(100);
-	for (int i = 0; i < NUM_OCTAVES; ++i) {
+	vec3 shift = vec3(100.0);
+	for (int i = 0; i < NUM_OCTAVES; ++i)
+    {
 		v += a * noise(x);
 		x = x * 2.0 + shift;
 		a *= 0.5;
 	}
+
 	return v;
 }
 
@@ -227,47 +224,18 @@ vec2 map(in vec3 p)
 	float t = constants.time;
 	float s = sin(t);
 	float c = cos(t);
-    vec2 m = constants.mouse * 2.0 - 1.0;
-
-	// Parameters
-	const float grid_density = 0.98;
-	const float displacement = 0.25;
-	const float radius_decay = 0.5;
-	const float attraction = 0.95;
+    vec2 m = constants.mouse;
 
 	// Displacers
-	float freq = 0.75;
-	float ampl = 2.0 * m.y;
-    vec3 displaced = p + (fbm(p * freq + t) * 2.0 - 1.0) * ampl;
-    displaced += noise(p * 0.25 + t) * 2.0 - 1.0;
+	float freq = m.x * 3.0;
+	float ampl = m.y * 3.0;
+    vec3 d = p + (fbm(p * freq + t) * 2.0 - 1.0) * ampl;
 
-	// vec3 cp = p * grid_density;
-	// vec2 n = floor(cp.xz);
-	// vec2 f = fract(cp.xz);
-	// float d = 10.0;
-	// for (int j = -1; j <= 1; ++j)
-	// {
-	// 	for (int i = -1; i <= 1; ++i)
-	// 	{
-	// 		mat2 rot = rotate_2d(t);
-	// 		vec2 g = vec2(float(i), float(j));
-	// 		vec2 o = rot * hash2(n + g) * 0.5 + 0.5;
-	// 		vec2 r = g - f + o;
-    //
-    //         float dims = 0.5;
-    //         float k = sdf_sphere(vec3(r.x, cp.y, r.y), vec3(0.0, o.x, 0.0), dims);
-	// 		if (k < d)
-	// 		{
-	// 			d = k;
-	// 		}
-	// 	}
-	// }
+    float sphere_outer = sdf_sphere(d, vec3(0.0), 5.0);
+    float sphere_inner = sdf_box(p, vec3(4.0));
+    float combi = op_intersect(sphere_outer, sphere_inner);
 
-    float sphere =  sdf_sphere(displaced, vec3(0.0), 5.0);
-    float plane = sdf_plane(displaced, 0.0);
-    float combi = sphere;// sdf_box(displaced, vec3(3.0));
-
-    float id = 0.0;
+    const float id = 0.0;
 
 	return vec2(id, combi);
 }
@@ -275,10 +243,9 @@ vec2 map(in vec3 p)
 vec3 calculate_normal(in vec3 p)
 {
     const vec3 e = vec3(0.001, 0.0, 0.0);
-
-    vec3 n = vec3(map(p + e.xyy).y - map(p - e.xyy).y,	// gradient x
-                  map(p + e.yxy).y - map(p - e.yxy).y,	// gradient y
-                  map(p + e.yyx).y - map(p - e.yyx).y); // gradient z
+    vec3 n = vec3(map(p + e.xyy).y - map(p - e.xyy).y,	// Gradient x
+                  map(p + e.yxy).y - map(p - e.yxy).y,	// Gradient y
+                  map(p + e.yyx).y - map(p - e.yyx).y); // Gradient z
 
     return normalize(n);
 }
@@ -290,8 +257,12 @@ vec2 raymarch(in ray r)
 
 	for (uint i = 0u; i < MAX_STEPS; ++i)
 	{
+        // Step along the ray
 		vec3 p = r.o + current_total_distance * r.d;
 
+        // Here, `hit_info` is a `vec2` that contains:
+        // 1) The ID of the object that was hit
+        // 2) The distance from `p` to the object in question
 		vec2 hit_info = map(p);
 		float id = hit_info.x;
 		float dist = hit_info.y;
@@ -316,7 +287,7 @@ vec2 raymarch(in ray r)
 
 float ambient_occlusion(in vec3 p, in vec3 n)
 {
-	float attenuation = 0.75;//0.95;
+	float attenuation = 0.75;
 	float ao;
     float accum = 0.0;
     float scale = 1.0;
@@ -341,16 +312,10 @@ void main()
 {
 	vec2 uv = vs_texcoord * 2.0 - 1.0;
     float t = constants.time;
+	vec2 m = constants.mouse;
 	float s = sin(t * 0.25);
 	float c = cos(t * 0.25);
 	float orbit = 8.0;
-
-    // float ipos = floor(t);
-	// float fpos = fract(t);
-	// fpos = pow(fpos, 2.0);
-	// vec3 sphere_pos_prev = hammersley(int(ipos), 64);
-	// vec3 sphere_pos_next = hammersley(int(ipos + 1.0), 64);
-	// vec3 current_samp = mix(sphere_pos_prev, sphere_pos_next, fpos) * 15.0;
 
 	vec3 camera_position = vec3(s * orbit, 15.0, c * orbit);
 	mat3 lookat = lookat(vec3(0.0), camera_position);
@@ -370,17 +335,24 @@ void main()
 	switch(int(res.x))
 	{
 		case 0:
-			float seed = res.y * 0.1325;
+            // Diffuse lighting
 			vec3 n = calculate_normal(hit);
 			vec3 l = normalize(vec3(1.0, 5.0, 0.0));
-			float d = max(0.0, dot(n, l));
+			float d = max(0.1, dot(n, l));
+
+            // Ambient occlusion
             float ao = ambient_occlusion(hit, n);
+            ao = pow(ao, 2.5);
 
-            color = mix(n.rbg, vec3(1.0), 0.5);
-
+            color = vec3(d);
 			break;
-		case 1: break;
-		case 2: break;
+		case 1: 
+			// Placeholder
+			break; 
+		case 2: 
+			// Placeholder
+			break;
+			// etc...
 		default:
 			color = background;
 			break;
