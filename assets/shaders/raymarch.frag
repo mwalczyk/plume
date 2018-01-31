@@ -227,7 +227,7 @@ vec2 map(in vec3 p)
     vec2 m = constants.mouse;
 
 	// Displacers
-	float freq = m.x * 3.0;
+	float freq = m.x;
 	float ampl = m.y * 3.0;
     vec3 d = p + (fbm(p * freq + t) * 2.0 - 1.0) * ampl;
 
@@ -317,7 +317,7 @@ void main()
 	float c = cos(t * 0.25);
 	float orbit = 8.0;
 
-	vec3 camera_position = vec3(s * orbit, 15.0, c * orbit);
+	vec3 camera_position = vec3(s * orbit, 10.0, c * orbit);
 	mat3 lookat = lookat(vec3(0.0), camera_position);
 
 	// Construct the primary ray
