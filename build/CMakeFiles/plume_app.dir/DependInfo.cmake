@@ -4,16 +4,13 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/main.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o"
-  "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/atomics.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o"
-  "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/multiply.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o"
-  "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/shared.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o"
   "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_cfg.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o"
   "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_cpp.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o"
   "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_cross.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o"
   "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_glsl.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o"
   "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_hlsl.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o"
   "/home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_msl.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o"
+  "/home/mike/Documents/github-repositories/plume/src/main.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/src/main.cpp.o"
   "/home/mike/Documents/github-repositories/plume/src/vk/misc/Geometry.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o"
   "/home/mike/Documents/github-repositories/plume/src/vk/misc/ResourceManager.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o"
   "/home/mike/Documents/github-repositories/plume/src/vk/misc/Utils.cpp" "/home/mike/Documents/github-repositories/plume/build/CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o"

@@ -65,17 +65,18 @@ namespace plume
 
 			// TODO: `glfwGetPrimaryMonitor()` crashes everything. Maybe try a windowed fullscreen mode?
 			m_window_ptr = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
-
+			
 			// Set the GLFW window user pointer to 'this' so that a member function can be used for mouse callbacks. 
 			// See: http://stackoverflow.com/questions/7676971/pointing-to-a-function-that-is-a-class-member-glfw-setkeycallback
 			glfwSetWindowUserPointer(m_window_ptr, this);
 
 			initialize_callbacks();
-
+			
 			// Create the surface.
 			// TODO: why do we have to do this?
 			VkSurfaceKHR surface_proxy = VK_NULL_HANDLE;
 			glfwCreateWindowSurface(instance.get_handle(), m_window_ptr, nullptr, &surface_proxy);
+			
 			m_surface_handle.reset(surface_proxy);
 		}
 
@@ -115,8 +116,8 @@ namespace plume
 		vk::Rect2D Window::get_fullscreen_scissor_rect2d() const
 		{
 			vk::Rect2D scissor;
-			scissor.extent = { m_width, m_height };
-			scissor.offset = { 0, 0 };
+			scissor.extent = vk::Extent2D{ m_width, m_height };
+			scissor.offset = vk::Offset2D{ 0, 0 };
 
 			return scissor;
 		}

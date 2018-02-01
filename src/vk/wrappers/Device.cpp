@@ -259,16 +259,18 @@ namespace plume
 											const Semaphore& signal,
 											vk::PipelineStageFlags pipeline_stage_flags)
 		{
-			vk::CommandBuffer command_buffer_handle = command_buffer.get_handle();
+			auto command_buffer_handle = command_buffer.get_handle();
+			auto wait_handle = wait.get_handle();
+			auto signal_handle = signal.get_handle();
 
 			vk::SubmitInfo submit_info = {};
 			submit_info.waitSemaphoreCount = 1;
-			submit_info.pWaitSemaphores = &wait.get_handle();
+			submit_info.pWaitSemaphores = &wait_handle;
 			submit_info.pWaitDstStageMask = &pipeline_stage_flags;
 			submit_info.commandBufferCount = 1;
 			submit_info.pCommandBuffers = &command_buffer_handle;
 			submit_info.signalSemaphoreCount = 1;
-			submit_info.pSignalSemaphores = &signal.get_handle();
+			submit_info.pSignalSemaphores = &signal_handle;
 
 			// TODO: this should support fences.
 			get_queue_handle(type).submit(submit_info, {});
@@ -302,11 +304,14 @@ namespace plume
 
 		void Device::present(const Swapchain& swapchain, uint32_t image_index, const Semaphore& wait)
 		{
+			auto wait_handle = wait.get_handle();
+			auto swapchain_handle = swapchain.get_handle();
+
 			vk::PresentInfoKHR present_info = {};
 			present_info.waitSemaphoreCount = 1;
-			present_info.pWaitSemaphores = &wait.get_handle();
+			present_info.pWaitSemaphores = &wait_handle;
 			present_info.swapchainCount = 1;
-			present_info.pSwapchains = &swapchain.get_handle();
+			present_info.pSwapchains = &swapchain_handle;
 			present_info.pImageIndices = &image_index;
 			present_info.pResults = nullptr;
 

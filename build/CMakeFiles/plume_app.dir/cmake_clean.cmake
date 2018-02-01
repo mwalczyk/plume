@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/plume_app.dir/src/main.cpp.o"
   "CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o"
   "CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o"
   "CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o"
@@ -21,10 +22,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o"
   "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o"
   "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o"
-  "CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o"
-  "CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o"
-  "CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o"
-  "CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o"
   "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o"
   "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o"
   "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o"

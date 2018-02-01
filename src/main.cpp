@@ -21,6 +21,7 @@ const std::string base_shader_path = "shaders/";
 
 int main()
 {
+	std::cout << "here";
 	/***********************************************************************************
 	 *
 	 * Instance, window, surface, device, and swapchain
@@ -28,12 +29,12 @@ int main()
 	 ***********************************************************************************/
 	pl::graphics::Instance instance;
 	pl::graphics::Window window{ instance, width, height };
-	pl::graphics::Device device{ instance.get_physical_devices()[0], window.get_surface_handle() };
-	pl::graphics::Swapchain swapchain{ device, window.get_surface_handle(), width, height };
+pl::graphics::Device device{ instance.get_physical_devices()[0], window.get_surface_handle() };
+pl::graphics::Swapchain swapchain{ device, window.get_surface_handle(), width, height };
 
-	auto swapchain_image_views = swapchain.get_image_view_handles();
+ auto swapchain_image_views = swapchain.get_image_view_handles();
 
-	/***********************************************************************************
+/***********************************************************************************
 	 *
 	 * Render pass
 	 *
@@ -192,6 +193,9 @@ int main()
 	pl::graphics::Semaphore image_available_sem{ device };
 	pl::graphics::Semaphore render_complete_sem{ device };
 
+	// Create a fence for each framebuffer.
+	std::vector<pl::graphics::Fence> fences{ framebuffers.size() };
+
 	while (!window.should_close())
 	{
 		// Check the windowing system for any user interaction.
@@ -222,7 +226,7 @@ int main()
 			command_buffer.draw_indexed(static_cast<uint32_t>(geometry.num_indices()));
 			command_buffer.end_render_pass();
 		}
-		device.submit_with_semaphores(pl::graphics::QueueType::GRAPHICS, command_buffer, image_available_sem, render_complete_sem);
+		device.submit_with_semaphores(pl::graphics::QueueType::GRAPHICS, command_buffer, image_available_sem, render_complete_sem, {});
 		
 		// Wait for all work on this queue to finish.
 		device.wait_idle_queue(pl::graphics::QueueType::GRAPHICS);

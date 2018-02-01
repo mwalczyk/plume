@@ -123,114 +123,6 @@ plume_app/fast:
 	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/build
 .PHONY : plume_app/fast
 
-deps/spirv-cross/main.o: deps/spirv-cross/main.cpp.o
-
-.PHONY : deps/spirv-cross/main.o
-
-# target to build an object file
-deps/spirv-cross/main.cpp.o:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o
-.PHONY : deps/spirv-cross/main.cpp.o
-
-deps/spirv-cross/main.i: deps/spirv-cross/main.cpp.i
-
-.PHONY : deps/spirv-cross/main.i
-
-# target to preprocess a source file
-deps/spirv-cross/main.cpp.i:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.i
-.PHONY : deps/spirv-cross/main.cpp.i
-
-deps/spirv-cross/main.s: deps/spirv-cross/main.cpp.s
-
-.PHONY : deps/spirv-cross/main.s
-
-# target to generate assembly for a file
-deps/spirv-cross/main.cpp.s:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.s
-.PHONY : deps/spirv-cross/main.cpp.s
-
-deps/spirv-cross/samples/cpp/atomics.o: deps/spirv-cross/samples/cpp/atomics.cpp.o
-
-.PHONY : deps/spirv-cross/samples/cpp/atomics.o
-
-# target to build an object file
-deps/spirv-cross/samples/cpp/atomics.cpp.o:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o
-.PHONY : deps/spirv-cross/samples/cpp/atomics.cpp.o
-
-deps/spirv-cross/samples/cpp/atomics.i: deps/spirv-cross/samples/cpp/atomics.cpp.i
-
-.PHONY : deps/spirv-cross/samples/cpp/atomics.i
-
-# target to preprocess a source file
-deps/spirv-cross/samples/cpp/atomics.cpp.i:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.i
-.PHONY : deps/spirv-cross/samples/cpp/atomics.cpp.i
-
-deps/spirv-cross/samples/cpp/atomics.s: deps/spirv-cross/samples/cpp/atomics.cpp.s
-
-.PHONY : deps/spirv-cross/samples/cpp/atomics.s
-
-# target to generate assembly for a file
-deps/spirv-cross/samples/cpp/atomics.cpp.s:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.s
-.PHONY : deps/spirv-cross/samples/cpp/atomics.cpp.s
-
-deps/spirv-cross/samples/cpp/multiply.o: deps/spirv-cross/samples/cpp/multiply.cpp.o
-
-.PHONY : deps/spirv-cross/samples/cpp/multiply.o
-
-# target to build an object file
-deps/spirv-cross/samples/cpp/multiply.cpp.o:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o
-.PHONY : deps/spirv-cross/samples/cpp/multiply.cpp.o
-
-deps/spirv-cross/samples/cpp/multiply.i: deps/spirv-cross/samples/cpp/multiply.cpp.i
-
-.PHONY : deps/spirv-cross/samples/cpp/multiply.i
-
-# target to preprocess a source file
-deps/spirv-cross/samples/cpp/multiply.cpp.i:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.i
-.PHONY : deps/spirv-cross/samples/cpp/multiply.cpp.i
-
-deps/spirv-cross/samples/cpp/multiply.s: deps/spirv-cross/samples/cpp/multiply.cpp.s
-
-.PHONY : deps/spirv-cross/samples/cpp/multiply.s
-
-# target to generate assembly for a file
-deps/spirv-cross/samples/cpp/multiply.cpp.s:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.s
-.PHONY : deps/spirv-cross/samples/cpp/multiply.cpp.s
-
-deps/spirv-cross/samples/cpp/shared.o: deps/spirv-cross/samples/cpp/shared.cpp.o
-
-.PHONY : deps/spirv-cross/samples/cpp/shared.o
-
-# target to build an object file
-deps/spirv-cross/samples/cpp/shared.cpp.o:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o
-.PHONY : deps/spirv-cross/samples/cpp/shared.cpp.o
-
-deps/spirv-cross/samples/cpp/shared.i: deps/spirv-cross/samples/cpp/shared.cpp.i
-
-.PHONY : deps/spirv-cross/samples/cpp/shared.i
-
-# target to preprocess a source file
-deps/spirv-cross/samples/cpp/shared.cpp.i:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.i
-.PHONY : deps/spirv-cross/samples/cpp/shared.cpp.i
-
-deps/spirv-cross/samples/cpp/shared.s: deps/spirv-cross/samples/cpp/shared.cpp.s
-
-.PHONY : deps/spirv-cross/samples/cpp/shared.s
-
-# target to generate assembly for a file
-deps/spirv-cross/samples/cpp/shared.cpp.s:
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.s
-.PHONY : deps/spirv-cross/samples/cpp/shared.cpp.s
-
 deps/spirv-cross/spirv_cfg.o: deps/spirv-cross/spirv_cfg.cpp.o
 
 .PHONY : deps/spirv-cross/spirv_cfg.o
@@ -392,6 +284,33 @@ deps/spirv-cross/spirv_msl.s: deps/spirv-cross/spirv_msl.cpp.s
 deps/spirv-cross/spirv_msl.cpp.s:
 	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.s
 .PHONY : deps/spirv-cross/spirv_msl.cpp.s
+
+src/main.o: src/main.cpp.o
+
+.PHONY : src/main.o
+
+# target to build an object file
+src/main.cpp.o:
+	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/src/main.cpp.o
+.PHONY : src/main.cpp.o
+
+src/main.i: src/main.cpp.i
+
+.PHONY : src/main.i
+
+# target to preprocess a source file
+src/main.cpp.i:
+	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/src/main.cpp.i
+.PHONY : src/main.cpp.i
+
+src/main.s: src/main.cpp.s
+
+.PHONY : src/main.s
+
+# target to generate assembly for a file
+src/main.cpp.s:
+	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/src/main.cpp.s
+.PHONY : src/main.cpp.s
 
 src/vk/misc/Geometry.o: src/vk/misc/Geometry.cpp.o
 
@@ -915,18 +834,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... plume_app"
-	@echo "... deps/spirv-cross/main.o"
-	@echo "... deps/spirv-cross/main.i"
-	@echo "... deps/spirv-cross/main.s"
-	@echo "... deps/spirv-cross/samples/cpp/atomics.o"
-	@echo "... deps/spirv-cross/samples/cpp/atomics.i"
-	@echo "... deps/spirv-cross/samples/cpp/atomics.s"
-	@echo "... deps/spirv-cross/samples/cpp/multiply.o"
-	@echo "... deps/spirv-cross/samples/cpp/multiply.i"
-	@echo "... deps/spirv-cross/samples/cpp/multiply.s"
-	@echo "... deps/spirv-cross/samples/cpp/shared.o"
-	@echo "... deps/spirv-cross/samples/cpp/shared.i"
-	@echo "... deps/spirv-cross/samples/cpp/shared.s"
 	@echo "... deps/spirv-cross/spirv_cfg.o"
 	@echo "... deps/spirv-cross/spirv_cfg.i"
 	@echo "... deps/spirv-cross/spirv_cfg.s"
@@ -945,6 +852,9 @@ help:
 	@echo "... deps/spirv-cross/spirv_msl.o"
 	@echo "... deps/spirv-cross/spirv_msl.i"
 	@echo "... deps/spirv-cross/spirv_msl.s"
+	@echo "... src/main.o"
+	@echo "... src/main.i"
+	@echo "... src/main.s"
 	@echo "... src/vk/misc/Geometry.o"
 	@echo "... src/vk/misc/Geometry.i"
 	@echo "... src/vk/misc/Geometry.s"

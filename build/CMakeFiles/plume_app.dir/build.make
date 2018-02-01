@@ -57,9 +57,33 @@ include CMakeFiles/plume_app.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/plume_app.dir/flags.make
 
+CMakeFiles/plume_app.dir/src/main.cpp.o: CMakeFiles/plume_app.dir/flags.make
+CMakeFiles/plume_app.dir/src/main.cpp.o: ../src/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/plume_app.dir/src/main.cpp.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/main.cpp.o -c /home/mike/Documents/github-repositories/plume/src/main.cpp
+
+CMakeFiles/plume_app.dir/src/main.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/plume_app.dir/src/main.cpp.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mike/Documents/github-repositories/plume/src/main.cpp > CMakeFiles/plume_app.dir/src/main.cpp.i
+
+CMakeFiles/plume_app.dir/src/main.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/plume_app.dir/src/main.cpp.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mike/Documents/github-repositories/plume/src/main.cpp -o CMakeFiles/plume_app.dir/src/main.cpp.s
+
+CMakeFiles/plume_app.dir/src/main.cpp.o.requires:
+
+.PHONY : CMakeFiles/plume_app.dir/src/main.cpp.o.requires
+
+CMakeFiles/plume_app.dir/src/main.cpp.o.provides: CMakeFiles/plume_app.dir/src/main.cpp.o.requires
+	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/src/main.cpp.o.provides.build
+.PHONY : CMakeFiles/plume_app.dir/src/main.cpp.o.provides
+
+CMakeFiles/plume_app.dir/src/main.cpp.o.provides.build: CMakeFiles/plume_app.dir/src/main.cpp.o
+
+
 CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o: ../src/vk/misc/Geometry.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/misc/Geometry.cpp
 
 CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.i: cmake_force
@@ -83,7 +107,7 @@ CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o.provides.build: CMakeFiles/p
 
 CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o: ../src/vk/misc/Utils.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/misc/Utils.cpp
 
 CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.i: cmake_force
@@ -107,7 +131,7 @@ CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o.provides.build: CMakeFiles/plum
 
 CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o: ../src/vk/misc/ResourceManager.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/misc/ResourceManager.cpp
 
 CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.i: cmake_force
@@ -131,7 +155,7 @@ CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o.provides.build: CMake
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Pipeline.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Pipeline.cpp.o: ../src/vk/wrappers/Pipeline.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Pipeline.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Pipeline.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Pipeline.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Pipeline.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Pipeline.cpp.i: cmake_force
@@ -155,7 +179,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Pipeline.cpp.o.provides.build: CMakeFil
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/RenderPass.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/RenderPass.cpp.o: ../src/vk/wrappers/RenderPass.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/RenderPass.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/RenderPass.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/RenderPass.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/RenderPass.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/RenderPass.cpp.i: cmake_force
@@ -179,7 +203,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/RenderPass.cpp.o.provides.build: CMakeF
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/DescriptorPool.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/DescriptorPool.cpp.o: ../src/vk/wrappers/DescriptorPool.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/DescriptorPool.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/DescriptorPool.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/DescriptorPool.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/DescriptorPool.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/DescriptorPool.cpp.i: cmake_force
@@ -203,7 +227,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/DescriptorPool.cpp.o.provides.build: CM
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Device.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Device.cpp.o: ../src/vk/wrappers/Device.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Device.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Device.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Device.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Device.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Device.cpp.i: cmake_force
@@ -227,7 +251,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Device.cpp.o.provides.build: CMakeFiles
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Sampler.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Sampler.cpp.o: ../src/vk/wrappers/Sampler.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Sampler.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Sampler.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Sampler.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Sampler.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Sampler.cpp.i: cmake_force
@@ -251,7 +275,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Sampler.cpp.o.provides.build: CMakeFile
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Swapchain.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Swapchain.cpp.o: ../src/vk/wrappers/Swapchain.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Swapchain.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Swapchain.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Swapchain.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Swapchain.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Swapchain.cpp.i: cmake_force
@@ -275,7 +299,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Swapchain.cpp.o.provides.build: CMakeFi
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Buffer.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Buffer.cpp.o: ../src/vk/wrappers/Buffer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Buffer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Buffer.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Buffer.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Buffer.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Buffer.cpp.i: cmake_force
@@ -299,7 +323,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Buffer.cpp.o.provides.build: CMakeFiles
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/CommandPool.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/CommandPool.cpp.o: ../src/vk/wrappers/CommandPool.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/CommandPool.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/CommandPool.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/CommandPool.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/CommandPool.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/CommandPool.cpp.i: cmake_force
@@ -323,7 +347,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/CommandPool.cpp.o.provides.build: CMake
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Image.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Image.cpp.o: ../src/vk/wrappers/Image.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Image.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Image.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Image.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Image.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Image.cpp.i: cmake_force
@@ -347,7 +371,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Image.cpp.o.provides.build: CMakeFiles/
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Instance.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Instance.cpp.o: ../src/vk/wrappers/Instance.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Instance.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Instance.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Instance.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Instance.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Instance.cpp.i: cmake_force
@@ -371,7 +395,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Instance.cpp.o.provides.build: CMakeFil
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/CommandBuffer.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/CommandBuffer.cpp.o: ../src/vk/wrappers/CommandBuffer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/CommandBuffer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/CommandBuffer.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/CommandBuffer.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/CommandBuffer.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/CommandBuffer.cpp.i: cmake_force
@@ -395,7 +419,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/CommandBuffer.cpp.o.provides.build: CMa
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Window.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Window.cpp.o: ../src/vk/wrappers/Window.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Window.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Window.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Window.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Window.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Window.cpp.i: cmake_force
@@ -419,7 +443,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Window.cpp.o.provides.build: CMakeFiles
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Synchronization.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Synchronization.cpp.o: ../src/vk/wrappers/Synchronization.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Synchronization.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Synchronization.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Synchronization.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Synchronization.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Synchronization.cpp.i: cmake_force
@@ -443,7 +467,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Synchronization.cpp.o.provides.build: C
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/ShaderModule.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/ShaderModule.cpp.o: ../src/vk/wrappers/ShaderModule.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/ShaderModule.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/ShaderModule.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/ShaderModule.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/ShaderModule.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/ShaderModule.cpp.i: cmake_force
@@ -467,7 +491,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/ShaderModule.cpp.o.provides.build: CMak
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/DeviceMemory.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/DeviceMemory.cpp.o: ../src/vk/wrappers/DeviceMemory.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/DeviceMemory.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/DeviceMemory.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/DeviceMemory.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/DeviceMemory.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/DeviceMemory.cpp.i: cmake_force
@@ -491,7 +515,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/DeviceMemory.cpp.o.provides.build: CMak
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Framebuffer.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/src/vk/wrappers/Framebuffer.cpp.o: ../src/vk/wrappers/Framebuffer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Framebuffer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/plume_app.dir/src/vk/wrappers/Framebuffer.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/src/vk/wrappers/Framebuffer.cpp.o -c /home/mike/Documents/github-repositories/plume/src/vk/wrappers/Framebuffer.cpp
 
 CMakeFiles/plume_app.dir/src/vk/wrappers/Framebuffer.cpp.i: cmake_force
@@ -515,7 +539,7 @@ CMakeFiles/plume_app.dir/src/vk/wrappers/Framebuffer.cpp.o.provides.build: CMake
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o: ../deps/spirv-cross/spirv_msl.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_msl.cpp
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.i: cmake_force
@@ -539,7 +563,7 @@ CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o.provides.build: CMakeF
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o: ../deps/spirv-cross/spirv_cfg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_cfg.cpp
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.i: cmake_force
@@ -563,7 +587,7 @@ CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o.provides.build: CMakeF
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o: ../deps/spirv-cross/spirv_glsl.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_glsl.cpp
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.i: cmake_force
@@ -585,105 +609,9 @@ CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o.provides: CMakeFiles/
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o.provides.build: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o
 
 
-CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o: CMakeFiles/plume_app.dir/flags.make
-CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o: ../deps/spirv-cross/main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/main.cpp
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mike/Documents/github-repositories/plume/deps/spirv-cross/main.cpp > CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.i
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mike/Documents/github-repositories/plume/deps/spirv-cross/main.cpp -o CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.s
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o.requires:
-
-.PHONY : CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o.requires
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o.provides: CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o.requires
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o.provides.build
-.PHONY : CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o.provides
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o.provides.build: CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o
-
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o: CMakeFiles/plume_app.dir/flags.make
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o: ../deps/spirv-cross/samples/cpp/atomics.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/atomics.cpp
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/atomics.cpp > CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.i
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/atomics.cpp -o CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.s
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o.requires:
-
-.PHONY : CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o.requires
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o.provides: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o.requires
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o.provides.build
-.PHONY : CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o.provides
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o.provides.build: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o
-
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o: CMakeFiles/plume_app.dir/flags.make
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o: ../deps/spirv-cross/samples/cpp/multiply.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/multiply.cpp
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/multiply.cpp > CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.i
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/multiply.cpp -o CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.s
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o.requires:
-
-.PHONY : CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o.requires
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o.provides: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o.requires
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o.provides.build
-.PHONY : CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o.provides
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o.provides.build: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o
-
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o: CMakeFiles/plume_app.dir/flags.make
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o: ../deps/spirv-cross/samples/cpp/shared.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/shared.cpp
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/shared.cpp > CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.i
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mike/Documents/github-repositories/plume/deps/spirv-cross/samples/cpp/shared.cpp -o CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.s
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o.requires:
-
-.PHONY : CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o.requires
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o.provides: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o.requires
-	$(MAKE) -f CMakeFiles/plume_app.dir/build.make CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o.provides.build
-.PHONY : CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o.provides
-
-CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o.provides.build: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o
-
-
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o: ../deps/spirv-cross/spirv_cpp.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_cpp.cpp
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.i: cmake_force
@@ -707,7 +635,7 @@ CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o.provides.build: CMakeF
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o: ../deps/spirv-cross/spirv_cross.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_cross.cpp
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.i: cmake_force
@@ -731,7 +659,7 @@ CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o.provides.build: CMak
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o: CMakeFiles/plume_app.dir/flags.make
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o: ../deps/spirv-cross/spirv_hlsl.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o -c /home/mike/Documents/github-repositories/plume/deps/spirv-cross/spirv_hlsl.cpp
 
 CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.i: cmake_force
@@ -755,6 +683,7 @@ CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o.provides.build: CMake
 
 # Object files for target plume_app
 plume_app_OBJECTS = \
+"CMakeFiles/plume_app.dir/src/main.cpp.o" \
 "CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o" \
 "CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o" \
 "CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o" \
@@ -777,10 +706,6 @@ plume_app_OBJECTS = \
 "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o" \
 "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o" \
 "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o" \
-"CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o" \
-"CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o" \
-"CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o" \
-"CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o" \
 "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o" \
 "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o" \
 "CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o"
@@ -788,6 +713,7 @@ plume_app_OBJECTS = \
 # External object files for target plume_app
 plume_app_EXTERNAL_OBJECTS =
 
+plume_app: CMakeFiles/plume_app.dir/src/main.cpp.o
 plume_app: CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o
 plume_app: CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o
 plume_app: CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o
@@ -810,16 +736,14 @@ plume_app: CMakeFiles/plume_app.dir/src/vk/wrappers/Framebuffer.cpp.o
 plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o
 plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o
 plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o
-plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o
-plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o
-plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o
-plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o
 plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o
 plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o
 plume_app: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o
 plume_app: CMakeFiles/plume_app.dir/build.make
+plume_app: /home/mike/Documents/vulkan-sdk/1.0.65.0/x86_64/lib/libvulkan.so
+plume_app: ../deps/glfw/src/libglfw.so
 plume_app: CMakeFiles/plume_app.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Linking CXX executable plume_app"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/mike/Documents/github-repositories/plume/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Linking CXX executable plume_app"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/plume_app.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -827,6 +751,7 @@ CMakeFiles/plume_app.dir/build: plume_app
 
 .PHONY : CMakeFiles/plume_app.dir/build
 
+CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/src/main.cpp.o.requires
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/src/vk/misc/Geometry.cpp.o.requires
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/src/vk/misc/Utils.cpp.o.requires
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/src/vk/misc/ResourceManager.cpp.o.requires
@@ -849,10 +774,6 @@ CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/src/vk/wrappers/Fram
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_msl.cpp.o.requires
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cfg.cpp.o.requires
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_glsl.cpp.o.requires
-CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/main.cpp.o.requires
-CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/atomics.cpp.o.requires
-CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/multiply.cpp.o.requires
-CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/samples/cpp/shared.cpp.o.requires
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cpp.cpp.o.requires
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_cross.cpp.o.requires
 CMakeFiles/plume_app.dir/requires: CMakeFiles/plume_app.dir/deps/spirv-cross/spirv_hlsl.cpp.o.requires
