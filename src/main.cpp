@@ -192,6 +192,9 @@ int main()
 	pl::graphics::Semaphore image_available_sem{ device };
 	pl::graphics::Semaphore render_complete_sem{ device };
 
+	// Create a fence for each framebuffer.
+	std::vector<pl::graphics::Fence> fences{ framebuffers.size() };
+
 	while (!window.should_close())
 	{
 		// Check the windowing system for any user interaction.
@@ -222,7 +225,7 @@ int main()
 			command_buffer.draw_indexed(static_cast<uint32_t>(geometry.num_indices()));
 			command_buffer.end_render_pass();
 		}
-		device.submit_with_semaphores(pl::graphics::QueueType::GRAPHICS, command_buffer, image_available_sem, render_complete_sem);
+		device.submit_with_semaphores(pl::graphics::QueueType::GRAPHICS, command_buffer, image_available_sem, render_complete_sem, {});
 		
 		// Wait for all work on this queue to finish.
 		device.wait_idle_queue(pl::graphics::QueueType::GRAPHICS);

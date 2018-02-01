@@ -257,6 +257,7 @@ namespace plume
 											const CommandBuffer& command_buffer,
 											const Semaphore& wait,
 											const Semaphore& signal,
+											const Fence& fence,
 											vk::PipelineStageFlags pipeline_stage_flags)
 		{
 			vk::CommandBuffer command_buffer_handle = command_buffer.get_handle();
@@ -270,8 +271,7 @@ namespace plume
 			submit_info.signalSemaphoreCount = 1;
 			submit_info.pSignalSemaphores = &signal.get_handle();
 
-			// TODO: this should support fences.
-			get_queue_handle(type).submit(submit_info, {});
+			get_queue_handle(type).submit(submit_info, fence.get_handle());
 		}
 
 		void one_time_submit(QueueType type, std::function<void(const CommandBuffer&)> func)

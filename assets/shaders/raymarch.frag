@@ -214,6 +214,22 @@ float sdf_plane(in vec3 p, in float h)
 	return p.y - h;
 }
 
+#define PHI (sqrt(5) * 0.5 + 0.5)
+
+float sdf_blob(in vec3 p) {
+	p = abs(p);
+	if (p.x < max(p.y, p.z)) p = p.yzx;
+	if (p.x < max(p.y, p.z)) p = p.yzx;
+	float b = max(max(max(dot(p, normalize(vec3(1, 1, 1))),
+						  dot(p.xz, normalize(vec2(PHI+1, 1)))),
+					  dot(p.yx, normalize(vec2(1, PHI)))),
+				  dot(p.xz, normalize(vec2(1, PHI))));
+
+	float l = length(p);
+	return l - 1.5 - 0.2 * (1.5 / 2) * cos(min(sqrt(1.01 - b / l) * (pi / 0.25),
+										   pi)); 
+}
+
 /****************************************************
  *
  * ray marching utilities
@@ -228,16 +244,17 @@ vec2 map(in vec3 p)
 
 	// Displacers
 	float freq = m.x;
-	float ampl = m.y * 3.0;
+	float ampl = m.y * 2.0;
     vec3 d = p + (fbm(p * freq + t) * 2.0 - 1.0) * ampl;
 
-    float sphere_outer = sdf_sphere(d, vec3(0.0), 5.0);
-    float sphere_inner = sdf_box(p, vec3(4.0));
-    float combi = op_intersect(sphere_outer, sphere_inner);
+    // Shapes
+    float sphere = sdf_sphere(d, vec3(0.0), 5.0);
+    float box = sdf_box(p, vec3(5.0));
+    float blob = sdf_blob(p * 0.5);
 
     const float id = 0.0;
 
-	return vec2(id, combi);
+	return vec2(id, blob);
 }
 
 vec3 calculate_normal(in vec3 p)
@@ -342,9 +359,9 @@ void main()
 
             // Ambient occlusion
             float ao = ambient_occlusion(hit, n);
-            ao = pow(ao, 2.5);
 
-            color = vec3(d);
+            vec3 nc = n * 0.5 + 0.5;
+            color = vec3(d * ao * nc);
 			break;
 		case 1: 
 			// Placeholder

@@ -44,6 +44,7 @@ namespace plume
 		};
 
 		class CommandBuffer;
+		class Fence;
 		class Semaphore;
 		class Swapchain;
 
@@ -121,6 +122,7 @@ namespace plume
 										const CommandBuffer& command_buffer,
 										const Semaphore& wait,
 										const Semaphore& signal,
+										const Fence& fence,
 										vk::PipelineStageFlags pipeline_stage_flags = vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
 			void present(const Swapchain& swapchain, uint32_t image_index, const Semaphore& wait);
