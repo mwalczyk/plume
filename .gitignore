@@ -31,6 +31,8 @@ bld/
 #wwwroot/
 
 # MSTest test Results
+build/ 
+
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 
