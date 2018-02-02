@@ -24,6 +24,15 @@ make
 
 This should create the executable `plume_app` in the `build` directory.
 
+For the time being, you must also run a script to compile all shaders in the `assets` folder into SPIR-V:
+
+```
+cd assets/shaders
+python compile_shaders.py .
+```
+
+This script is a slightly modified version of the same Python script that can be found in Sascha Willems' excellent Vulkan examples repository.
+
 More information on working with submodules can be found [here](https://github.com/blog/2104-working-with-submodules).
 
 ## Inspiration
