@@ -21,7 +21,6 @@ const std::string base_shader_path = "shaders/";
 
 int main()
 {
-	std::cout << "here";
 	/***********************************************************************************
 	 *
 	 * Instance, window, surface, device, and swapchain
@@ -29,12 +28,12 @@ int main()
 	 ***********************************************************************************/
 	pl::graphics::Instance instance;
 	pl::graphics::Window window{ instance, width, height };
-pl::graphics::Device device{ instance.get_physical_devices()[0], window.get_surface_handle() };
-pl::graphics::Swapchain swapchain{ device, window.get_surface_handle(), width, height };
+	pl::graphics::Device device{ instance.get_physical_devices()[0], window.get_surface_handle() };
+	pl::graphics::Swapchain swapchain{ device, window.get_surface_handle(), width, height };
 
- auto swapchain_image_views = swapchain.get_image_view_handles();
+    auto swapchain_image_views = swapchain.get_image_view_handles();
 
-/***********************************************************************************
+	/***********************************************************************************
 	 *
 	 * Render pass
 	 *
@@ -76,8 +75,8 @@ pl::graphics::Swapchain swapchain{ device, window.get_surface_handle(), width, h
 	auto binds = geometry.get_vertex_input_binding_descriptions();
 	auto attrs = geometry.get_vertex_input_attribute_descriptions();
 
-	auto v_resource = pl::fsys::ResourceManager::load_binary_file(base_shader_path + "raymarch_vert.spv");
-	auto f_resource = pl::fsys::ResourceManager::load_binary_file(base_shader_path + "raymarch_frag.spv");
+	auto v_resource = pl::fsys::ResourceManager::load_binary_file(base_shader_path + "raymarch.vert.spv");
+	auto f_resource = pl::fsys::ResourceManager::load_binary_file(base_shader_path + "raymarch.frag.spv");
 	auto v_shader = pl::graphics::ShaderModule::create(device, v_resource);
 	auto f_shader = pl::graphics::ShaderModule::create(device, f_resource);
 
