@@ -12,12 +12,9 @@ endif()
 
 # Set C++ language standard
 set(CMAKE_CXX_STANDARD 14)
-#add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-#add_definitions(-std=c++11)
 
 # Set variables
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
-set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(DEPS_DIR ${CMAKE_SOURCE_DIR}/deps)
 
 # Add include directories
@@ -30,16 +27,19 @@ include_directories(${DEPS_DIR}/glm/glm)
 include_directories(${DEPS_DIR}/spirv-cross)
 include_directories(${DEPS_DIR}/stb)
 
-# Add libraries
-#link_directories(${CMAKE_SOURCE_DIR}/deps/glfw/src)
-#find_library(GLFW_LIBRARY libglfw /home/mike/Documents/github-repositories/plume/deps/glfw/src)
-#add_subdirectory(${DEPS_DIR}/glfw)
-find_library(Vulkan_LIBRARY NAMES vulkan HINTS "$ENV{VULKAN_SDK}/lib" "${CMAKE_SOURCE_DIR}/libs/vulkan" REQUIRED)
-find_library(Glfw_LIBRARY NAMES libglfw.so PATHS ${CMAKE_SOURCE_DIR}/deps/glfw/src)
+# Compile GLFW, as per: http://www.glfw.org/docs/latest/build_guide.html
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+add_subdirectory(deps/glfw)
 
-# Add the executable
-file(GLOB sources src/*.cpp src/vk/misc/*.cpp src/vk/wrappers/*.cpp deps/spirv-cross/*.cpp)
-add_executable(plume_app ${sources})
+# Add Vulkan library
+find_library(VULKAN_LIBRARY NAMES vulkan HINTS "$ENV{VULKAN_SDK}/lib" "${CMAKE_SOURCE_DIR}/libs/vulkan" REQUIRED)
 
-target_link_libraries(plume_app ${Vulkan_LIBRARY} ${Glfw_LIBRARY})
+# Grab all of the source files
+file(GLOB SOURCES src/*.cpp src/vk/misc/*.cpp src/vk/wrappers/*.cpp)
 
+# Add the executable and link libraries
+add_executable(plume_app ${SOURCES})
+target_link_libraries(plume_app ${VULKAN_LIBRARY})
+target_link_libraries(plume_app glfw)
