@@ -10,3 +10,6 @@
 [submodule "deps/shaderc"]
 	path = deps/shaderc
 	url = https://github.com/google/shaderc
+[submodule "deps/glfw"]
+	path = deps/glfw
+	url = https://github.com/glfw/glfw

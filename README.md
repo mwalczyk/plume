@@ -2,7 +2,7 @@
   <img src="https://github.com/mwalczyk/plume/blob/master/logo.svg" alt="plume logo" width="400" height="auto"/>
 </p>
 
-A work-in-progress framework and abstraction layer around the Vulkan graphics API. Currently being developed with version 1.0.54.0.
+A work-in-progress framework and abstraction layer around the Vulkan graphics API. Currently being developed with version 1.0.65.0.
 
 ## Cloning
 
@@ -11,14 +11,18 @@ Plume uses several submodules:
 - [glm](https://github.com/g-truc/glm) for mathematics
 - [spirv-cross](https://github.com/KhronosGroup/SPIRV-Cross) for shader reflection
 - [stb](https://github.com/nothings/stb) for image loading
+- [glfw](https://github.com/glfw/glfw) for cross-platform windowing
 
-After cloning the main repository, make sure to initialize submodules by executing the following command from the top-level directory:
+After cloning the main repository, run `checkout_and_build_deps.sh` which will initialize the aforementioned submodules and setup a few other directories that will be used during the build process. Next, run CMake:
 
-`git submodule update --init --recursive`
+```
+mkdir build
+cd build
+cmake ..
+make
+```
 
-Existing submodules can be updated recursively by executing the following command from the top-level directory:
-
-`git submodule update --recursive --remote`
+This should create the executable `plume_app` in the `build` directory.
 
 More information on working with submodules can be found [here](https://github.com/blog/2104-working-with-submodules).
 

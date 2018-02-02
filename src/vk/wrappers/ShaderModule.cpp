@@ -146,7 +146,8 @@ namespace plume
 		void ShaderModule::perform_reflection()
 		{
 			// Parse the shader resources.
-			spirv_cross::CompilerGLSL compiler_glsl = spirv_cross::CompilerGLSL(m_shader_code);
+			spirv_cross::CompilerGLSL compiler_glsl(std::move(m_shader_code));
+		//	spirv_cross::CompilerGLSL compiler_glsl = spirv_cross::CompilerGLSL(m_shader_code);
 			spirv_cross::ShaderResources shader_resources = compiler_glsl.get_shader_resources();
 			m_shader_stage = spv_to_vk_execution_mode(compiler_glsl.get_execution_model());
 			m_entry_points = compiler_glsl.get_entry_points();

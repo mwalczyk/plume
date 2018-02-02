@@ -75,8 +75,8 @@ namespace plume
 			render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
 			render_pass_begin_info.framebuffer = framebuffer.get_handle();
 			render_pass_begin_info.pClearValues = clear_values.data();
-			render_pass_begin_info.renderArea.extent = { framebuffer.get_width(), framebuffer.get_height() };
-			render_pass_begin_info.renderArea.offset = { 0, 0 };
+			render_pass_begin_info.renderArea.extent = vk::Extent2D{ framebuffer.get_width(), framebuffer.get_height() };
+			render_pass_begin_info.renderArea.offset = vk::Offset2D{ 0, 0 };
 			render_pass_begin_info.renderPass = render_pass.get_handle();
 
 			get_handle().beginRenderPass(render_pass_begin_info, vk::SubpassContents::eInline);

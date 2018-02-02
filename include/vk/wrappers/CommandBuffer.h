@@ -158,7 +158,7 @@ namespace plume
 			void update_push_constant_ranges(const Pipeline& pipeline, vk::ShaderStageFlags stage_flags, uint32_t offset, uint32_t size, const T& data)
 			{
 				// TODO: does this actually work?
-				m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), stage_flags, offset, size, &data);
+				//m_command_buffer_handle.pushConstants(pipeline->get_pipeline_layout_handle(), stage_flags, offset, size, &data);
 			}
 
 			//! During shader reflection, the pipeline object grabs and stores information about the available push

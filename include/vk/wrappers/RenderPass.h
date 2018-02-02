@@ -94,7 +94,7 @@ namespace plume
 
 			//! Factory method for constructing a new shared RenderPassBuilder. Note that a single RenderPassBuilder
 			//! can be owned by multiple RenderPass instances, which is why shared pointer semantics are enforced.
-			static std::shared_ptr<RenderPassBuilder> RenderPassBuilder::create()
+			static std::shared_ptr<RenderPassBuilder> create()
 			{
 				return std::shared_ptr<RenderPassBuilder>(new RenderPassBuilder());
 			}
