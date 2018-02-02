@@ -14,7 +14,7 @@ git clone https://github.com/KhronosGroup/SPIRV-Headers.git spirv-tools/external
 cd ../../..
 mkdir include/vk/spirv-cross
 mkdir src/vk/spirv-cross
-mv deps/spirv-cross/*.hpp include/vk/spirv-cross
-mv deps/spirv-cross/*.cpp src/vk/spirv-cross
+cp deps/spirv-cross/*.hpp include/vk/spirv-cross
+cp deps/spirv-cross/*.cpp src/vk/spirv-cross
 rm src/vk/spirv-cross/main.cpp
 
