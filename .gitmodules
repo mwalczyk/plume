@@ -13,3 +13,6 @@
 [submodule "deps/glfw"]
 	path = deps/glfw
 	url = https://github.com/glfw/glfw
+[submodule "glfw"]
+	path = deps/glfw
+	url = https://github.com/glfw/glfw
