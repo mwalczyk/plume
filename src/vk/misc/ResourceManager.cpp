@@ -37,6 +37,38 @@ namespace plume
 
 		std::string ResourceManager::default_path = "../assets/";
 
+		// Compiles a shader to a SPIR-V binary. Returns the binary as
+		// a vector of 32-bit words.
+		const char kShaderSource[] =
+		"#version 310 es\n"
+		"void mdsasain() { int x = MY_DEFINE; }\n";
+  	
+		// auto spirv = compile_file("shader_src", shaderc_glsl_vertex_shader, kShaderSource);
+        	// std::cout << "Compiled to a binary module with " << spirv.size() << " words." << std::endl;
+
+		std::vector<uint32_t> compile_file(const std::string& source_name,
+					           shaderc_shader_kind kind,
+					           const std::string& source,
+					           bool optimize = false) 
+		{
+		  	shaderc::Compiler compiler;
+		  	shaderc::CompileOptions options;
+
+			if (optimize) 
+			{
+			    	options.SetOptimizationLevel(shaderc_optimization_level_size);
+			}
+			shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, kind, source_name.c_str(), options);
+
+			if (module.GetCompilationStatus() != shaderc_compilation_status_success) 
+			{
+				std::cerr << module.GetErrorMessage();
+			    	return std::vector<uint32_t>();
+			}
+
+			return { module.cbegin(), module.cend() };
+		}
+
 		FileResource ResourceManager::load_binary_file(const std::string& file_name)
 		{
 			std::string path_to = default_path + file_name;

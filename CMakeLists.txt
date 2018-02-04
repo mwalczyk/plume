@@ -38,7 +38,7 @@ add_subdirectory(deps/glfw)
 # Compile shaderc, as per: https://github.com/google/shaderc/blob/master/libshaderc/README.md
 #add_subdirectory(deps/shaderc)
 
-# Add Vulkan library
+# Add vulkan and shaderc libraries
 find_library(VULKAN_LIBRARY NAMES vulkan HINTS "$ENV{VULKAN_SDK}/lib" "${CMAKE_SOURCE_DIR}/libs/vulkan" REQUIRED)
 find_library(SHADERC_LIBRARY NAMES shaderc_combined HINTS "${CMAKE_SOURCE_DIR}/deps/shaderc/build/libshaderc" REQUIRED)
 

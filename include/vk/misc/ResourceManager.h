@@ -29,6 +29,9 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <iostream>
+
+#include "shaderc/shaderc.hpp"
 
 namespace plume
 {
