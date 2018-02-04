@@ -47,7 +47,6 @@ namespace plume
         	// std::cout << "Compiled to a binary module with " << spirv.size() << " words." << std::endl;
 
 		std::vector<uint32_t> compile_file(const std::string& source_name,
-					           shaderc_shader_kind kind,
 					           const std::string& source,
 					           bool optimize = false) 
 		{
@@ -58,7 +57,7 @@ namespace plume
 			{
 			    	options.SetOptimizationLevel(shaderc_optimization_level_size);
 			}
-			shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, kind, source_name.c_str(), options);
+			shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, kind, shaderc_glslc_infer_from_source, options);
 
 			if (module.GetCompilationStatus() != shaderc_compilation_status_success) 
 			{
