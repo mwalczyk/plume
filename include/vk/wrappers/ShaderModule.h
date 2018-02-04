@@ -27,6 +27,7 @@
 #pragma once
 
 #include "spirv_glsl.hpp"
+#include "shaderc/shaderc.hpp"
 
 #include "Device.h"
 #include "ResourceManager.h"

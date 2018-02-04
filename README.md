@@ -2,9 +2,11 @@
   <img src="https://github.com/mwalczyk/plume/blob/master/logo.svg" alt="plume logo" width="400" height="auto"/>
 </p>
 
-A work-in-progress framework and abstraction layer around the Vulkan graphics API. Currently being developed with version 1.0.65.0.
+A work-in-progress framework and abstraction layer around the Vulkan graphics API. Currently being developed with version `1.0.65.0`.
 
-## Cloning
+## Building
+
+First, make sure that you have the latest version of the Vulkan SDK installed on your system and that the `VULKAN_SDK` environment variable is set. The SDK can be installed from LunarG's [website](https://vulkan.lunarg.com/).
 
 Plume uses several submodules:
 - [shaderc](https://github.com/google/shaderc) for runtime shader compilation (from GLSL to SPIR-V)
@@ -22,7 +24,7 @@ cmake ..
 make
 ```
 
-This should create the executable `plume_app` in the `build` directory.
+This will build shaderc, glfw, spirv-cross, and plume and create the executable `plume_app` in the `build` directory.
 
 For the time being, you must also run a script to compile all shaders in the `assets` folder into SPIR-V:
 
