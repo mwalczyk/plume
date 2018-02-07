@@ -1,10 +1,11 @@
-<p align="center">
-  <img src="https://github.com/mwalczyk/plume/blob/master/logo.svg" alt="plume logo" width="400" height="auto"/>
-</p>
-
+# Plume
 A work-in-progress framework and abstraction layer around the Vulkan graphics API. Currently being developed with version 1.0.65.0.
 
-## Cloning
+<p>
+  <img src="https://github.com/mwalczyk/plume/blob/master/logo.svg" alt="plume logo" width="100" height="auto"/>
+</p>
+
+## Building
 
 Plume uses several submodules:
 - [shaderc](https://github.com/google/shaderc) for runtime shader compilation (from GLSL to SPIR-V)
@@ -35,7 +36,7 @@ This script is a slightly modified version of the same Python script that can be
 
 More information on working with submodules can be found [here](https://github.com/blog/2104-working-with-submodules).
 
-## Inspiration
+## References
 
 Plume's syntax, structure, and design patterns were greatly influenced by several major
 open source projects:
