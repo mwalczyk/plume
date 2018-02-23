@@ -45,7 +45,7 @@ namespace plume
   	
 		// auto spirv = compile_file("shader_src", shaderc_glsl_vertex_shader, kShaderSource);
         	// std::cout << "Compiled to a binary module with " << spirv.size() << " words." << std::endl;
-
+//shaderc_glslc_infer_from_source
 		std::vector<uint32_t> compile_file(const std::string& source_name,
 					           const std::string& source,
 					           bool optimize = false) 
@@ -57,7 +57,7 @@ namespace plume
 			{
 			    	options.SetOptimizationLevel(shaderc_optimization_level_size);
 			}
-			shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, kind, shaderc_glslc_infer_from_source, options);
+			shaderc::SpvCompilationResult module =  compiler.CompileGlslToSpv(source, shaderc_glsl_vertex_shader, source_name.c_str(), options);
 
 			if (module.GetCompilationStatus() != shaderc_compilation_status_success) 
 			{
